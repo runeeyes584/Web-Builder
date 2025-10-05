@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
-import { ComponentLibrary } from "@/components/builder/component-library"
 import { Canvas } from "@/components/builder/canvas"
+import { ComponentLibrary } from "@/components/builder/component-library"
+import { LayersPanel } from "@/components/builder/layers-panel"
 import { PropertiesPanel } from "@/components/builder/properties-panel"
 import { TopToolbar } from "@/components/builder/top-toolbar"
 import { useBuilderState } from "@/hooks/use-builder-state"
 import type { BuilderElement } from "@/lib/builder-types"
+import { useEffect, useState } from "react"
 
 export default function WebsiteBuilder() {
   const {
@@ -31,6 +32,9 @@ export default function WebsiteBuilder() {
   } = useBuilderState()
 
   const [isDarkMode, setIsDarkMode] = useState(true)
+  const [zoom, setZoom] = useState(100)
+  const [showGrid, setShowGrid] = useState(true)
+  const [showLayers, setShowLayers] = useState(false)
 
   const breakpointWidths = {
     desktop: "w-full",
@@ -59,6 +63,63 @@ export default function WebsiteBuilder() {
     })
   }
 
+  const handleRotateSelected = () => {
+    selectedElements.forEach((elementId) => {
+      const element = elements.find(el => el.id === elementId)
+      if (element) {
+        const currentRotation = element.styles.transform?.includes('rotate') 
+          ? parseInt(element.styles.transform.match(/rotate\((\d+)deg\)/)?.[1] || '0')
+          : 0
+        
+        const newRotation = (currentRotation + 90) % 360
+        updateElement(elementId, {
+          styles: {
+            ...element.styles,
+            transform: `rotate(${newRotation}deg)`,
+          }
+        })
+      }
+    })
+  }
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key.toLowerCase()) {
+          case 'z':
+            if (e.shiftKey) {
+              e.preventDefault()
+              redo()
+            } else {
+              e.preventDefault()
+              undo()
+            }
+            break
+          case 'y':
+            e.preventDefault()
+            redo()
+            break
+          case 'd':
+            e.preventDefault()
+            if (selectedElements.length > 0) {
+              selectedElements.forEach((id) => duplicateElement(id))
+            }
+            break
+          case 'r':
+            e.preventDefault()
+            if (selectedElements.length > 0) {
+              handleRotateSelected()
+            }
+            break
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [undo, redo, selectedElements, duplicateElement, handleRotateSelected])
+
   return (
     <div className="h-screen bg-background text-foreground flex flex-col">
       {/* Top Toolbar */}
@@ -77,6 +138,13 @@ export default function WebsiteBuilder() {
         }}
         elements={elements}
         onLoadProject={loadProject}
+        zoom={zoom}
+        onZoomChange={setZoom}
+        showGrid={showGrid}
+        onGridToggle={setShowGrid}
+        showLayers={showLayers}
+        onLayersToggle={setShowLayers}
+        onRotateSelected={handleRotateSelected}
       />
 
       {/* Main Layout */}
@@ -104,6 +172,8 @@ export default function WebsiteBuilder() {
                 onDuplicateElement={duplicateElement}
                 snapToGrid={snapToGrid}
                 snapSettings={snapSettings}
+                zoom={zoom}
+                showGrid={showGrid}
               />
             </div>
           </div>
@@ -120,6 +190,18 @@ export default function WebsiteBuilder() {
           />
         </div>
       </div>
+
+      {/* Layers Panel */}
+      <LayersPanel
+        elements={elements}
+        selectedElements={selectedElements}
+        onElementSelect={handleElementSelect}
+        onUpdateElement={updateElement}
+        onDeleteElement={deleteElement}
+        onDuplicateElement={duplicateElement}
+        isOpen={showLayers}
+        onClose={() => setShowLayers(false)}
+      />
     </div>
   )
 }

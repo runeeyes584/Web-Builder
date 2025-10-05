@@ -2,16 +2,15 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Search, Plus, Eye } from "lucide-react"
-import { templates, type Template } from "@/lib/templates"
+import { Input } from "@/components/ui/input"
 import type { BuilderElement } from "@/lib/builder-types"
+import { templates, type Template } from "@/lib/templates"
+import { Bookmark, Clock, Code, Eye, Heart, Layout, Plus, Search, Share, Sparkles, Star, Users, Zap } from "lucide-react"
+import { useState } from "react"
 
 interface TemplateLibraryProps {
   onAddTemplate: (elements: BuilderElement[]) => void
@@ -23,13 +22,13 @@ export function TemplateLibrary({ onAddTemplate }: TemplateLibraryProps) {
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null)
 
   const categories = [
-    { id: "all", label: "All Templates" },
-    { id: "hero", label: "Hero Sections" },
-    { id: "about", label: "About" },
-    { id: "services", label: "Services" },
-    { id: "contact", label: "Contact" },
-    { id: "footer", label: "Footer" },
-    { id: "full-page", label: "Full Pages" },
+    { id: "all", label: "All Templates", icon: Layout, count: templates.length },
+    { id: "hero", label: "Hero Sections", icon: Star, count: templates.filter(t => t.category === "hero").length },
+    { id: "about", label: "About", icon: Users, count: templates.filter(t => t.category === "about").length },
+    { id: "services", label: "Services", icon: Zap, count: templates.filter(t => t.category === "services").length },
+    { id: "contact", label: "Contact", icon: Clock, count: templates.filter(t => t.category === "contact").length },
+    { id: "footer", label: "Footer", icon: Layout, count: templates.filter(t => t.category === "footer").length },
+    { id: "full-page", label: "Full Pages", icon: Code, count: templates.filter(t => t.category === "full-page").length },
   ]
 
   const filteredTemplates = templates.filter((template) => {
@@ -118,67 +117,115 @@ export function TemplateLibrary({ onAddTemplate }: TemplateLibraryProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="w-full bg-transparent" variant="outline">
-          <Plus className="w-4 h-4 mr-2" />
+        <Button className="w-full bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 border-primary/20" variant="outline">
+          <Sparkles className="w-4 h-4 mr-2" />
           Templates
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-6xl h-[80vh]">
-        <DialogHeader>
-          <DialogTitle>Template Library</DialogTitle>
+      <DialogContent className="max-w-7xl h-[85vh] bg-gradient-to-br from-background to-background/95">
+        <DialogHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-bold">Template Library</DialogTitle>
+              <p className="text-sm text-muted-foreground">Choose from professional templates</p>
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="flex flex-col h-full">
-          {/* Search and Filters */}
-          <div className="flex gap-4 mb-4">
+          {/* Enhanced Search and Filters */}
+          <div className="flex gap-4 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search templates..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-muted/50 border-muted-foreground/20 focus:border-primary/50"
               />
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>{filteredTemplates.length} templates</span>
             </div>
           </div>
 
-          {/* Category Tabs */}
-          <div className="flex gap-2 mb-4 overflow-x-auto">
+          {/* Enhanced Category Tabs */}
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
             {categories.map((category) => (
               <Button
                 key={category.id}
                 variant={selectedCategory === category.id ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSelectedCategory(category.id)}
-                className="whitespace-nowrap"
+                className={`whitespace-nowrap transition-all duration-200 ${
+                  selectedCategory === category.id 
+                    ? "bg-primary text-primary-foreground shadow-lg" 
+                    : "hover:bg-muted/50"
+                }`}
               >
+                <category.icon className="w-3 h-3 mr-2" />
                 {category.label}
+                <Badge variant="secondary" className="ml-2 text-xs">
+                  {category.count}
+                </Badge>
               </Button>
             ))}
           </div>
 
-          {/* Templates Grid */}
-          <ScrollArea className="flex-1">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
-              {filteredTemplates.map((template) => (
-                <Card key={template.id} className="p-4 hover:shadow-lg transition-shadow">
-                  <div className="aspect-video bg-muted rounded-md mb-3 overflow-hidden">
+          {/* Enhanced Templates Grid */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
+              {filteredTemplates.map((template, index) => (
+                <Card 
+                  key={template.id} 
+                  className="group p-0 hover:shadow-xl transition-all duration-300 border-border/50 hover:border-primary/30 overflow-hidden bg-card/50 backdrop-blur-sm"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="aspect-video bg-gradient-to-br from-muted to-muted/50 rounded-t-lg overflow-hidden relative">
                     <img
                       src={template.thumbnail || "/placeholder.svg"}
                       alt={template.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="secondary" className="h-6 w-6 p-0">
+                          <Heart className="w-3 h-3" />
+                        </Button>
+                        <Button size="sm" variant="secondary" className="h-6 w-6 p-0">
+                          <Bookmark className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-sm">{template.name}</h3>
-                      <Badge variant="outline" className="text-xs">
-                        {template.category}
-                      </Badge>
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm group-hover:text-primary transition-colors duration-200 truncate">
+                          {template.name}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">
+                            {template.category}
+                          </Badge>
+                          {template.popular && (
+                            <Badge variant="default" className="text-xs bg-gradient-to-r from-orange-500 to-red-500">
+                              <Star className="w-2 h-2 mr-1" />
+                              Popular
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    <p className="text-xs text-muted-foreground line-clamp-2">{template.description}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                      {template.description}
+                    </p>
 
                     <div className="flex gap-2 pt-2">
                       <Dialog>
@@ -186,24 +233,36 @@ export function TemplateLibrary({ onAddTemplate }: TemplateLibraryProps) {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1 bg-transparent"
+                            className="flex-1 bg-transparent hover:bg-muted/50 transition-colors duration-200"
                             onClick={() => setPreviewTemplate(template)}
                           >
                             <Eye className="w-3 h-3 mr-1" />
                             Preview
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-4xl h-[80vh]">
+                        <DialogContent className="max-w-5xl h-[85vh] bg-gradient-to-br from-background to-background/95">
                           <DialogHeader>
-                            <DialogTitle>{template.name} Preview</DialogTitle>
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center">
+                                <Eye className="w-4 h-4 text-primary-foreground" />
+                              </div>
+                              <div>
+                                <DialogTitle className="text-lg font-bold">{template.name} Preview</DialogTitle>
+                                <p className="text-sm text-muted-foreground">{template.description}</p>
+                              </div>
+                            </div>
                           </DialogHeader>
-                          <ScrollArea className="flex-1">
-                            <div className="bg-card border rounded-lg p-4">
+                          <div className="flex-1 overflow-y-auto custom-scrollbar">
+                            <div className="bg-card border rounded-lg p-6 shadow-lg">
                               {template.elements.map(renderElementPreview)}
                             </div>
-                          </ScrollArea>
-                          <div className="flex justify-end gap-2 pt-4">
-                            <Button onClick={() => handleAddTemplate(template)}>
+                          </div>
+                          <div className="flex justify-end gap-3 pt-4 border-t">
+                            <Button variant="outline" size="sm">
+                              <Share className="w-4 h-4 mr-2" />
+                              Share
+                            </Button>
+                            <Button onClick={() => handleAddTemplate(template)} className="bg-gradient-to-r from-primary to-primary/80">
                               <Plus className="w-4 h-4 mr-2" />
                               Add to Project
                             </Button>
@@ -211,7 +270,11 @@ export function TemplateLibrary({ onAddTemplate }: TemplateLibraryProps) {
                         </DialogContent>
                       </Dialog>
 
-                      <Button size="sm" className="flex-1" onClick={() => handleAddTemplate(template)}>
+                      <Button 
+                        size="sm" 
+                        className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-200" 
+                        onClick={() => handleAddTemplate(template)}
+                      >
                         <Plus className="w-3 h-3 mr-1" />
                         Add
                       </Button>
@@ -222,11 +285,15 @@ export function TemplateLibrary({ onAddTemplate }: TemplateLibraryProps) {
             </div>
 
             {filteredTemplates.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No templates found matching your criteria.</p>
+              <div className="text-center py-16">
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Search className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No templates found</h3>
+                <p className="text-muted-foreground">Try adjusting your search criteria or browse all templates.</p>
               </div>
             )}
-          </ScrollArea>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

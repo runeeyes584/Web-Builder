@@ -2,10 +2,10 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Trash2, Copy } from "lucide-react"
-import type { BuilderElement, DragData, Breakpoint } from "@/lib/builder-types"
+import type { Breakpoint, BuilderElement, DragData } from "@/lib/builder-types"
+import { Copy, Trash2 } from "lucide-react"
+import { useRef, useState } from "react"
 
 interface CanvasProps {
   elements: BuilderElement[]
@@ -19,6 +19,8 @@ interface CanvasProps {
   onDuplicateElement: (id: string) => void
   snapToGrid: (value: number, gridSize: number) => number
   snapSettings: { enabled: boolean; gridSize: number; snapToElements: boolean; snapDistance: number }
+  zoom?: number
+  showGrid?: boolean
 }
 
 export function Canvas({
@@ -33,6 +35,8 @@ export function Canvas({
   onDuplicateElement,
   snapToGrid,
   snapSettings,
+  zoom = 100,
+  showGrid = true,
 }: CanvasProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [draggedElementId, setDraggedElementId] = useState<string | null>(null)
@@ -46,33 +50,36 @@ export function Canvas({
     const elementTemplates: Record<string, Partial<BuilderElement>> = {
       heading: {
         content: "New Heading",
-        styles: { fontSize: "2rem", fontWeight: "bold", marginBottom: "1rem" },
+        styles: { fontSize: "2rem", fontWeight: "bold", marginBottom: "1rem", color: "var(--color-foreground)" },
         responsiveStyles: {
           desktop: { fontSize: "2rem" },
           tablet: { fontSize: "1.75rem" },
           mobile: { fontSize: "1.5rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 60 },
+        animations: { type: "fadeIn", duration: 600, delay: 0, direction: "up" },
       },
       paragraph: {
         content: "New paragraph text. Click to edit this content.",
-        styles: { marginBottom: "1rem", lineHeight: "1.6" },
+        styles: { marginBottom: "1rem", lineHeight: "1.6", color: "var(--color-muted-foreground)" },
         responsiveStyles: {
           desktop: { fontSize: "1rem", lineHeight: "1.6" },
           tablet: { fontSize: "0.95rem", lineHeight: "1.5" },
           mobile: { fontSize: "0.9rem", lineHeight: "1.4" },
         },
         position: { x: 100, y: 100, width: 400, height: 80 },
+        animations: { type: "slideIn", duration: 800, delay: 200, direction: "up" },
       },
       image: {
         content: "/placeholder.svg?height=200&width=400",
-        styles: { width: "100%", height: "auto", marginBottom: "1rem" },
+        styles: { width: "100%", height: "auto", marginBottom: "1rem", borderRadius: "0.5rem" },
         responsiveStyles: {
           desktop: { width: "100%", maxWidth: "400px" },
           tablet: { width: "100%", maxWidth: "350px" },
           mobile: { width: "100%", maxWidth: "300px" },
         },
         position: { x: 100, y: 100, width: 400, height: 200 },
+        animations: { type: "zoomIn", duration: 700, delay: 100 },
       },
       button: {
         content: "Click Me",
@@ -83,6 +90,8 @@ export function Canvas({
           borderRadius: "0.5rem",
           border: "none",
           cursor: "pointer",
+          fontWeight: "500",
+          transition: "all 0.2s ease",
         },
         responsiveStyles: {
           desktop: { padding: "0.75rem 1.5rem", fontSize: "1rem" },
@@ -90,16 +99,1275 @@ export function Canvas({
           mobile: { padding: "0.6rem 1rem", fontSize: "0.9rem" },
         },
         position: { x: 100, y: 100, width: 120, height: 40 },
+        animations: { type: "bounce", duration: 600, delay: 300 },
       },
       section: {
         content: "New Section",
-        styles: { padding: "2rem", backgroundColor: "var(--color-muted)", marginBottom: "1rem" },
+        styles: { 
+          padding: "2rem", 
+          backgroundColor: "var(--color-muted)", 
+          marginBottom: "1rem",
+          borderRadius: "0.75rem",
+          border: "1px solid var(--color-border)"
+        },
         responsiveStyles: {
           desktop: { padding: "2rem" },
           tablet: { padding: "1.5rem" },
           mobile: { padding: "1rem" },
         },
         position: { x: 100, y: 100, width: 500, height: 200 },
+        animations: { type: "slideIn", duration: 800, delay: 0, direction: "up" },
+      },
+      card: {
+        content: "Card Content",
+        styles: {
+          padding: "1.5rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.75rem",
+          border: "1px solid var(--color-border)",
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+          marginBottom: "1rem",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1.5rem" },
+          tablet: { padding: "1.25rem" },
+          mobile: { padding: "1rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      quote: {
+        content: "This is an inspiring quote that will motivate your visitors.",
+        styles: {
+          padding: "1.5rem",
+          borderLeft: "4px solid var(--color-primary)",
+          backgroundColor: "var(--color-muted)",
+          fontStyle: "italic",
+          fontSize: "1.1rem",
+          borderRadius: "0.5rem",
+        },
+        responsiveStyles: {
+          desktop: { fontSize: "1.1rem" },
+          tablet: { fontSize: "1rem" },
+          mobile: { fontSize: "0.95rem" },
+        },
+        position: { x: 100, y: 100, width: 400, height: 120 },
+        animations: { type: "slideIn", duration: 700, delay: 100, direction: "left" },
+      },
+      separator: {
+        content: "",
+        styles: {
+          height: "1px",
+          backgroundColor: "var(--color-border)",
+          margin: "2rem 0",
+          width: "100%",
+        },
+        position: { x: 100, y: 100, width: 300, height: 1 },
+        animations: { type: "fadeIn", duration: 500, delay: 0 },
+      },
+      list: {
+        content: "• First item\n• Second item\n• Third item",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          lineHeight: "1.8",
+        },
+        responsiveStyles: {
+          desktop: { fontSize: "1rem" },
+          tablet: { fontSize: "0.95rem" },
+          mobile: { fontSize: "0.9rem" },
+        },
+        position: { x: 100, y: 100, width: 250, height: 120 },
+        animations: { type: "slideIn", duration: 600, delay: 200, direction: "up" },
+      },
+      input: {
+        content: "Enter text here...",
+        styles: {
+          padding: "0.75rem",
+          border: "1px solid var(--color-border)",
+          borderRadius: "0.5rem",
+          backgroundColor: "var(--color-background)",
+          color: "var(--color-foreground)",
+          fontSize: "1rem",
+          width: "100%",
+        },
+        responsiveStyles: {
+          desktop: { padding: "0.75rem", fontSize: "1rem" },
+          tablet: { padding: "0.65rem", fontSize: "0.95rem" },
+          mobile: { padding: "0.6rem", fontSize: "0.9rem" },
+        },
+        position: { x: 100, y: 100, width: 200, height: 40 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      textarea: {
+        content: "Enter your message here...",
+        styles: {
+          padding: "0.75rem",
+          border: "1px solid var(--color-border)",
+          borderRadius: "0.5rem",
+          backgroundColor: "var(--color-background)",
+          color: "var(--color-foreground)",
+          fontSize: "1rem",
+          width: "100%",
+          resize: "vertical",
+        },
+        responsiveStyles: {
+          desktop: { padding: "0.75rem", fontSize: "1rem" },
+          tablet: { padding: "0.65rem", fontSize: "0.95rem" },
+          mobile: { padding: "0.6rem", fontSize: "0.9rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 100 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      select: {
+        content: "Select an option",
+        styles: {
+          padding: "0.75rem",
+          border: "1px solid var(--color-border)",
+          borderRadius: "0.5rem",
+          backgroundColor: "var(--color-background)",
+          color: "var(--color-foreground)",
+          fontSize: "1rem",
+          width: "100%",
+        },
+        responsiveStyles: {
+          desktop: { padding: "0.75rem", fontSize: "1rem" },
+          tablet: { padding: "0.65rem", fontSize: "0.95rem" },
+          mobile: { padding: "0.6rem", fontSize: "0.9rem" },
+        },
+        position: { x: 100, y: 100, width: 200, height: 40 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      checkbox: {
+        content: "Checkbox option",
+        styles: {
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          fontSize: "1rem",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { fontSize: "1rem" },
+          tablet: { fontSize: "0.95rem" },
+          mobile: { fontSize: "0.9rem" },
+        },
+        position: { x: 100, y: 100, width: 150, height: 30 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      radio: {
+        content: "Radio option",
+        styles: {
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          fontSize: "1rem",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { fontSize: "1rem" },
+          tablet: { fontSize: "0.95rem" },
+          mobile: { fontSize: "0.9rem" },
+        },
+        position: { x: 100, y: 100, width: 150, height: 30 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      switch: {
+        content: "Toggle switch",
+        styles: {
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          fontSize: "1rem",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { fontSize: "1rem" },
+          tablet: { fontSize: "0.95rem" },
+          mobile: { fontSize: "0.9rem" },
+        },
+        position: { x: 100, y: 100, width: 150, height: 30 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      video: {
+        content: "/placeholder.svg?height=200&width=400",
+        styles: {
+          width: "100%",
+          height: "auto",
+          borderRadius: "0.5rem",
+          backgroundColor: "var(--color-muted)",
+        },
+        responsiveStyles: {
+          desktop: { width: "100%", maxWidth: "400px" },
+          tablet: { width: "100%", maxWidth: "350px" },
+          mobile: { width: "100%", maxWidth: "300px" },
+        },
+        position: { x: 100, y: 100, width: 400, height: 200 },
+        animations: { type: "zoomIn", duration: 700, delay: 100 },
+      },
+      audio: {
+        content: "Audio Player",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          textAlign: "center",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 80 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      gallery: {
+        content: "Image Gallery",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          textAlign: "center",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "zoomIn", duration: 700, delay: 100 },
+      },
+      icon: {
+        content: "⭐",
+        styles: {
+          fontSize: "2rem",
+          textAlign: "center",
+          color: "var(--color-primary)",
+        },
+        responsiveStyles: {
+          desktop: { fontSize: "2rem" },
+          tablet: { fontSize: "1.75rem" },
+          mobile: { fontSize: "1.5rem" },
+        },
+        position: { x: 100, y: 100, width: 60, height: 60 },
+        animations: { type: "bounce", duration: 600, delay: 300 },
+      },
+      badge: {
+        content: "New",
+        styles: {
+          padding: "0.25rem 0.75rem",
+          backgroundColor: "var(--color-primary)",
+          color: "var(--color-primary-foreground)",
+          borderRadius: "9999px",
+          fontSize: "0.875rem",
+          fontWeight: "500",
+        },
+        responsiveStyles: {
+          desktop: { fontSize: "0.875rem" },
+          tablet: { fontSize: "0.8rem" },
+          mobile: { fontSize: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 60, height: 30 },
+        animations: { type: "pulse", duration: 1000, delay: 0 },
+      },
+      avatar: {
+        content: "👤",
+        styles: {
+          width: "60px",
+          height: "60px",
+          borderRadius: "50%",
+          backgroundColor: "var(--color-muted)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "1.5rem",
+        },
+        responsiveStyles: {
+          desktop: { width: "60px", height: "60px", fontSize: "1.5rem" },
+          tablet: { width: "50px", height: "50px", fontSize: "1.25rem" },
+          mobile: { width: "40px", height: "40px", fontSize: "1rem" },
+        },
+        position: { x: 100, y: 100, width: 60, height: 60 },
+        animations: { type: "zoomIn", duration: 600, delay: 200 },
+      },
+      modal: {
+        content: "Modal Content",
+        styles: {
+          padding: "2rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.75rem",
+          border: "1px solid var(--color-border)",
+          boxShadow: "0 10px 25px rgba(0, 0, 0, 0.2)",
+          textAlign: "center",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "2rem" },
+          tablet: { padding: "1.5rem" },
+          mobile: { padding: "1rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "zoomIn", duration: 500, delay: 0 },
+      },
+      tooltip: {
+        content: "Tooltip text",
+        styles: {
+          padding: "0.5rem 0.75rem",
+          backgroundColor: "var(--color-popover)",
+          color: "var(--color-popover-foreground)",
+          borderRadius: "0.375rem",
+          fontSize: "0.875rem",
+          border: "1px solid var(--color-border)",
+        },
+        responsiveStyles: {
+          desktop: { fontSize: "0.875rem" },
+          tablet: { fontSize: "0.8rem" },
+          mobile: { fontSize: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 120, height: 40 },
+        animations: { type: "fadeIn", duration: 300, delay: 0 },
+      },
+      dropdown: {
+        content: "Dropdown Menu",
+        styles: {
+          padding: "0.75rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          color: "var(--color-foreground)",
+          fontSize: "1rem",
+        },
+        responsiveStyles: {
+          desktop: { fontSize: "1rem" },
+          tablet: { fontSize: "0.95rem" },
+          mobile: { fontSize: "0.9rem" },
+        },
+        position: { x: 100, y: 100, width: 200, height: 40 },
+        animations: { type: "slideIn", duration: 300, delay: 0, direction: "down" },
+      },
+      tabs: {
+        content: "Tab Content",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 150 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      accordion: {
+        content: "Accordion Content",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 100 },
+        animations: { type: "slideIn", duration: 500, delay: 100, direction: "up" },
+      },
+      carousel: {
+        content: "Image Carousel",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          textAlign: "center",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "slideIn", duration: 600, delay: 200, direction: "left" },
+      },
+      table: {
+        content: "Data Table",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          color: "var(--color-foreground)",
+          fontSize: "0.875rem",
+        },
+        responsiveStyles: {
+          desktop: { fontSize: "0.875rem" },
+          tablet: { fontSize: "0.8rem" },
+          mobile: { fontSize: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 400, height: 200 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      chart: {
+        content: "Data Chart",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          textAlign: "center",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "zoomIn", duration: 700, delay: 100 },
+      },
+      progress: {
+        content: "Progress Bar",
+        styles: {
+          padding: "0.5rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "0.5rem" },
+          tablet: { padding: "0.4rem" },
+          mobile: { padding: "0.3rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 40 },
+        animations: { type: "slideIn", duration: 500, delay: 100, direction: "left" },
+      },
+      timeline: {
+        content: "Timeline Event",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          color: "var(--color-foreground)",
+          borderLeft: "4px solid var(--color-primary)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 100 },
+        animations: { type: "slideIn", duration: 600, delay: 200, direction: "left" },
+      },
+      stats: {
+        content: "Statistics",
+        styles: {
+          padding: "1.5rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.75rem",
+          border: "1px solid var(--color-border)",
+          textAlign: "center",
+          color: "var(--color-foreground)",
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1.5rem" },
+          tablet: { padding: "1.25rem" },
+          mobile: { padding: "1rem" },
+        },
+        position: { x: 100, y: 100, width: 200, height: 120 },
+        animations: { type: "zoomIn", duration: 600, delay: 200 },
+      },
+      counter: {
+        content: "0",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-primary)",
+          color: "var(--color-primary-foreground)",
+          borderRadius: "0.5rem",
+          fontSize: "2rem",
+          fontWeight: "bold",
+          textAlign: "center",
+        },
+        responsiveStyles: {
+          desktop: { fontSize: "2rem" },
+          tablet: { fontSize: "1.75rem" },
+          mobile: { fontSize: "1.5rem" },
+        },
+        position: { x: 100, y: 100, width: 80, height: 80 },
+        animations: { type: "bounce", duration: 600, delay: 300 },
+      },
+      "product-card": {
+        content: "Product Name",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.75rem",
+          border: "1px solid var(--color-border)",
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+          textAlign: "center",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 200, height: 250 },
+        animations: { type: "zoomIn", duration: 600, delay: 200 },
+      },
+      price: {
+        content: "$99.99",
+        styles: {
+          fontSize: "1.5rem",
+          fontWeight: "bold",
+          color: "var(--color-primary)",
+          textAlign: "center",
+        },
+        responsiveStyles: {
+          desktop: { fontSize: "1.5rem" },
+          tablet: { fontSize: "1.25rem" },
+          mobile: { fontSize: "1.125rem" },
+        },
+        position: { x: 100, y: 100, width: 100, height: 40 },
+        animations: { type: "bounce", duration: 600, delay: 300 },
+      },
+      rating: {
+        content: "⭐⭐⭐⭐⭐",
+        styles: {
+          fontSize: "1.25rem",
+          textAlign: "center",
+          color: "var(--color-primary)",
+        },
+        responsiveStyles: {
+          desktop: { fontSize: "1.25rem" },
+          tablet: { fontSize: "1.125rem" },
+          mobile: { fontSize: "1rem" },
+        },
+        position: { x: 100, y: 100, width: 120, height: 30 },
+        animations: { type: "pulse", duration: 1000, delay: 0 },
+      },
+      cart: {
+        content: "Add to Cart",
+        styles: {
+          padding: "0.75rem 1.5rem",
+          backgroundColor: "var(--color-primary)",
+          color: "var(--color-primary-foreground)",
+          borderRadius: "0.5rem",
+          fontSize: "1rem",
+          fontWeight: "600",
+          textAlign: "center",
+          cursor: "pointer",
+        },
+        responsiveStyles: {
+          desktop: { padding: "0.75rem 1.5rem", fontSize: "1rem" },
+          tablet: { padding: "0.65rem 1.25rem", fontSize: "0.95rem" },
+          mobile: { padding: "0.6rem 1rem", fontSize: "0.9rem" },
+        },
+        position: { x: 100, y: 100, width: 120, height: 40 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      checkout: {
+        content: "Checkout",
+        styles: {
+          padding: "1rem 2rem",
+          backgroundColor: "var(--color-primary)",
+          color: "var(--color-primary-foreground)",
+          borderRadius: "0.5rem",
+          fontSize: "1.1rem",
+          fontWeight: "600",
+          textAlign: "center",
+          cursor: "pointer",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem 2rem", fontSize: "1.1rem" },
+          tablet: { padding: "0.875rem 1.75rem", fontSize: "1rem" },
+          mobile: { padding: "0.75rem 1.5rem", fontSize: "0.95rem" },
+        },
+        position: { x: 100, y: 100, width: 120, height: 50 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      "social-links": {
+        content: "Social Media",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          textAlign: "center",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 200, height: 80 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      "contact-info": {
+        content: "Contact Information",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 250, height: 120 },
+        animations: { type: "slideIn", duration: 600, delay: 200, direction: "up" },
+      },
+      map: {
+        content: "Map Location",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-muted)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          textAlign: "center",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "zoomIn", duration: 700, delay: 100 },
+      },
+      newsletter: {
+        content: "Newsletter Signup",
+        styles: {
+          padding: "1.5rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.75rem",
+          border: "1px solid var(--color-border)",
+          textAlign: "center",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1.5rem" },
+          tablet: { padding: "1.25rem" },
+          mobile: { padding: "1rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 150 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      team: {
+        content: "Team Member",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.75rem",
+          border: "1px solid var(--color-border)",
+          textAlign: "center",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 200, height: 250 },
+        animations: { type: "zoomIn", duration: 600, delay: 200 },
+      },
+      testimonial: {
+        content: "Customer Review",
+        styles: {
+          padding: "1.5rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.75rem",
+          border: "1px solid var(--color-border)",
+          textAlign: "center",
+          color: "var(--color-foreground)",
+          fontStyle: "italic",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1.5rem" },
+          tablet: { padding: "1.25rem" },
+          mobile: { padding: "1rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 150 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      grid: {
+        content: "Grid Layout",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          textAlign: "center",
+          color: "var(--color-foreground)",
+          display: "grid",
+          gridTemplateColumns: "repeat(2, 1fr)",
+          gap: "1rem",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      navigation: {
+        content: "Navigation Menu",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          color: "var(--color-foreground)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 400, height: 60 },
+        animations: { type: "slideIn", duration: 500, delay: 100, direction: "down" },
+      },
+      footer: {
+        content: "Footer Content",
+        styles: {
+          padding: "2rem",
+          backgroundColor: "var(--color-muted)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          textAlign: "center",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "2rem" },
+          tablet: { padding: "1.5rem" },
+          mobile: { padding: "1rem" },
+        },
+        position: { x: 100, y: 100, width: 400, height: 120 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      header: {
+        content: "Header Content",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          textAlign: "center",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 400, height: 100 },
+        animations: { type: "slideIn", duration: 500, delay: 100, direction: "down" },
+      },
+      sidebar: {
+        content: "Sidebar Content",
+        styles: {
+          padding: "1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--color-border)",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1rem" },
+          tablet: { padding: "0.875rem" },
+          mobile: { padding: "0.75rem" },
+        },
+        position: { x: 100, y: 100, width: 200, height: 300 },
+        animations: { type: "slideIn", duration: 500, delay: 100, direction: "left" },
+      },
+      form: {
+        content: "Contact Form",
+        styles: {
+          padding: "1.5rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "0.75rem",
+          border: "1px solid var(--color-border)",
+          color: "var(--color-foreground)",
+        },
+        responsiveStyles: {
+          desktop: { padding: "1.5rem" },
+          tablet: { padding: "1.25rem" },
+          mobile: { padding: "1rem" },
+        },
+        position: { x: 100, y: 100, width: 300, height: 250 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      // Advanced UI Components
+      calendar: {
+        content: "Calendar",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      "search-bar": {
+        content: "Search...",
+        styles: { padding: "0.75rem", border: "1px solid var(--color-border)", borderRadius: "0.5rem", backgroundColor: "var(--color-background)", color: "var(--color-foreground)", fontSize: "1rem", width: "100%" },
+        responsiveStyles: { desktop: { padding: "0.75rem", fontSize: "1rem" }, tablet: { padding: "0.65rem", fontSize: "0.95rem" }, mobile: { padding: "0.6rem", fontSize: "0.9rem" } },
+        position: { x: 100, y: 100, width: 250, height: 40 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      filter: {
+        content: "Filter Options",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 200, height: 120 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      breadcrumb: {
+        content: "Home > About > Contact",
+        styles: { padding: "0.5rem", backgroundColor: "var(--color-muted)", borderRadius: "0.375rem", color: "var(--color-foreground)", fontSize: "0.875rem" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 200, height: 35 },
+        animations: { type: "fadeIn", duration: 400, delay: 0 },
+      },
+      pagination: {
+        content: "1 2 3 ... 10",
+        styles: { padding: "0.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.375rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center", fontSize: "0.875rem" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 200, height: 40 },
+        animations: { type: "fadeIn", duration: 400, delay: 0 },
+      },
+      spinner: {
+        content: "Loading...",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", textAlign: "center", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 120, height: 80 },
+        animations: { type: "pulse", duration: 1000, delay: 0 },
+      },
+      skeleton: {
+        content: "Loading skeleton",
+        styles: { padding: "1rem", backgroundColor: "var(--color-muted)", borderRadius: "0.5rem", color: "var(--color-muted-foreground)", fontSize: "0.875rem" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 200, height: 100 },
+        animations: { type: "pulse", duration: 1500, delay: 0 },
+      },
+      alert: {
+        content: "Alert message",
+        styles: { padding: "0.75rem", backgroundColor: "var(--color-destructive)", color: "var(--color-destructive-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", textAlign: "center" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 200, height: 50 },
+        animations: { type: "shake", duration: 500, delay: 0 },
+      },
+      toast: {
+        content: "Toast notification",
+        styles: { padding: "0.75rem", backgroundColor: "var(--color-card)", color: "var(--color-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", textAlign: "center", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 200, height: 50 },
+        animations: { type: "slideIn", duration: 300, delay: 0, direction: "up" },
+      },
+      drawer: {
+        content: "Side drawer",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", width: "250px" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 250, height: 300 },
+        animations: { type: "slideIn", duration: 500, delay: 100, direction: "left" },
+      },
+      // Content & Text Components
+      "code-block": {
+        content: "console.log('Hello World');",
+        styles: { padding: "1rem", backgroundColor: "var(--color-muted)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", fontFamily: "monospace", fontSize: "0.875rem" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 300, height: 100 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      markdown: {
+        content: "# Markdown Content\n\nThis is **bold** text and *italic* text.",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", fontSize: "0.875rem", lineHeight: "1.6" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 300, height: 120 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      "rich-text": {
+        content: "Rich Text Editor",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", fontSize: "0.875rem" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 300, height: 150 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      typography: {
+        content: "Typography Styles",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", fontSize: "1.125rem", fontWeight: "600" },
+        responsiveStyles: { desktop: { fontSize: "1.125rem" }, tablet: { fontSize: "1rem" }, mobile: { fontSize: "0.95rem" } },
+        position: { x: 100, y: 100, width: 200, height: 80 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      link: {
+        content: "External Link",
+        styles: { padding: "0.5rem", backgroundColor: "transparent", color: "var(--color-primary)", fontSize: "0.875rem", textDecoration: "underline", cursor: "pointer" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 120, height: 30 },
+        animations: { type: "fadeIn", duration: 400, delay: 0 },
+      },
+      tag: {
+        content: "Tag",
+        styles: { padding: "0.25rem 0.75rem", backgroundColor: "var(--color-primary)", color: "var(--color-primary-foreground)", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: "500" },
+        responsiveStyles: { desktop: { fontSize: "0.75rem" }, tablet: { fontSize: "0.7rem" }, mobile: { fontSize: "0.65rem" } },
+        position: { x: 100, y: 100, width: 60, height: 25 },
+        animations: { type: "bounce", duration: 600, delay: 300 },
+      },
+      label: {
+        content: "Label Text",
+        styles: { padding: "0.25rem 0.5rem", backgroundColor: "var(--color-muted)", color: "var(--color-foreground)", borderRadius: "0.25rem", fontSize: "0.75rem", fontWeight: "500" },
+        responsiveStyles: { desktop: { fontSize: "0.75rem" }, tablet: { fontSize: "0.7rem" }, mobile: { fontSize: "0.65rem" } },
+        position: { x: 100, y: 100, width: 80, height: 25 },
+        animations: { type: "fadeIn", duration: 400, delay: 0 },
+      },
+      // File & Media Components
+      "file-upload": {
+        content: "Choose File",
+        styles: { padding: "0.75rem", border: "2px dashed var(--color-border)", borderRadius: "0.5rem", backgroundColor: "var(--color-background)", color: "var(--color-foreground)", fontSize: "0.875rem", textAlign: "center", cursor: "pointer" },
+        responsiveStyles: { desktop: { padding: "0.75rem", fontSize: "0.875rem" }, tablet: { padding: "0.65rem", fontSize: "0.8rem" }, mobile: { padding: "0.6rem", fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 200, height: 80 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      "file-download": {
+        content: "Download File",
+        styles: { padding: "0.75rem", backgroundColor: "var(--color-primary)", color: "var(--color-primary-foreground)", borderRadius: "0.5rem", fontSize: "0.875rem", textAlign: "center", cursor: "pointer" },
+        responsiveStyles: { desktop: { padding: "0.75rem", fontSize: "0.875rem" }, tablet: { padding: "0.65rem", fontSize: "0.8rem" }, mobile: { padding: "0.6rem", fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 150, height: 50 },
+        animations: { type: "bounce", duration: 600, delay: 300 },
+      },
+      "pdf-viewer": {
+        content: "PDF Document",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      document: {
+        content: "Document Viewer",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 250, height: 150 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      folder: {
+        content: "Folder Name",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 150, height: 100 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      "image-gallery": {
+        content: "Image Gallery",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      "video-gallery": {
+        content: "Video Gallery",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.5rem" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      "media-player": {
+        content: "Media Player",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 300, height: 150 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      // Navigation & Menu Components
+      menu: {
+        content: "Dropdown Menu",
+        styles: { padding: "0.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.375rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", fontSize: "0.875rem" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 150, height: 40 },
+        animations: { type: "slideIn", duration: 300, delay: 0, direction: "down" },
+      },
+      "tab-nav": {
+        content: "Tab Navigation",
+        styles: { padding: "0.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.375rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", display: "flex", gap: "0.5rem" },
+        responsiveStyles: { desktop: { padding: "0.5rem" }, tablet: { padding: "0.4rem" }, mobile: { padding: "0.3rem" } },
+        position: { x: 100, y: 100, width: 300, height: 50 },
+        animations: { type: "slideIn", duration: 400, delay: 100, direction: "up" },
+      },
+      "side-menu": {
+        content: "Side Menu",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", width: "200px" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 200, height: 300 },
+        animations: { type: "slideIn", duration: 500, delay: 100, direction: "left" },
+      },
+      "mobile-menu": {
+        content: "Mobile Menu",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", display: "flex", flexDirection: "column", gap: "0.5rem" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 250, height: 200 },
+        animations: { type: "slideIn", duration: 500, delay: 100, direction: "down" },
+      },
+      "back-button": {
+        content: "← Back",
+        styles: { padding: "0.5rem 1rem", backgroundColor: "var(--color-muted)", color: "var(--color-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", cursor: "pointer" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 80, height: 35 },
+        animations: { type: "fadeIn", duration: 400, delay: 0 },
+      },
+      "home-button": {
+        content: "🏠 Home",
+        styles: { padding: "0.5rem 1rem", backgroundColor: "var(--color-primary)", color: "var(--color-primary-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", cursor: "pointer" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 80, height: 35 },
+        animations: { type: "bounce", duration: 600, delay: 300 },
+      },
+      // Feedback & Status Components
+      loading: {
+        content: "Loading...",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", textAlign: "center", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 120, height: 80 },
+        animations: { type: "pulse", duration: 1000, delay: 0 },
+      },
+      "progress-ring": {
+        content: "75%",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "50%", border: "1px solid var(--color-border)", textAlign: "center", color: "var(--color-foreground)", width: "80px", height: "80px", display: "flex", alignItems: "center", justifyContent: "center" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 80, height: 80 },
+        animations: { type: "pulse", duration: 2000, delay: 0 },
+      },
+      "status-badge": {
+        content: "Active",
+        styles: { padding: "0.25rem 0.75rem", backgroundColor: "var(--color-primary)", color: "var(--color-primary-foreground)", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: "500" },
+        responsiveStyles: { desktop: { fontSize: "0.75rem" }, tablet: { fontSize: "0.7rem" }, mobile: { fontSize: "0.65rem" } },
+        position: { x: 100, y: 100, width: 60, height: 25 },
+        animations: { type: "bounce", duration: 600, delay: 300 },
+      },
+      notification: {
+        content: "🔔 3",
+        styles: { padding: "0.25rem 0.5rem", backgroundColor: "var(--color-destructive)", color: "var(--color-destructive-foreground)", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: "500", textAlign: "center" },
+        responsiveStyles: { desktop: { fontSize: "0.75rem" }, tablet: { fontSize: "0.7rem" }, mobile: { fontSize: "0.65rem" } },
+        position: { x: 100, y: 100, width: 40, height: 25 },
+        animations: { type: "shake", duration: 500, delay: 0 },
+      },
+      "alert-banner": {
+        content: "Important Notice",
+        styles: { padding: "0.75rem", backgroundColor: "var(--color-destructive)", color: "var(--color-destructive-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", textAlign: "center" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 200, height: 50 },
+        animations: { type: "shake", duration: 500, delay: 0 },
+      },
+      "success-message": {
+        content: "✅ Success!",
+        styles: { padding: "0.75rem", backgroundColor: "var(--color-primary)", color: "var(--color-primary-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", textAlign: "center" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 150, height: 50 },
+        animations: { type: "bounce", duration: 600, delay: 300 },
+      },
+      "error-message": {
+        content: "❌ Error!",
+        styles: { padding: "0.75rem", backgroundColor: "var(--color-destructive)", color: "var(--color-destructive-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", textAlign: "center" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 120, height: 50 },
+        animations: { type: "shake", duration: 500, delay: 0 },
+      },
+      "warning-message": {
+        content: "⚠️ Warning!",
+        styles: { padding: "0.75rem", backgroundColor: "var(--color-secondary)", color: "var(--color-secondary-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", textAlign: "center" },
+        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        position: { x: 100, y: 100, width: 130, height: 50 },
+        animations: { type: "shake", duration: 500, delay: 0 },
+      },
+      // Utility & Tools Components
+      divider: {
+        content: "",
+        styles: { height: "1px", backgroundColor: "var(--color-border)", width: "100%" },
+        responsiveStyles: { desktop: {}, tablet: {}, mobile: {} },
+        position: { x: 100, y: 100, width: 200, height: 1 },
+        animations: { type: "fadeIn", duration: 400, delay: 0 },
+      },
+      spacer: {
+        content: "",
+        styles: { backgroundColor: "transparent", width: "100%", height: "2rem" },
+        responsiveStyles: { desktop: { height: "2rem" }, tablet: { height: "1.5rem" }, mobile: { height: "1rem" } },
+        position: { x: 100, y: 100, width: 200, height: 32 },
+        animations: { type: "fadeIn", duration: 400, delay: 0 },
+      },
+      container: {
+        content: "Container",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 300, height: 150 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      wrapper: {
+        content: "Wrapper",
+        styles: { padding: "0.5rem", backgroundColor: "var(--color-muted)", borderRadius: "0.375rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "0.5rem" }, tablet: { padding: "0.4rem" }, mobile: { padding: "0.3rem" } },
+        position: { x: 100, y: 100, width: 250, height: 100 },
+        animations: { type: "fadeIn", duration: 400, delay: 0 },
+      },
+      flexbox: {
+        content: "Flex Container",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", display: "flex", gap: "0.5rem", alignItems: "center" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 300, height: 100 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      "grid-container": {
+        content: "Grid Container",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.5rem" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 300, height: 150 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      center: {
+        content: "Centered Content",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 200, height: 100 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      stack: {
+        content: "Stack Container",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", display: "flex", flexDirection: "column", gap: "0.5rem" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 200, height: 150 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      // Business & Marketing Components
+      "pricing-table": {
+        content: "Pricing Plans",
+        styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center" },
+        responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      "feature-list": {
+        content: "Feature Highlights",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 300, height: 150 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      faq: {
+        content: "FAQ Section",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      "blog-post": {
+        content: "Blog Article",
+        styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
+        position: { x: 100, y: 100, width: 300, height: 250 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      "case-study": {
+        content: "Case Study",
+        styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      cta: {
+        content: "Call to Action",
+        styles: { padding: "2rem", backgroundColor: "var(--color-primary)", color: "var(--color-primary-foreground)", borderRadius: "0.75rem", textAlign: "center" },
+        responsiveStyles: { desktop: { padding: "2rem" }, tablet: { padding: "1.5rem" }, mobile: { padding: "1rem" } },
+        position: { x: 100, y: 100, width: 300, height: 150 },
+        animations: { type: "bounce", duration: 600, delay: 300 },
+      },
+      hero: {
+        content: "Hero Section",
+        styles: { padding: "3rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center" },
+        responsiveStyles: { desktop: { padding: "3rem" }, tablet: { padding: "2rem" }, mobile: { padding: "1.5rem" } },
+        position: { x: 100, y: 100, width: 400, height: 300 },
+        animations: { type: "fadeIn", duration: 800, delay: 200 },
+      },
+      about: {
+        content: "About Us",
+        styles: { padding: "2rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "2rem" }, tablet: { padding: "1.5rem" }, mobile: { padding: "1rem" } },
+        position: { x: 100, y: 100, width: 350, height: 200 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      // Forms & Validation Components
+      "contact-form": {
+        content: "Contact Us Form",
+        styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
+        position: { x: 100, y: 100, width: 300, height: 250 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      "newsletter-signup": {
+        content: "Newsletter Signup",
+        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center" },
+        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
+        position: { x: 100, y: 100, width: 250, height: 120 },
+        animations: { type: "fadeIn", duration: 500, delay: 100 },
+      },
+      "login-form": {
+        content: "Login Form",
+        styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
+        position: { x: 100, y: 100, width: 250, height: 200 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      "registration-form": {
+        content: "Registration Form",
+        styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
+        position: { x: 100, y: 100, width: 300, height: 300 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      "survey-form": {
+        content: "Survey Form",
+        styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
+        position: { x: 100, y: 100, width: 300, height: 250 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      "order-form": {
+        content: "Order Form",
+        styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      "booking-form": {
+        content: "Booking Form",
+        styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
+        position: { x: 100, y: 100, width: 300, height: 250 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
+      },
+      "feedback-form": {
+        content: "Feedback Form",
+        styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
+        responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
+        position: { x: 100, y: 100, width: 300, height: 200 },
+        animations: { type: "fadeIn", duration: 600, delay: 200 },
       },
     }
 
@@ -244,7 +1512,7 @@ export function Canvas({
             />
           )}
           {element.type === "button" && (
-            <button className="text-card-foreground w-full h-full" style={elementStyles}>
+            <button className="text-card-foreground w-full h-full hover:opacity-90 transition-opacity" style={elementStyles}>
               {element.content}
             </button>
           )}
@@ -253,6 +1521,1197 @@ export function Canvas({
               {element.content}
             </div>
           )}
+          {element.type === "card" && (
+            <div className="text-card-foreground w-full h-full" style={elementStyles}>
+              <h3 className="font-semibold mb-2">Card Title</h3>
+              <p className="text-sm text-muted-foreground">{element.content}</p>
+            </div>
+          )}
+          {element.type === "quote" && (
+            <div className="text-card-foreground w-full h-full" style={elementStyles}>
+              <p className="text-sm italic">"{element.content}"</p>
+            </div>
+          )}
+          {element.type === "separator" && (
+            <div className="w-full h-full" style={elementStyles}></div>
+          )}
+    {element.type === "list" && (
+      <div className="text-card-foreground w-full h-full" style={elementStyles}>
+        <ul className="text-sm space-y-1">
+          {element.content.split('\n').map((item, index) => (
+            <li key={index} className="flex items-center">
+              <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
+              {item.replace('• ', '')}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+    {element.type === "input" && (
+      <input
+        type="text"
+        placeholder={element.content}
+        className="w-full h-full bg-background text-foreground border border-border rounded-md px-3 py-2"
+        style={elementStyles}
+      />
+    )}
+    {element.type === "textarea" && (
+      <textarea
+        placeholder={element.content}
+        className="w-full h-full bg-background text-foreground border border-border rounded-md px-3 py-2 resize-none"
+        style={elementStyles}
+      />
+    )}
+    {element.type === "select" && (
+      <select className="w-full h-full bg-background text-foreground border border-border rounded-md px-3 py-2" style={elementStyles}>
+        <option>{element.content}</option>
+        <option>Option 1</option>
+        <option>Option 2</option>
+        <option>Option 3</option>
+      </select>
+    )}
+    {element.type === "checkbox" && (
+      <div className="text-card-foreground w-full h-full flex items-center gap-2" style={elementStyles}>
+        <input type="checkbox" className="w-4 h-4" />
+        <span className="text-sm">{element.content}</span>
+      </div>
+    )}
+    {element.type === "radio" && (
+      <div className="text-card-foreground w-full h-full flex items-center gap-2" style={elementStyles}>
+        <input type="radio" name="radio-group" className="w-4 h-4" />
+        <span className="text-sm">{element.content}</span>
+      </div>
+    )}
+    {element.type === "switch" && (
+      <div className="text-card-foreground w-full h-full flex items-center gap-2" style={elementStyles}>
+        <div className="w-10 h-6 bg-muted rounded-full relative">
+          <div className="w-4 h-4 bg-primary rounded-full absolute top-1 left-1 transition-transform"></div>
+        </div>
+        <span className="text-sm">{element.content}</span>
+      </div>
+    )}
+    {element.type === "video" && (
+      <div className="w-full h-full bg-muted rounded-lg flex items-center justify-center" style={elementStyles}>
+        <div className="text-center text-muted-foreground">
+          <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-2">
+            <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+          <p className="text-sm">Video Player</p>
+        </div>
+      </div>
+    )}
+    {element.type === "audio" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
+        <div className="text-center">
+          <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-2">
+            <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+            </svg>
+          </div>
+          <p className="text-sm">{element.content}</p>
+        </div>
+      </div>
+    )}
+    {element.type === "gallery" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
+        <div className="text-center">
+          <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <p className="text-sm">{element.content}</p>
+        </div>
+      </div>
+    )}
+    {element.type === "icon" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <span className="text-4xl">{element.content}</span>
+      </div>
+    )}
+    {element.type === "badge" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <span className="text-sm font-medium">{element.content}</span>
+      </div>
+    )}
+    {element.type === "avatar" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <span className="text-2xl">{element.content}</span>
+      </div>
+    )}
+    {element.type === "modal" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg flex items-center justify-center" style={elementStyles}>
+        <div className="text-center">
+          <h3 className="font-semibold mb-2">Modal</h3>
+          <p className="text-sm text-muted-foreground">{element.content}</p>
+        </div>
+      </div>
+    )}
+    {element.type === "tooltip" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <span className="text-sm">{element.content}</span>
+      </div>
+    )}
+    {element.type === "dropdown" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-between px-3" style={elementStyles}>
+        <span className="text-sm">{element.content}</span>
+        <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+    )}
+    {element.type === "tabs" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+        <div className="flex border-b border-border mb-3">
+          <div className="px-3 py-2 text-sm font-medium border-b-2 border-primary">Tab 1</div>
+          <div className="px-3 py-2 text-sm text-muted-foreground">Tab 2</div>
+        </div>
+        <p className="text-sm">{element.content}</p>
+      </div>
+    )}
+    {element.type === "accordion" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg" style={elementStyles}>
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Accordion Item</span>
+            <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+        <div className="p-4">
+          <p className="text-sm text-muted-foreground">{element.content}</p>
+        </div>
+      </div>
+    )}
+    {element.type === "carousel" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
+        <div className="text-center">
+          <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <p className="text-sm">{element.content}</p>
+        </div>
+      </div>
+    )}
+    {element.type === "table" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg overflow-hidden" style={elementStyles}>
+        <table className="w-full text-sm">
+          <thead className="bg-muted">
+            <tr>
+              <th className="p-2 text-left">Header 1</th>
+              <th className="p-2 text-left">Header 2</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-t border-border">
+              <td className="p-2">Row 1, Col 1</td>
+              <td className="p-2">Row 1, Col 2</td>
+            </tr>
+            <tr className="border-t border-border">
+              <td className="p-2">Row 2, Col 1</td>
+              <td className="p-2">Row 2, Col 2</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    )}
+    {element.type === "chart" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
+        <div className="text-center">
+          <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <p className="text-sm">{element.content}</p>
+        </div>
+      </div>
+    )}
+    {element.type === "progress" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+        <div className="mb-2">
+          <span className="text-sm font-medium">{element.content}</span>
+        </div>
+        <div className="w-full bg-muted rounded-full h-2">
+          <div className="bg-primary h-2 rounded-full" style={{ width: '60%' }}></div>
+        </div>
+      </div>
+    )}
+    {element.type === "timeline" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+        <div className="flex items-start gap-3">
+          <div className="w-3 h-3 bg-primary rounded-full mt-1"></div>
+          <div>
+            <h4 className="text-sm font-medium">Timeline Event</h4>
+            <p className="text-xs text-muted-foreground mt-1">{element.content}</p>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "stats" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg flex flex-col items-center justify-center" style={elementStyles}>
+        <div className="text-2xl font-bold text-primary mb-1">1,234</div>
+        <div className="text-sm text-muted-foreground">{element.content}</div>
+      </div>
+    )}
+    {element.type === "counter" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <span className="text-3xl font-bold">{element.content}</span>
+      </div>
+    )}
+    {element.type === "product-card" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg overflow-hidden" style={elementStyles}>
+        <div className="h-24 bg-muted flex items-center justify-center">
+          <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div className="p-3">
+          <h3 className="font-semibold text-sm mb-1">{element.content}</h3>
+          <p className="text-xs text-muted-foreground mb-2">Product description</p>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-bold text-primary">$99.99</span>
+            <button className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">Add</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "price" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <span className="text-2xl font-bold">{element.content}</span>
+      </div>
+    )}
+    {element.type === "rating" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <span className="text-lg">{element.content}</span>
+      </div>
+    )}
+    {element.type === "cart" && (
+      <button className="w-full h-full bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors" style={elementStyles}>
+        {element.content}
+      </button>
+    )}
+    {element.type === "checkout" && (
+      <button className="w-full h-full bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors" style={elementStyles}>
+        {element.content}
+      </button>
+    )}
+    {element.type === "social-links" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
+        <div className="flex gap-2">
+          <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+            <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+            </svg>
+          </div>
+          <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+            <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "contact-info" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>
+            <span className="text-sm">+1 (555) 123-4567</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <span className="text-sm">info@example.com</span>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "map" && (
+      <div className="text-card-foreground w-full h-full bg-muted border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
+        <div className="text-center">
+          <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <p className="text-sm">{element.content}</p>
+        </div>
+      </div>
+    )}
+    {element.type === "newsletter" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+        <div className="text-center">
+          <h3 className="font-semibold text-sm mb-2">Subscribe to Newsletter</h3>
+          <p className="text-xs text-muted-foreground mb-3">Get updates delivered to your inbox</p>
+          <div className="flex gap-2">
+            <input type="email" placeholder="Enter email" className="flex-1 px-2 py-1 text-xs border border-border rounded bg-background" />
+            <button className="px-3 py-1 text-xs bg-primary text-primary-foreground rounded">Subscribe</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "team" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg overflow-hidden" style={elementStyles}>
+        <div className="h-20 bg-muted flex items-center justify-center">
+          <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+        </div>
+        <div className="p-3 text-center">
+          <h3 className="font-semibold text-sm mb-1">{element.content}</h3>
+          <p className="text-xs text-muted-foreground">Team Member</p>
+        </div>
+      </div>
+    )}
+    {element.type === "testimonial" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg p-4" style={elementStyles}>
+        <div className="text-center">
+          <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h4v10h-10z"/>
+            </svg>
+          </div>
+          <p className="text-sm italic mb-2">"{element.content}"</p>
+          <div className="text-xs text-muted-foreground">- Customer Name</div>
+        </div>
+      </div>
+    )}
+    {element.type === "grid" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+        <div className="grid grid-cols-2 gap-2 h-full">
+          <div className="bg-muted rounded p-2 text-xs text-center">Item 1</div>
+          <div className="bg-muted rounded p-2 text-xs text-center">Item 2</div>
+          <div className="bg-muted rounded p-2 text-xs text-center">Item 3</div>
+          <div className="bg-muted rounded p-2 text-xs text-center">Item 4</div>
+        </div>
+      </div>
+    )}
+    {element.type === "navigation" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-between px-4" style={elementStyles}>
+        <div className="font-semibold text-sm">Logo</div>
+        <div className="flex gap-4">
+          <span className="text-sm">Home</span>
+          <span className="text-sm">About</span>
+          <span className="text-sm">Contact</span>
+        </div>
+      </div>
+    )}
+    {element.type === "footer" && (
+      <div className="text-card-foreground w-full h-full bg-muted border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
+        <div className="text-center">
+          <p className="text-sm font-medium mb-1">{element.content}</p>
+          <p className="text-xs text-muted-foreground">© 2024 Your Company</p>
+        </div>
+      </div>
+    )}
+    {element.type === "header" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
+        <div className="text-center">
+          <h1 className="text-lg font-bold mb-1">{element.content}</h1>
+          <p className="text-sm text-muted-foreground">Welcome to our website</p>
+        </div>
+      </div>
+    )}
+    {element.type === "sidebar" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+        <div className="space-y-3">
+          <div className="text-sm font-medium">Menu</div>
+          <div className="space-y-2">
+            <div className="text-xs text-muted-foreground">• Dashboard</div>
+            <div className="text-xs text-muted-foreground">• Settings</div>
+            <div className="text-xs text-muted-foreground">• Profile</div>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "form" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+        <div className="space-y-3">
+          <h3 className="font-semibold text-sm">{element.content}</h3>
+          <div className="space-y-2">
+            <input type="text" placeholder="Name" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <input type="email" placeholder="Email" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <textarea placeholder="Message" className="w-full px-2 py-1 text-xs border border-border rounded bg-background h-16 resize-none"></textarea>
+            <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Submit</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {/* Advanced UI Components */}
+    {element.type === "calendar" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+        <div className="text-center">
+          <h3 className="font-semibold text-sm mb-3">Calendar</h3>
+          <div className="grid grid-cols-7 gap-1 text-xs">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+              <div key={i} className="p-1 text-center font-medium text-muted-foreground">{day}</div>
+            ))}
+            {Array.from({length: 28}, (_, i) => (
+              <div key={i} className="p-1 text-center hover:bg-muted rounded">{i + 1}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "search-bar" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="relative">
+          <input 
+            type="text" 
+            placeholder={element.content}
+            className="w-full px-3 py-2 pl-8 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          <svg className="absolute left-2 top-2.5 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+      </div>
+    )}
+    {element.type === "filter" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+        <h3 className="font-semibold text-sm mb-3">{element.content}</h3>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-xs">
+            <input type="checkbox" className="rounded" />
+            <span>Option 1</span>
+          </label>
+          <label className="flex items-center gap-2 text-xs">
+            <input type="checkbox" className="rounded" />
+            <span>Option 2</span>
+          </label>
+          <label className="flex items-center gap-2 text-xs">
+            <input type="checkbox" className="rounded" />
+            <span>Option 3</span>
+          </label>
+        </div>
+      </div>
+    )}
+    {element.type === "breadcrumb" && (
+      <div className="w-full h-full flex items-center" style={elementStyles}>
+        <nav className="flex items-center space-x-1 text-sm">
+          <span className="text-primary hover:underline cursor-pointer">Home</span>
+          <span className="text-muted-foreground">/</span>
+          <span className="text-primary hover:underline cursor-pointer">About</span>
+          <span className="text-muted-foreground">/</span>
+          <span className="text-muted-foreground">Contact</span>
+        </nav>
+      </div>
+    )}
+    {element.type === "pagination" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <nav className="flex items-center space-x-1">
+          <button className="px-2 py-1 text-xs border border-border rounded hover:bg-muted">←</button>
+          <button className="px-2 py-1 text-xs bg-primary text-primary-foreground rounded">1</button>
+          <button className="px-2 py-1 text-xs border border-border rounded hover:bg-muted">2</button>
+          <button className="px-2 py-1 text-xs border border-border rounded hover:bg-muted">3</button>
+          <span className="px-2 py-1 text-xs text-muted-foreground">...</span>
+          <button className="px-2 py-1 text-xs border border-border rounded hover:bg-muted">10</button>
+          <button className="px-2 py-1 text-xs border border-border rounded hover:bg-muted">→</button>
+        </nav>
+      </div>
+    )}
+    {element.type === "spinner" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span className="ml-2 text-sm">{element.content}</span>
+      </div>
+    )}
+    {element.type === "skeleton" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="animate-pulse space-y-3">
+          <div className="h-4 bg-muted rounded w-3/4"></div>
+          <div className="h-4 bg-muted rounded w-1/2"></div>
+          <div className="h-4 bg-muted rounded w-5/6"></div>
+        </div>
+      </div>
+    )}
+    {element.type === "alert" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <div className="flex items-center gap-2">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          <span className="text-sm font-medium">{element.content}</span>
+        </div>
+      </div>
+    )}
+    {element.type === "toast" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <div className="flex items-center gap-2">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          </svg>
+          <span className="text-sm">{element.content}</span>
+        </div>
+      </div>
+    )}
+    {element.type === "drawer" && (
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+        <div className="space-y-3">
+          <h3 className="font-semibold text-sm">{element.content}</h3>
+          <div className="space-y-2">
+            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer">• Menu Item 1</div>
+            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer">• Menu Item 2</div>
+            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer">• Menu Item 3</div>
+          </div>
+        </div>
+      </div>
+    )}
+    {/* Content & Text Components */}
+    {element.type === "code-block" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <pre className="w-full h-full p-4 bg-muted rounded-lg border border-border overflow-auto">
+          <code className="text-sm font-mono text-foreground">{element.content}</code>
+        </pre>
+      </div>
+    )}
+    {element.type === "markdown" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="prose prose-sm max-w-none">
+          <h1 className="text-lg font-bold mb-2">Markdown Content</h1>
+          <p className="text-sm mb-2">This is <strong>bold</strong> text and <em>italic</em> text.</p>
+          <p className="text-sm text-muted-foreground">Markdown rendering...</p>
+        </div>
+      </div>
+    )}
+    {element.type === "rich-text" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="space-y-2">
+          <div className="flex gap-1 p-2 bg-muted rounded border border-border">
+            <button className="px-2 py-1 text-xs bg-background rounded hover:bg-muted">B</button>
+            <button className="px-2 py-1 text-xs bg-background rounded hover:bg-muted">I</button>
+            <button className="px-2 py-1 text-xs bg-background rounded hover:bg-muted">U</button>
+          </div>
+          <div className="p-2 border border-border rounded bg-background min-h-[100px] text-sm">
+            {element.content}
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "typography" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-2">Typography</h1>
+          <p className="text-sm text-muted-foreground">Font styles and sizes</p>
+        </div>
+      </div>
+    )}
+    {element.type === "link" && (
+      <div className="w-full h-full flex items-center" style={elementStyles}>
+        <a href="#" className="text-primary hover:text-primary/80 underline text-sm">
+          {element.content}
+        </a>
+      </div>
+    )}
+    {element.type === "tag" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">
+          {element.content}
+        </span>
+      </div>
+    )}
+    {element.type === "label" && (
+      <div className="w-full h-full flex items-center" style={elementStyles}>
+        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-muted text-foreground">
+          {element.content}
+        </span>
+      </div>
+    )}
+    {/* File & Media Components */}
+    {element.type === "file-upload" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
+          <svg className="w-8 h-8 text-muted-foreground mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          <span className="text-sm text-muted-foreground">{element.content}</span>
+        </div>
+      </div>
+    )}
+    {element.type === "file-download" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span className="text-sm font-medium">{element.content}</span>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "pdf-viewer" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full flex flex-col items-center justify-center">
+          <svg className="w-12 h-12 text-muted-foreground mb-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+          </svg>
+          <span className="text-sm font-medium">{element.content}</span>
+          <span className="text-xs text-muted-foreground mt-1">PDF Viewer</span>
+        </div>
+      </div>
+    )}
+    {element.type === "document" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full flex flex-col items-center justify-center">
+          <svg className="w-10 h-10 text-muted-foreground mb-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+          </svg>
+          <span className="text-sm font-medium">{element.content}</span>
+        </div>
+      </div>
+    )}
+    {element.type === "folder" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full flex flex-col items-center justify-center">
+          <svg className="w-10 h-10 text-muted-foreground mb-2" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+          </svg>
+          <span className="text-sm font-medium">{element.content}</span>
+        </div>
+      </div>
+    )}
+    {element.type === "image-gallery" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full grid grid-cols-3 gap-2">
+          {Array.from({length: 6}, (_, i) => (
+            <div key={i} className="bg-muted rounded border border-border flex items-center justify-center">
+              <svg className="w-6 h-6 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+              </svg>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+    {element.type === "video-gallery" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full grid grid-cols-2 gap-2">
+          {Array.from({length: 4}, (_, i) => (
+            <div key={i} className="bg-muted rounded border border-border flex items-center justify-center">
+              <svg className="w-6 h-6 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+              </svg>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+    {element.type === "media-player" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full flex flex-col items-center justify-center">
+          <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center mb-3">
+            <svg className="w-8 h-8 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+            </svg>
+          </div>
+          <span className="text-sm font-medium">{element.content}</span>
+          <div className="flex gap-2 mt-2">
+            <button className="px-2 py-1 text-xs bg-muted rounded hover:bg-muted/80">⏮</button>
+            <button className="px-2 py-1 text-xs bg-primary text-primary-foreground rounded">⏸</button>
+            <button className="px-2 py-1 text-xs bg-muted rounded hover:bg-muted/80">⏭</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {/* Navigation & Menu Components */}
+    {element.type === "menu" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="relative">
+          <button className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background text-foreground hover:bg-muted flex items-center justify-between">
+            <span>{element.content}</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    )}
+    {element.type === "tab-nav" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="flex border-b border-border">
+          <button className="px-3 py-2 text-sm font-medium text-primary border-b-2 border-primary">Tab 1</button>
+          <button className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground">Tab 2</button>
+          <button className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground">Tab 3</button>
+        </div>
+      </div>
+    )}
+    {element.type === "side-menu" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="space-y-2">
+          <div className="text-sm font-medium text-foreground mb-3">{element.content}</div>
+          <div className="space-y-1">
+            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer py-1 px-2 rounded hover:bg-muted">• Dashboard</div>
+            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer py-1 px-2 rounded hover:bg-muted">• Settings</div>
+            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer py-1 px-2 rounded hover:bg-muted">• Profile</div>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "mobile-menu" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="space-y-2">
+          <div className="text-sm font-medium text-foreground mb-3">{element.content}</div>
+          <div className="space-y-1">
+            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer py-2 px-3 rounded hover:bg-muted">📱 Home</div>
+            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer py-2 px-3 rounded hover:bg-muted">📱 About</div>
+            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer py-2 px-3 rounded hover:bg-muted">📱 Contact</div>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "back-button" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <button className="w-full h-full flex items-center justify-center hover:bg-muted/50 rounded transition-colors">
+          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          <span className="text-sm">{element.content}</span>
+        </button>
+      </div>
+    )}
+    {element.type === "home-button" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <button className="w-full h-full flex items-center justify-center hover:opacity-80 rounded transition-opacity">
+          <span className="text-sm font-medium">{element.content}</span>
+        </button>
+      </div>
+    )}
+    {/* Feedback & Status Components */}
+    {element.type === "loading" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <div className="flex items-center gap-2">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          <span className="text-sm">{element.content}</span>
+        </div>
+      </div>
+    )}
+    {element.type === "progress-ring" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <div className="relative">
+          <svg className="w-16 h-16 transform -rotate-90">
+            <circle cx="32" cy="32" r="28" stroke="var(--color-muted)" strokeWidth="4" fill="none" />
+            <circle cx="32" cy="32" r="28" stroke="var(--color-primary)" strokeWidth="4" fill="none" strokeDasharray="175" strokeDashoffset="44" />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-sm font-medium">{element.content}</span>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "status-badge" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">
+          {element.content}
+        </span>
+      </div>
+    )}
+    {element.type === "notification" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <div className="relative">
+          <svg className="w-6 h-6 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+          </svg>
+          <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center">
+            3
+          </span>
+        </div>
+      </div>
+    )}
+    {element.type === "alert-banner" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <div className="flex items-center gap-2">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          <span className="text-sm font-medium">{element.content}</span>
+        </div>
+      </div>
+    )}
+    {element.type === "success-message" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <div className="flex items-center gap-2">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          </svg>
+          <span className="text-sm font-medium">{element.content}</span>
+        </div>
+      </div>
+    )}
+    {element.type === "error-message" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <div className="flex items-center gap-2">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          </svg>
+          <span className="text-sm font-medium">{element.content}</span>
+        </div>
+      </div>
+    )}
+    {element.type === "warning-message" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <div className="flex items-center gap-2">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          <span className="text-sm font-medium">{element.content}</span>
+        </div>
+      </div>
+    )}
+    {/* Utility & Tools Components */}
+    {element.type === "divider" && (
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <div className="w-full h-px bg-border"></div>
+      </div>
+    )}
+    {element.type === "spacer" && (
+      <div className="w-full h-full bg-transparent" style={elementStyles}>
+        <div className="w-full h-full bg-muted/20 border border-dashed border-border rounded flex items-center justify-center">
+          <span className="text-xs text-muted-foreground">Spacer</span>
+        </div>
+      </div>
+    )}
+    {element.type === "container" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="text-center">
+            <h3 className="text-sm font-medium mb-2">{element.content}</h3>
+            <p className="text-xs text-muted-foreground">Container wrapper</p>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "wrapper" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="text-center">
+            <h3 className="text-sm font-medium mb-2">{element.content}</h3>
+            <p className="text-xs text-muted-foreground">Element wrapper</p>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "flexbox" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full flex items-center justify-center gap-2">
+          <div className="w-8 h-8 bg-primary/20 rounded flex items-center justify-center">
+            <span className="text-xs">1</span>
+          </div>
+          <div className="w-8 h-8 bg-primary/20 rounded flex items-center justify-center">
+            <span className="text-xs">2</span>
+          </div>
+          <div className="w-8 h-8 bg-primary/20 rounded flex items-center justify-center">
+            <span className="text-xs">3</span>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "grid-container" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full grid grid-cols-2 gap-2">
+          <div className="bg-primary/20 rounded flex items-center justify-center">
+            <span className="text-xs">Item 1</span>
+          </div>
+          <div className="bg-primary/20 rounded flex items-center justify-center">
+            <span className="text-xs">Item 2</span>
+          </div>
+          <div className="bg-primary/20 rounded flex items-center justify-center">
+            <span className="text-xs">Item 3</span>
+          </div>
+          <div className="bg-primary/20 rounded flex items-center justify-center">
+            <span className="text-xs">Item 4</span>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "center" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="text-center">
+            <h3 className="text-sm font-medium mb-2">{element.content}</h3>
+            <p className="text-xs text-muted-foreground">Centered content</p>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "stack" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full flex flex-col gap-2">
+          <div className="bg-primary/20 rounded p-2 text-center">
+            <span className="text-xs">Stack Item 1</span>
+          </div>
+          <div className="bg-primary/20 rounded p-2 text-center">
+            <span className="text-xs">Stack Item 2</span>
+          </div>
+          <div className="bg-primary/20 rounded p-2 text-center">
+            <span className="text-xs">Stack Item 3</span>
+          </div>
+        </div>
+      </div>
+    )}
+    {/* Business & Marketing Components */}
+    {element.type === "pricing-table" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full flex flex-col items-center justify-center">
+          <h3 className="text-lg font-bold mb-4">{element.content}</h3>
+          <div className="grid grid-cols-3 gap-4 w-full">
+            <div className="bg-muted rounded-lg p-3 text-center">
+              <div className="text-sm font-medium">Basic</div>
+              <div className="text-lg font-bold text-primary">$9</div>
+            </div>
+            <div className="bg-primary/10 rounded-lg p-3 text-center border-2 border-primary">
+              <div className="text-sm font-medium">Pro</div>
+              <div className="text-lg font-bold text-primary">$29</div>
+            </div>
+            <div className="bg-muted rounded-lg p-3 text-center">
+              <div className="text-sm font-medium">Enterprise</div>
+              <div className="text-lg font-bold text-primary">$99</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "feature-list" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full space-y-3">
+          <h3 className="text-sm font-medium mb-3">{element.content}</h3>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs">
+              <svg className="w-3 h-3 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              <span>Feature 1</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <svg className="w-3 h-3 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              <span>Feature 2</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <svg className="w-3 h-3 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              <span>Feature 3</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "faq" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full space-y-3">
+          <h3 className="text-sm font-medium mb-3">{element.content}</h3>
+          <div className="space-y-2">
+            <div className="border border-border rounded p-2">
+              <div className="text-xs font-medium mb-1">Q: What is this service?</div>
+              <div className="text-xs text-muted-foreground">A: This is a comprehensive solution...</div>
+            </div>
+            <div className="border border-border rounded p-2">
+              <div className="text-xs font-medium mb-1">Q: How does it work?</div>
+              <div className="text-xs text-muted-foreground">A: It works by...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "blog-post" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full space-y-3">
+          <div className="w-full h-20 bg-muted rounded mb-3"></div>
+          <h3 className="text-sm font-medium">{element.content}</h3>
+          <p className="text-xs text-muted-foreground line-clamp-3">This is a sample blog post content that demonstrates how the blog post component would look...</p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>By Author</span>
+            <span>•</span>
+            <span>Dec 2024</span>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "case-study" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full space-y-3">
+          <div className="w-full h-16 bg-muted rounded mb-3"></div>
+          <h3 className="text-sm font-medium">{element.content}</h3>
+          <p className="text-xs text-muted-foreground">Success story showcasing results and outcomes...</p>
+          <div className="flex gap-2">
+            <div className="bg-primary/20 rounded px-2 py-1 text-xs">+50% Growth</div>
+            <div className="bg-primary/20 rounded px-2 py-1 text-xs">ROI: 300%</div>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "cta" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full flex flex-col items-center justify-center text-center">
+          <h3 className="text-lg font-bold mb-2">{element.content}</h3>
+          <p className="text-sm mb-4 opacity-90">Get started today and transform your business</p>
+          <button className="px-4 py-2 bg-background text-primary rounded-lg text-sm font-medium hover:bg-background/80 transition-colors">
+            Get Started
+          </button>
+        </div>
+      </div>
+    )}
+    {element.type === "hero" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full flex flex-col items-center justify-center text-center">
+          <h1 className="text-2xl font-bold mb-3">Welcome to Our Platform</h1>
+          <p className="text-sm mb-6 opacity-80 max-w-md">Build amazing websites with our drag-and-drop builder. No coding required.</p>
+          <div className="flex gap-3">
+            <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+              Get Started
+            </button>
+            <button className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors">
+              Learn More
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "about" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full space-y-3">
+          <h3 className="text-lg font-bold">{element.content}</h3>
+          <p className="text-sm opacity-80">We are a team of passionate developers and designers creating amazing digital experiences.</p>
+          <div className="grid grid-cols-2 gap-2 mt-4">
+            <div className="text-center">
+              <div className="text-lg font-bold text-primary">100+</div>
+              <div className="text-xs text-muted-foreground">Projects</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-primary">50+</div>
+              <div className="text-xs text-muted-foreground">Clients</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    {/* Forms & Validation Components */}
+    {element.type === "contact-form" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full space-y-3">
+          <h3 className="text-sm font-medium">{element.content}</h3>
+          <div className="space-y-2">
+            <input type="text" placeholder="Name" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <input type="email" placeholder="Email" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <textarea placeholder="Message" className="w-full px-2 py-1 text-xs border border-border rounded bg-background h-16 resize-none"></textarea>
+            <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Send Message</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "newsletter-signup" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full flex flex-col items-center justify-center text-center space-y-3">
+          <h3 className="text-sm font-medium">{element.content}</h3>
+          <p className="text-xs text-muted-foreground">Stay updated with our latest news</p>
+          <div className="flex gap-2 w-full">
+            <input type="email" placeholder="Enter email" className="flex-1 px-2 py-1 text-xs border border-border rounded bg-background" />
+            <button className="px-3 py-1 text-xs bg-primary text-primary-foreground rounded">Subscribe</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "login-form" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full space-y-3">
+          <h3 className="text-sm font-medium">{element.content}</h3>
+          <div className="space-y-2">
+            <input type="email" placeholder="Email" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <input type="password" placeholder="Password" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Login</button>
+            <div className="text-xs text-center text-muted-foreground">Forgot password?</div>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "registration-form" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full space-y-2">
+          <h3 className="text-sm font-medium">{element.content}</h3>
+          <div className="space-y-1">
+            <input type="text" placeholder="Full Name" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <input type="email" placeholder="Email" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <input type="password" placeholder="Password" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <input type="password" placeholder="Confirm Password" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Register</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "survey-form" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full space-y-3">
+          <h3 className="text-sm font-medium">{element.content}</h3>
+          <div className="space-y-2">
+            <div className="text-xs font-medium">How satisfied are you?</div>
+            <div className="flex gap-1">
+              {[1,2,3,4,5].map(i => (
+                <button key={i} className="w-6 h-6 text-xs border border-border rounded hover:bg-muted">{i}</button>
+              ))}
+            </div>
+            <textarea placeholder="Additional comments" className="w-full px-2 py-1 text-xs border border-border rounded bg-background h-12 resize-none"></textarea>
+            <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Submit</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "order-form" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full space-y-3">
+          <h3 className="text-sm font-medium">{element.content}</h3>
+          <div className="space-y-2">
+            <input type="text" placeholder="Product Name" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <input type="number" placeholder="Quantity" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <input type="text" placeholder="Shipping Address" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Place Order</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "booking-form" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full space-y-3">
+          <h3 className="text-sm font-medium">{element.content}</h3>
+          <div className="space-y-2">
+            <input type="text" placeholder="Service" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <input type="date" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <input type="time" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+            <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Book Now</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {element.type === "feedback-form" && (
+      <div className="w-full h-full" style={elementStyles}>
+        <div className="w-full h-full space-y-3">
+          <h3 className="text-sm font-medium">{element.content}</h3>
+          <div className="space-y-2">
+            <select className="w-full px-2 py-1 text-xs border border-border rounded bg-background">
+              <option>Select Category</option>
+              <option>Bug Report</option>
+              <option>Feature Request</option>
+              <option>General Feedback</option>
+            </select>
+            <textarea placeholder="Your feedback" className="w-full px-2 py-1 text-xs border border-border rounded bg-background h-16 resize-none"></textarea>
+            <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Submit Feedback</button>
+          </div>
+        </div>
+      </div>
+    )}
         </div>
 
         {/* Element label and controls */}
@@ -300,43 +2759,81 @@ export function Canvas({
   return (
     <div
       ref={canvasRef}
-      className={`relative w-full h-full min-h-[800px] bg-canvas overflow-auto ${isDragOver ? "bg-drop-zone/20" : ""}`}
+      className={`relative w-full h-full min-h-[800px] bg-gradient-to-br from-canvas via-canvas to-canvas/95 overflow-auto transition-all duration-300 ${isDragOver ? "bg-drop-zone/20" : ""}`}
       onClick={handleCanvasClick}
       onDragOver={handleCanvasDragOver}
       onDragLeave={handleCanvasDragLeave}
       onDrop={handleCanvasDrop}
+      style={{ 
+        transform: `scale(${zoom / 100})`,
+        transformOrigin: 'top left',
+        width: `${100 / (zoom / 100)}%`,
+        height: `${100 / (zoom / 100)}%`,
+      }}
     >
-      {/* Grid overlay */}
-      {snapSettings.enabled && (
+      {/* Enhanced Grid overlay */}
+      {showGrid && (
         <div
-          className="absolute inset-0 pointer-events-none opacity-20"
+          className="absolute inset-0 pointer-events-none opacity-10 transition-opacity duration-300"
           style={{
             backgroundImage: `
-              linear-gradient(to right, var(--color-border) 1px, transparent 1px),
-              linear-gradient(to bottom, var(--color-border) 1px, transparent 1px)
+              linear-gradient(to right, var(--color-primary) 1px, transparent 1px),
+              linear-gradient(to bottom, var(--color-primary) 1px, transparent 1px)
             `,
             backgroundSize: `${snapSettings.gridSize}px ${snapSettings.gridSize}px`,
           }}
         />
       )}
 
-      {/* Breakpoint indicator */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30">
-        <div className="inline-flex items-center gap-2 bg-muted px-3 py-1 rounded-full text-sm text-muted-foreground">
+      {/* Enhanced Breakpoint indicator - Fixed size regardless of zoom */}
+      <div 
+        className="absolute z-30 animate-in slide-in-from-top duration-500"
+        style={{
+          top: `${16 / (zoom / 100)}px`,
+          left: '50%',
+          transform: `translateX(-50%) scale(${100 / zoom})`,
+          transformOrigin: 'center',
+        }}
+      >
+        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-muted to-muted/80 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-muted-foreground border border-border shadow-lg">
+          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
           <span>Editing for:</span>
-          <span className="font-medium text-foreground capitalize">{currentBreakpoint}</span>
+          <span className="font-medium text-foreground capitalize bg-primary/10 px-2 py-1 rounded-md">{currentBreakpoint}</span>
         </div>
       </div>
 
-      {/* Elements */}
-      {elements.map(renderElement)}
+      {/* Elements with animations */}
+      {elements.map((element, index) => (
+        <div
+          key={element.id}
+          className="animate-in fade-in duration-500"
+          style={{ animationDelay: `${index * 100}ms` }}
+        >
+          {renderElement(element)}
+        </div>
+      ))}
 
-      {/* Drop zone indicator */}
+      {/* Enhanced Drop zone indicator */}
       {isDragOver && (
-        <div className="absolute inset-4 border-2 border-dashed border-primary rounded-lg flex items-center justify-center text-primary bg-drop-zone/10 pointer-events-none z-20">
-          <p className="text-lg font-medium">Drop component anywhere on the canvas</p>
+        <div className="absolute inset-4 border-2 border-dashed border-primary rounded-xl flex items-center justify-center text-primary bg-gradient-to-br from-drop-zone/20 to-drop-zone/10 backdrop-blur-sm pointer-events-none z-20 animate-in zoom-in duration-300">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 mx-auto animate-bounce">
+              <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            </div>
+            <p className="text-lg font-medium">Drop component anywhere on the canvas</p>
+            <p className="text-sm text-muted-foreground mt-2">Release to add to your design</p>
+          </div>
         </div>
       )}
+
+      {/* Canvas info overlay */}
+      <div className="absolute bottom-4 right-4 z-30">
+        <div className="bg-muted/80 backdrop-blur-sm px-3 py-2 rounded-lg text-xs text-muted-foreground border border-border">
+          {elements.length} elements • {currentBreakpoint} view
+        </div>
+      </div>
     </div>
   )
 }

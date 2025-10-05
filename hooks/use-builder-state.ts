@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import type { BuilderElement, Breakpoint, SnapSettings } from "@/lib/builder-types"
+import type { Breakpoint, BuilderElement, SnapSettings } from "@/lib/builder-types"
+import { useCallback, useState } from "react"
 
 export function useBuilderState() {
   const [elements, setElements] = useState<BuilderElement[]>([
@@ -50,13 +50,27 @@ export function useBuilderState() {
         ...element,
         position: position || element.position || { x: 100, y: 100, width: 200, height: 50 },
       }
-      return [...prev, newElement]
+      const newElements = [...prev, newElement]
+      
+      // Save to history
+      setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])
+      setHistoryIndex((idx) => idx + 1)
+      
+      return newElements
     })
-  }, [])
+  }, [historyIndex])
 
   const updateElement = useCallback((id: string, updates: Partial<BuilderElement>) => {
-    setElements((prev) => prev.map((el) => (el.id === id ? { ...el, ...updates } : el)))
-  }, [])
+    setElements((prev) => {
+      const newElements = prev.map((el) => (el.id === id ? { ...el, ...updates } : el))
+      
+      // Save to history
+      setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])
+      setHistoryIndex((idx) => idx + 1)
+      
+      return newElements
+    })
+  }, [historyIndex])
 
   const updateElementResponsiveStyle = useCallback(
     (id: string, breakpoint: Breakpoint, styles: Record<string, any>) => {
@@ -82,9 +96,23 @@ export function useBuilderState() {
   )
 
   const deleteElement = useCallback((id: string) => {
-    setElements((prev) => prev.filter((el) => el.id !== id))
+    console.log('Delete element:', id)
+    setElements((prev) => {
+      const newElements = prev.filter((el) => el.id !== id)
+      
+      // Save to history
+      setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])
+      setHistoryIndex((idx) => idx + 1)
+      
+      console.log('Element deleted, history updated:', { 
+        newHistoryLength: historyIndex + 2, 
+        newElementsCount: newElements.length 
+      })
+      
+      return newElements
+    })
     setSelectedElements((prev) => prev.filter((elId) => elId !== id))
-  }, [])
+  }, [historyIndex])
 
   const duplicateElement = useCallback(
     (id: string) => {
@@ -102,11 +130,17 @@ export function useBuilderState() {
 
   const updateElementPosition = useCallback(
     (id: string, position: { x: number; y: number; width?: number; height?: number }) => {
-      setElements((prev) =>
-        prev.map((el) => (el.id === id ? { ...el, position: { ...el.position, ...position } } : el)),
-      )
+      setElements((prev) => {
+        const newElements = prev.map((el) => (el.id === id ? { ...el, position: { ...el.position, ...position } } : el))
+        
+        // Save to history
+        setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])
+        setHistoryIndex((idx) => idx + 1)
+        
+        return newElements
+      })
     },
-    [],
+    [historyIndex],
   )
 
   const snapToGrid = useCallback((value: number, gridSize: number) => {
@@ -114,16 +148,22 @@ export function useBuilderState() {
   }, [])
 
   const undo = useCallback(() => {
+    console.log('Undo called:', { historyIndex, historyLength: history.length })
     if (historyIndex > 0) {
-      setHistoryIndex((prev) => prev - 1)
-      setElements(history[historyIndex - 1])
+      const newIndex = historyIndex - 1
+      setHistoryIndex(newIndex)
+      setElements(history[newIndex])
+      console.log('Undo successful:', { newIndex, elementsCount: history[newIndex].length })
     }
   }, [history, historyIndex])
 
   const redo = useCallback(() => {
+    console.log('Redo called:', { historyIndex, historyLength: history.length })
     if (historyIndex < history.length - 1) {
-      setHistoryIndex((prev) => prev + 1)
-      setElements(history[historyIndex + 1])
+      const newIndex = historyIndex + 1
+      setHistoryIndex(newIndex)
+      setElements(history[newIndex])
+      console.log('Redo successful:', { newIndex, elementsCount: history[newIndex].length })
     }
   }, [history, historyIndex])
 

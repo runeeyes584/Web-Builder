@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { PreviewModal } from "./preview-modal"
-import { ExportModal } from "./export-modal"
-import { ProjectManagerComponent } from "./project-manager"
-import { Monitor, Tablet, Smartphone, Eye, Download, Undo, Redo, Copy, Moon, Sun } from "lucide-react"
 import type { Breakpoint, BuilderElement } from "@/lib/builder-types"
+import { Copy, Download, Eye, Grid, Layers, Monitor, Moon, Redo, RotateCcw, Save, Smartphone, Sun, Tablet, Undo, ZoomIn, ZoomOut } from "lucide-react"
+import { useState } from "react"
+import { ExportModal } from "./export-modal"
+import { PreviewModal } from "./preview-modal"
+import { ProjectManagerComponent } from "./project-manager"
 
 interface TopToolbarProps {
   currentBreakpoint: Breakpoint
@@ -21,6 +21,13 @@ interface TopToolbarProps {
   onDuplicateSelected: () => void
   elements?: BuilderElement[]
   onLoadProject?: (elements: BuilderElement[]) => void
+  zoom?: number
+  onZoomChange?: (zoom: number) => void
+  showGrid?: boolean
+  onGridToggle?: (show: boolean) => void
+  showLayers?: boolean
+  onLayersToggle?: (show: boolean) => void
+  onRotateSelected?: () => void
 }
 
 export function TopToolbar({
@@ -36,81 +43,165 @@ export function TopToolbar({
   onDuplicateSelected,
   elements = [],
   onLoadProject,
+  zoom = 100,
+  onZoomChange,
+  showGrid = true,
+  onGridToggle,
+  showLayers = false,
+  onLayersToggle,
+  onRotateSelected,
 }: TopToolbarProps) {
   const [showPreview, setShowPreview] = useState(false)
   const [showExport, setShowExport] = useState(false)
 
   return (
     <>
-      <div className="h-14 bg-card border-b border-border flex items-center justify-between px-4">
+      <div className="h-16 bg-gradient-to-r from-card via-card to-card/95 border-b border-border flex items-center justify-between px-4 backdrop-blur-sm">
         {/* Left Section - Logo & Project */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">WB</span>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg">
+              <span className="text-primary-foreground font-bold text-lg">WB</span>
             </div>
-            <span className="font-semibold text-foreground">Website Builder</span>
+            <div>
+              <span className="font-semibold text-foreground text-lg">Website Builder</span>
+              <p className="text-xs text-muted-foreground">Professional Design Tool</p>
+            </div>
           </div>
 
-          <div className="h-6 w-px bg-border" />
+          <div className="h-8 w-px bg-border" />
 
           <ProjectManagerComponent elements={elements} onLoadProject={onLoadProject || (() => {})} />
         </div>
 
-        {/* Center Section - Breakpoint Controls */}
-        <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-          <Button
-            variant={currentBreakpoint === "desktop" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => onBreakpointChange("desktop")}
-            className="h-8"
-          >
-            <Monitor className="w-4 h-4" />
-          </Button>
-          <Button
-            variant={currentBreakpoint === "tablet" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => onBreakpointChange("tablet")}
-            className="h-8"
-          >
-            <Tablet className="w-4 h-4" />
-          </Button>
-          <Button
-            variant={currentBreakpoint === "mobile" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => onBreakpointChange("mobile")}
-            className="h-8"
-          >
-            <Smartphone className="w-4 h-4" />
-          </Button>
+        {/* Center Section - Breakpoint Controls & Tools */}
+        <div className="flex items-center gap-4">
+          {/* Breakpoint Controls */}
+          <div className="flex items-center gap-1 bg-gradient-to-r from-muted to-muted/80 rounded-xl p-1 shadow-sm">
+            <Button
+              variant={currentBreakpoint === "desktop" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => onBreakpointChange("desktop")}
+              className="h-9 px-3"
+            >
+              <Monitor className="w-4 h-4 mr-2" />
+              Desktop
+            </Button>
+            <Button
+              variant={currentBreakpoint === "tablet" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => onBreakpointChange("tablet")}
+              className="h-9 px-3"
+            >
+              <Tablet className="w-4 h-4 mr-2" />
+              Tablet
+            </Button>
+            <Button
+              variant={currentBreakpoint === "mobile" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => onBreakpointChange("mobile")}
+              className="h-9 px-3"
+            >
+              <Smartphone className="w-4 h-4 mr-2" />
+              Mobile
+            </Button>
+          </div>
+
+          {/* Zoom Controls */}
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+            <Button variant="ghost" size="sm" onClick={() => onZoomChange?.(Math.max(25, zoom - 25))}>
+              <ZoomOut className="w-4 h-4" />
+            </Button>
+            <span className="text-sm font-medium px-2 min-w-[3rem] text-center">{zoom}%</span>
+            <Button variant="ghost" size="sm" onClick={() => onZoomChange?.(Math.min(200, zoom + 25))}>
+              <ZoomIn className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* View Controls */}
+          <div className="flex items-center gap-1">
+            <Button 
+              variant={showGrid ? "default" : "ghost"} 
+              size="sm" 
+              onClick={() => onGridToggle?.(!showGrid)}
+            >
+              <Grid className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant={showLayers ? "default" : "ghost"} 
+              size="sm" 
+              onClick={() => onLayersToggle?.(!showLayers)}
+              title="Toggle Layers Panel"
+            >
+              <Layers className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Right Section - Actions */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={onUndo} disabled={!canUndo}>
+          {/* Edit Tools */}
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onUndo} 
+              disabled={!canUndo}
+              title="Undo (Ctrl+Z)"
+            >
               <Undo className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={onRedo} disabled={!canRedo}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onRedo} 
+              disabled={!canRedo}
+              title="Redo (Ctrl+Y)"
+            >
               <Redo className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={onDuplicateSelected} disabled={selectedElements.length === 0}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onDuplicateSelected} 
+              disabled={selectedElements.length === 0}
+              title="Duplicate selected elements (Ctrl+D)"
+            >
               <Copy className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onRotateSelected}
+              disabled={selectedElements.length === 0}
+              title="Rotate selected elements 90°"
+            >
+              <RotateCcw className="w-4 h-4" />
             </Button>
           </div>
 
           <div className="h-6 w-px bg-border" />
 
-          <Button variant="ghost" size="sm" onClick={() => setShowPreview(true)}>
-            <Eye className="w-4 h-4 mr-2" />
-            Preview
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setShowExport(true)}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+          {/* Main Actions */}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowPreview(true)} className="bg-primary/5 hover:bg-primary/10">
+              <Eye className="w-4 h-4 mr-2" />
+              Preview
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowExport(true)} className="bg-primary/5 hover:bg-primary/10">
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+            <Button variant="outline" size="sm" className="bg-primary/5 hover:bg-primary/10">
+              <Save className="w-4 h-4 mr-2" />
+              Save
+            </Button>
+          </div>
 
-          <Button variant="ghost" size="sm" onClick={onDarkModeToggle}>
+          <div className="h-6 w-px bg-border" />
+
+          {/* Theme Toggle */}
+          <Button variant="ghost" size="sm" onClick={onDarkModeToggle} className="hover:bg-primary/10">
             {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </Button>
         </div>

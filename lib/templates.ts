@@ -7,6 +7,8 @@ export interface Template {
   category: "hero" | "about" | "services" | "contact" | "footer" | "navigation" | "full-page"
   thumbnail: string
   elements: BuilderElement[]
+  popular?: boolean
+  tags?: string[]
 }
 
 export const templates: Template[] = [
@@ -17,6 +19,8 @@ export const templates: Template[] = [
     description: "Clean hero section with CTA",
     category: "hero",
     thumbnail: "/placeholder.svg?height=120&width=200&text=Modern+Hero",
+    popular: true,
+    tags: ["modern", "clean", "cta"],
     elements: [
       {
         id: "hero-section",
@@ -598,6 +602,410 @@ export const templates: Template[] = [
       },
     ],
   },
+
+  // Additional Hero Templates
+  {
+    id: "hero-minimal",
+    name: "Minimal Hero",
+    description: "Ultra-clean minimal hero design",
+    category: "hero",
+    thumbnail: "/placeholder.svg?height=120&width=200&text=Minimal+Hero",
+    popular: true,
+    tags: ["minimal", "clean", "simple"],
+    elements: [
+      {
+        id: "minimal-hero",
+        type: "section",
+        content: "",
+        styles: {
+          padding: "6rem 2rem",
+          backgroundColor: "var(--color-background)",
+          textAlign: "center",
+          minHeight: "50vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+        },
+        children: [
+          {
+            id: "minimal-title",
+            type: "heading",
+            content: "Simplicity is the ultimate sophistication",
+            styles: {
+              fontSize: "3rem",
+              fontWeight: "300",
+              marginBottom: "2rem",
+              color: "var(--color-foreground)",
+              lineHeight: "1.2",
+              letterSpacing: "-0.02em",
+            },
+            responsiveStyles: {
+              desktop: { fontSize: "3rem" },
+              tablet: { fontSize: "2.25rem" },
+              mobile: { fontSize: "1.75rem" },
+            },
+          },
+          {
+            id: "minimal-subtitle",
+            type: "paragraph",
+            content: "Focus on what matters most",
+            styles: {
+              fontSize: "1.125rem",
+              color: "var(--color-muted-foreground)",
+              fontWeight: "400",
+              letterSpacing: "0.01em",
+            },
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: "hero-dark",
+    name: "Dark Hero",
+    description: "Bold dark theme hero section",
+    category: "hero",
+    thumbnail: "/placeholder.svg?height=120&width=200&text=Dark+Hero",
+    tags: ["dark", "bold", "modern"],
+    elements: [
+      {
+        id: "dark-hero",
+        type: "section",
+        content: "",
+        styles: {
+          padding: "5rem 2rem",
+          background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)",
+          textAlign: "center",
+          minHeight: "80vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          color: "white",
+        },
+        children: [
+          {
+            id: "dark-title",
+            type: "heading",
+            content: "Dark Mode Excellence",
+            styles: {
+              fontSize: "4.5rem",
+              fontWeight: "700",
+              marginBottom: "1.5rem",
+              color: "white",
+              textShadow: "0 4px 8px rgba(0,0,0,0.5)",
+            },
+            responsiveStyles: {
+              desktop: { fontSize: "4.5rem" },
+              tablet: { fontSize: "3.5rem" },
+              mobile: { fontSize: "2.5rem" },
+            },
+          },
+          {
+            id: "dark-subtitle",
+            type: "paragraph",
+            content: "Experience the power of dark design",
+            styles: {
+              fontSize: "1.5rem",
+              color: "rgba(255,255,255,0.8)",
+              marginBottom: "3rem",
+              fontWeight: "300",
+            },
+          },
+          {
+            id: "dark-cta",
+            type: "button",
+            content: "Explore Dark Mode",
+            styles: {
+              padding: "1.25rem 2.5rem",
+              fontSize: "1.125rem",
+              fontWeight: "600",
+              backgroundColor: "white",
+              color: "#1a1a1a",
+              border: "none",
+              borderRadius: "0.5rem",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              boxShadow: "0 8px 25px rgba(0,0,0,0.3)",
+            },
+          },
+        ],
+      },
+    ],
+  },
+
+  // Additional About Templates
+  {
+    id: "about-team",
+    name: "Team About",
+    description: "About section featuring team members",
+    category: "about",
+    thumbnail: "/placeholder.svg?height=120&width=200&text=Team+About",
+    popular: true,
+    tags: ["team", "about", "people"],
+    elements: [
+      {
+        id: "team-section",
+        type: "section",
+        content: "",
+        styles: {
+          padding: "5rem 2rem",
+          backgroundColor: "var(--color-background)",
+          textAlign: "center",
+        },
+        children: [
+          {
+            id: "team-title",
+            type: "heading",
+            content: "Meet Our Team",
+            styles: {
+              fontSize: "3rem",
+              fontWeight: "bold",
+              marginBottom: "1rem",
+              color: "var(--color-foreground)",
+            },
+          },
+          {
+            id: "team-subtitle",
+            type: "paragraph",
+            content: "The talented individuals behind our success",
+            styles: {
+              fontSize: "1.25rem",
+              color: "var(--color-muted-foreground)",
+              marginBottom: "4rem",
+              maxWidth: "600px",
+              margin: "0 auto 4rem auto",
+            },
+          },
+          {
+            id: "team-grid",
+            type: "grid",
+            content: "",
+            styles: {
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: "3rem",
+              maxWidth: "1000px",
+              margin: "0 auto",
+            },
+            responsiveStyles: {
+              desktop: { gridTemplateColumns: "repeat(3, 1fr)" },
+              tablet: { gridTemplateColumns: "repeat(2, 1fr)" },
+              mobile: { gridTemplateColumns: "1fr" },
+            },
+            children: [
+              {
+                id: "member-1",
+                type: "card",
+                content: "John Doe\nCEO & Founder",
+                styles: {
+                  padding: "2rem",
+                  backgroundColor: "var(--color-card)",
+                  borderRadius: "1rem",
+                  border: "1px solid var(--color-border)",
+                  textAlign: "center",
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                },
+              },
+              {
+                id: "member-2",
+                type: "card",
+                content: "Jane Smith\nLead Designer",
+                styles: {
+                  padding: "2rem",
+                  backgroundColor: "var(--color-card)",
+                  borderRadius: "1rem",
+                  border: "1px solid var(--color-border)",
+                  textAlign: "center",
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                },
+              },
+              {
+                id: "member-3",
+                type: "card",
+                content: "Mike Johnson\nLead Developer",
+                styles: {
+                  padding: "2rem",
+                  backgroundColor: "var(--color-card)",
+                  borderRadius: "1rem",
+                  border: "1px solid var(--color-border)",
+                  textAlign: "center",
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  // Additional Services Templates
+  {
+    id: "services-features",
+    name: "Feature Services",
+    description: "Services with feature highlights",
+    category: "services",
+    thumbnail: "/placeholder.svg?height=120&width=200&text=Feature+Services",
+    tags: ["features", "services", "highlights"],
+    elements: [
+      {
+        id: "features-section",
+        type: "section",
+        content: "",
+        styles: {
+          padding: "5rem 2rem",
+          backgroundColor: "var(--color-muted)",
+        },
+        children: [
+          {
+            id: "features-title",
+            type: "heading",
+            content: "Why Choose Us",
+            styles: {
+              fontSize: "3rem",
+              fontWeight: "bold",
+              marginBottom: "3rem",
+              color: "var(--color-foreground)",
+              textAlign: "center",
+            },
+          },
+          {
+            id: "features-list",
+            type: "list",
+            content: "✓ Fast & Reliable\n✓ 24/7 Support\n✓ Modern Technology\n✓ Affordable Pricing",
+            styles: {
+              maxWidth: "600px",
+              margin: "0 auto",
+              backgroundColor: "var(--color-card)",
+              padding: "3rem",
+              borderRadius: "1rem",
+              border: "1px solid var(--color-border)",
+              fontSize: "1.125rem",
+              lineHeight: "2",
+              color: "var(--color-foreground)",
+            },
+          },
+        ],
+      },
+    ],
+  },
+
+  // Full Page Templates
+  {
+    id: "landing-page",
+    name: "Complete Landing Page",
+    description: "Full landing page with all sections",
+    category: "full-page",
+    thumbnail: "/placeholder.svg?height=120&width=200&text=Landing+Page",
+    popular: true,
+    tags: ["landing", "complete", "full-page"],
+    elements: [
+      {
+        id: "landing-hero",
+        type: "section",
+        content: "",
+        styles: {
+          padding: "6rem 2rem",
+          background: "linear-gradient(135deg, var(--color-primary) 0%, var(--color-chart-1) 100%)",
+          textAlign: "center",
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          color: "white",
+        },
+        children: [
+          {
+            id: "landing-title",
+            type: "heading",
+            content: "Transform Your Business",
+            styles: {
+              fontSize: "4rem",
+              fontWeight: "bold",
+              marginBottom: "1.5rem",
+              color: "white",
+              textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+            },
+          },
+          {
+            id: "landing-subtitle",
+            type: "paragraph",
+            content: "The complete solution for modern businesses",
+            styles: {
+              fontSize: "1.5rem",
+              color: "rgba(255,255,255,0.9)",
+              marginBottom: "3rem",
+              maxWidth: "700px",
+            },
+          },
+          {
+            id: "landing-cta",
+            type: "button",
+            content: "Get Started Today",
+            styles: {
+              padding: "1.25rem 3rem",
+              fontSize: "1.25rem",
+              fontWeight: "600",
+              backgroundColor: "white",
+              color: "var(--color-primary)",
+              border: "none",
+              borderRadius: "0.75rem",
+              cursor: "pointer",
+              boxShadow: "0 8px 25px rgba(0,0,0,0.2)",
+            },
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: "portfolio-page",
+    name: "Portfolio Page",
+    description: "Complete portfolio showcase page",
+    category: "full-page",
+    thumbnail: "/placeholder.svg?height=120&width=200&text=Portfolio+Page",
+    tags: ["portfolio", "showcase", "creative"],
+    elements: [
+      {
+        id: "portfolio-hero",
+        type: "section",
+        content: "",
+        styles: {
+          padding: "4rem 2rem",
+          backgroundColor: "var(--color-background)",
+          textAlign: "center",
+        },
+        children: [
+          {
+            id: "portfolio-title",
+            type: "heading",
+            content: "Creative Portfolio",
+            styles: {
+              fontSize: "3.5rem",
+              fontWeight: "bold",
+              marginBottom: "1rem",
+              color: "var(--color-foreground)",
+            },
+          },
+          {
+            id: "portfolio-subtitle",
+            type: "paragraph",
+            content: "Showcasing innovative design and development",
+            styles: {
+              fontSize: "1.25rem",
+              color: "var(--color-muted-foreground)",
+              marginBottom: "3rem",
+            },
+          },
+        ],
+      },
+    ],
+  },
 ]
 
 export const getTemplatesByCategory = (category: Template["category"]) => {
@@ -605,3 +1013,16 @@ export const getTemplatesByCategory = (category: Template["category"]) => {
 }
 
 export const getAllTemplates = () => templates
+
+export const getPopularTemplates = () => {
+  return templates.filter((template) => template.popular)
+}
+
+export const searchTemplates = (query: string) => {
+  const lowercaseQuery = query.toLowerCase()
+  return templates.filter((template) => 
+    template.name.toLowerCase().includes(lowercaseQuery) ||
+    template.description.toLowerCase().includes(lowercaseQuery) ||
+    template.tags?.some(tag => tag.toLowerCase().includes(lowercaseQuery))
+  )
+}
