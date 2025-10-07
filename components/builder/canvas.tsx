@@ -5,7 +5,8 @@ import type React from "react"
 import { Button } from "@/components/ui/button"
 import type { Breakpoint, BuilderElement, DragData } from "@/lib/builder-types"
 import { Copy, Trash2 } from "lucide-react"
-import { useRef, useState } from "react"
+import { useRef, useState, useCallback, useEffect } from "react"
+import { useDrop } from "react-dnd"
 
 interface CanvasProps {
   elements: BuilderElement[]
@@ -21,6 +22,7 @@ interface CanvasProps {
   snapSettings: { enabled: boolean; gridSize: number; snapToElements: boolean; snapDistance: number }
   zoom?: number
   showGrid?: boolean
+  showPartitions?: boolean
 }
 
 export function Canvas({
@@ -37,12 +39,107 @@ export function Canvas({
   snapSettings,
   zoom = 100,
   showGrid = true,
+  showPartitions = false,
 }: CanvasProps) {
-  const [isDragOver, setIsDragOver] = useState(false)
   const [draggedElementId, setDraggedElementId] = useState<string | null>(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [isResizing, setIsResizing] = useState<string | null>(null)
-  const canvasRef = useRef<HTMLDivElement>(null)
+  const [canvasEl, setCanvasEl] = useState<HTMLDivElement | null>(null)
+
+  // Transient positions/sizes while dragging/resizing to avoid heavy global updates
+  const transientRef = useRef(new Map<string, { x?: number; y?: number; width?: number; height?: number }>())
+  const rafIdRef = useRef<number | null>(null)
+  const dragGroupRef = useRef<{
+    ids: string[]
+    startPositions: Map<string, { x: number; y: number }>
+    mouseStart: { x: number; y: number }
+  } | null>(null)
+  // Local tick to trigger at most one render per animation frame
+  const [, setRafTick] = useState(0)
+  const scheduleRerender = useCallback(() => {
+    if (rafIdRef.current != null) return
+    rafIdRef.current = window.requestAnimationFrame(() => {
+      rafIdRef.current = null
+      setRafTick((t) => (t + 1) % 1000000)
+    })
+  }, [])
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current)
+    }
+  }, [])
+
+  type ComponentDragItem = { type: "COMPONENT"; componentType: string }
+
+  const [{ isOver }, dropRef] = useDrop<
+    ComponentDragItem,
+    void,
+    { isOver: boolean }
+  >(() => ({
+    accept: "COMPONENT",
+    collect: (monitor) => ({ isOver: monitor.isOver({ shallow: true }) }),
+    drop: (item, monitor) => {
+      console.log('Drop event triggered:', item)
+      if (!canvasEl) {
+        console.warn('Canvas element not found')
+        return
+      }
+      
+      const client = monitor.getClientOffset()
+      if (!client) {
+        console.warn('Client offset not found')
+        return
+      }
+      
+      const rect = canvasEl.getBoundingClientRect()
+      const scale = zoom / 100
+      
+      // Calculate position with cursor at center of dropped element
+      let x = (client.x - rect.left) / scale
+      let y = (client.y - rect.top) / scale
+
+      // Snap into partitions if enabled
+      if (showPartitions) {
+        const headerH = 96
+        const footerH = 96
+        const canvasHeight = rect.height / scale
+        const sectionTop = headerH
+        const sectionBottom = canvasHeight - footerH
+        const mid = (sectionTop + sectionBottom) / 2
+        if (y < sectionTop) {
+          y = Math.max(8, y) // keep inside header
+        } else if (y > sectionBottom) {
+          y = Math.min(canvasHeight - 8, y) // keep inside footer
+        } else {
+          // inside section: snap roughly towards middle area a bit for convenience
+          if (Math.abs(y - mid) < 20) y = mid
+        }
+      }
+      
+      console.log('Drop position:', { x, y, scale })
+      
+      const newElement = createElementFromType(item.componentType)
+      const width = newElement.position?.width || 0
+      const height = newElement.position?.height || 0
+      
+      // Center the element on the cursor position
+      const centeredX = x - width / 2
+      const centeredY = y - height / 2
+      
+      // Apply grid snapping if enabled
+      const snappedX = snapSettings.enabled ? snapToGrid(centeredX, snapSettings.gridSize) : centeredX
+      const snappedY = snapSettings.enabled ? snapToGrid(centeredY, snapSettings.gridSize) : centeredY
+      
+      console.log('Adding element:', newElement.type)
+      onAddElement(newElement, { x: Math.max(0, snappedX), y: Math.max(0, snappedY) })
+    },
+  }), [canvasEl, zoom, snapSettings, snapToGrid, onAddElement, showPartitions])
+
+  const setCanvasNode = useCallback((node: HTMLDivElement | null) => {
+    console.log('Setting canvas node:', !!node)
+    setCanvasEl(node)
+    dropRef(node)
+  }, [dropRef])
 
   const createElementFromType = (type: string): BuilderElement => {
     const id = `${type}-${Date.now()}`
@@ -1380,6 +1477,18 @@ export function Canvas({
       position: elementTemplates[type]?.position || { x: 100, y: 100, width: 200, height: 50 },
       ...elementTemplates[type],
     }
+
+    // Build the element and ensure required fields like `type` are present
+    const element: BuilderElement = {
+      id,
+      type: type as BuilderElement["type"],
+      content: elementTemplates[type]?.content as string || "New Element",
+      styles: elementTemplates[type]?.styles || {},
+      responsiveStyles: elementTemplates[type]?.responsiveStyles || {},
+      position: elementTemplates[type]?.position || { x: 100, y: 100, width: 200, height: 50 },
+      animations: (elementTemplates[type] as any)?.animations,
+    }
+    return element
   }
 
   const getElementStyles = (element: BuilderElement): Record<string, any> => {
@@ -1388,39 +1497,7 @@ export function Canvas({
     return { ...baseStyles, ...responsiveStyles }
   }
 
-  const handleCanvasDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = "copy"
-    setIsDragOver(true)
-  }
-
-  const handleCanvasDragLeave = () => {
-    setIsDragOver(false)
-  }
-
-  const handleCanvasDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-
-    if (!canvasRef.current) return
-
-    const rect = canvasRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-
-    try {
-      const dragData: DragData = JSON.parse(e.dataTransfer.getData("application/json"))
-
-      if (dragData.type === "component" && dragData.componentType) {
-        const newElement = createElementFromType(dragData.componentType)
-        const snappedX = snapSettings.enabled ? snapToGrid(x, snapSettings.gridSize) : x
-        const snappedY = snapSettings.enabled ? snapToGrid(y, snapSettings.gridSize) : y
-        onAddElement(newElement, { x: snappedX, y: snappedY })
-      }
-    } catch (error) {
-      console.error("Error handling drop:", error)
-    }
-  }
+  // overlay uses `isOver` directly
 
   const handleElementMouseDown = (e: React.MouseEvent, elementId: string) => {
     if (e.button !== 0) return // Only left click
@@ -1431,25 +1508,72 @@ export function Canvas({
     e.preventDefault()
     e.stopPropagation()
 
-    const startX = e.clientX
-    const startY = e.clientY
-    const startElementX = element.position.x
-    const startElementY = element.position.y
+    if (!canvasEl) return
+    const rect = canvasEl.getBoundingClientRect()
+    const scale = zoom / 100
+    const startX = (e.clientX - rect.left) / scale
+    const startY = (e.clientY - rect.top) / scale
+    // Determine which elements are affected (multi-select drag support)
+    const idsToDrag = selectedElements.includes(elementId) && selectedElements.length > 1
+      ? selectedElements
+      : [elementId]
+
+    // Build start positions per element for delta-based movement
+    const startPositions = new Map<string, { x: number; y: number }>()
+    for (const id of idsToDrag) {
+      const el = elements.find((x) => x.id === id)
+      if (el?.position) startPositions.set(id, { x: el.position.x, y: el.position.y })
+    }
+
+    dragGroupRef.current = {
+      ids: idsToDrag,
+      startPositions,
+      mouseStart: { x: startX, y: startY },
+    }
 
     setDraggedElementId(elementId)
-    setDragOffset({ x: startX - startElementX, y: startY - startElementY })
 
     const handleMouseMove = (e: MouseEvent) => {
-      const newX = e.clientX - dragOffset.x
-      const newY = e.clientY - dragOffset.y
+      if (!canvasEl) return
+      const rect = canvasEl.getBoundingClientRect()
+      const scale = zoom / 100
+      const localX = (e.clientX - rect.left) / scale
+      const localY = (e.clientY - rect.top) / scale
+      const group = dragGroupRef.current
+      if (!group) return
+      const dx = localX - group.mouseStart.x
+      const dy = localY - group.mouseStart.y
 
-      const snappedX = snapSettings.enabled ? snapToGrid(newX, snapSettings.gridSize) : newX
-      const snappedY = snapSettings.enabled ? snapToGrid(newY, snapSettings.gridSize) : newY
-
-      onUpdateElementPosition(elementId, { x: Math.max(0, snappedX), y: Math.max(0, snappedY) })
+      for (const id of group.ids) {
+        const start = group.startPositions.get(id)
+        if (!start) continue
+        const newX = start.x + dx
+        const newY = start.y + dy
+        const snappedX = snapSettings.enabled ? snapToGrid(newX, snapSettings.gridSize) : newX
+        const snappedY = snapSettings.enabled ? snapToGrid(newY, snapSettings.gridSize) : newY
+        const prev = transientRef.current.get(id) || {}
+        transientRef.current.set(id, { ...prev, x: Math.max(0, snappedX), y: Math.max(0, snappedY) })
+      }
+      scheduleRerender()
     }
 
     const handleMouseUp = () => {
+      // Commit final position(s) once
+      const group = dragGroupRef.current
+      if (group) {
+        for (const id of group.ids) {
+          const start = group.startPositions.get(id)
+          const last = transientRef.current.get(id)
+          if (start && (last?.x != null || last?.y != null)) {
+            onUpdateElementPosition(id, {
+              x: last?.x ?? start.x,
+              y: last?.y ?? start.y,
+            })
+          }
+          transientRef.current.delete(id)
+        }
+      }
+      dragGroupRef.current = null
       setDraggedElementId(null)
       document.removeEventListener("mousemove", handleMouseMove)
       document.removeEventListener("mouseup", handleMouseUp)
@@ -1457,6 +1581,104 @@ export function Canvas({
 
     document.addEventListener("mousemove", handleMouseMove)
     document.addEventListener("mouseup", handleMouseUp)
+  }
+
+  // Resizing support for Basic Elements
+  const RESIZABLE_TYPES = new Set([
+    "heading",
+    "paragraph",
+    "image",
+    "button",
+    "card",
+    "quote",
+    "separator",
+    "list",
+  ])
+
+  const handleResizeMouseDown = (
+    e: React.MouseEvent,
+    elementId: string,
+    direction: "e" | "s" | "se" | "n" | "w" | "ne" | "nw" | "sw"
+  ) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const element = elements.find((el) => el.id === elementId)
+    if (!element?.position) return
+    setIsResizing(elementId)
+
+    const startPos = { ...element.position }
+    if (!canvasEl) return
+    const rect = canvasEl.getBoundingClientRect()
+    const scale = zoom / 100
+
+    const onMouseMove = (ev: MouseEvent) => {
+      const localX = (ev.clientX - rect.left) / scale
+      const localY = (ev.clientY - rect.top) / scale
+      let nextWidth = startPos.width || 0
+      let nextHeight = startPos.height || 0
+      let nextX = startPos.x
+      let nextY = startPos.y
+      const isE = direction === "e" || direction === "se" || direction === "ne"
+      const isS = direction === "s" || direction === "se" || direction === "sw"
+      const isW = direction === "w" || direction === "sw" || direction === "nw"
+      const isN = direction === "n" || direction === "ne" || direction === "nw"
+
+      if (isE) {
+        nextWidth = Math.max(20, localX - startPos.x)
+      }
+      if (isS) {
+        nextHeight = Math.max(20, localY - startPos.y)
+      }
+      if (isW) {
+        const rawW = Math.max(20, startPos.x + (startPos.width || 0) - localX)
+        const snappedW = snapSettings.enabled && startPos.width !== undefined
+          ? snapToGrid(rawW, snapSettings.gridSize)
+          : rawW
+        nextWidth = snappedW
+        nextX = startPos.x + (startPos.width! - snappedW)
+      }
+      if (isN) {
+        const rawH = Math.max(20, startPos.y + (startPos.height || 0) - localY)
+        const snappedH = snapSettings.enabled && startPos.height !== undefined
+          ? snapToGrid(rawH, snapSettings.gridSize)
+          : rawH
+        nextHeight = snappedH
+        nextY = startPos.y + (startPos.height! - snappedH)
+      }
+      const snappedW = snapSettings.enabled && startPos.width !== undefined
+        ? snapToGrid(nextWidth, snapSettings.gridSize)
+        : nextWidth
+      const snappedH = snapSettings.enabled && startPos.height !== undefined
+        ? snapToGrid(nextHeight, snapSettings.gridSize)
+        : nextHeight
+      // Update transient size/position and render on next animation frame (no global commit yet)
+      const prev = transientRef.current.get(elementId) || {}
+      const payload: any = { width: snappedW, height: snappedH }
+      if (isW) payload.x = Math.max(0, nextX)
+      if (isN) payload.y = Math.max(0, nextY)
+      transientRef.current.set(elementId, { ...prev, ...payload })
+      scheduleRerender()
+    }
+
+    const onMouseUp = () => {
+      setIsResizing(null)
+      // Commit final size/position once
+      const last = transientRef.current.get(elementId)
+      if (last?.width != null || last?.height != null || last?.x != null || last?.y != null) {
+        onUpdateElementPosition(elementId, {
+          x: last?.x ?? startPos.x,
+          y: last?.y ?? startPos.y,
+          width: last?.width ?? startPos.width,
+          height: last?.height ?? startPos.height,
+        })
+      }
+      transientRef.current.delete(elementId)
+      document.removeEventListener("mousemove", onMouseMove)
+      document.removeEventListener("mouseup", onMouseUp)
+    }
+
+    document.addEventListener("mousemove", onMouseMove)
+    document.addEventListener("mouseup", onMouseUp)
   }
 
   const handleElementClick = (e: React.MouseEvent, elementId: string) => {
@@ -1473,20 +1695,33 @@ export function Canvas({
     const isSelected = selectedElements.includes(element.id)
     const elementStyles = getElementStyles(element)
     const position = element.position || { x: 0, y: 0, width: 200, height: 50 }
+    const transient = transientRef.current.get(element.id)
+
+    // Use transform for dragging (GPU-accelerated) and direct width/height for resizing
+    const dx = transient?.x != null ? (transient.x - position.x) : 0
+    const dy = transient?.y != null ? (transient.y - position.y) : 0
+    const finalWidth = transient?.width != null ? transient.width : position.width
+    const finalHeight = transient?.height != null ? transient.height : position.height
+
+    const isActiveMove = draggedElementId === element.id
+    const isActiveResize = isResizing === element.id
 
     return (
       <div
         key={element.id}
         className={`
-          absolute cursor-pointer transition-all duration-200 rounded-md group
+          absolute cursor-pointer rounded-md group
+          ${isActiveMove || isActiveResize ? "transition-none" : "transition-all duration-200"}
           ${isSelected ? "ring-2 ring-primary bg-element-selected" : "hover:bg-element-hover"}
-          ${draggedElementId === element.id ? "z-50" : "z-10"}
+          ${isActiveMove ? "z-50" : "z-10"}
         `}
         style={{
           left: position.x,
           top: position.y,
-          width: position.width,
-          height: position.height,
+          width: finalWidth,
+          height: finalHeight,
+          transform: dx !== 0 || dy !== 0 ? `translate(${dx}px, ${dy}px)` : undefined,
+          willChange: dx !== 0 || dy !== 0 ? "transform" : isActiveResize ? "width, height" : undefined,
         }}
         onClick={(e) => handleElementClick(e, element.id)}
         onMouseDown={(e) => handleElementMouseDown(e, element.id)}
@@ -1920,7 +2155,7 @@ export function Canvas({
       <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
         <div className="text-center">
           <h1 className="text-lg font-bold mb-1">{element.content}</h1>
-          <p className="text-sm text-muted-foreground">Welcome to our website</p>
+          <p className="text-sm text-muted-foreground align-center">Welcome to our website</p>
         </div>
       </div>
     )}
@@ -2715,7 +2950,7 @@ export function Canvas({
         </div>
 
         {/* Element label and controls */}
-        {isSelected && (
+        {isSelected && RESIZABLE_TYPES.has(element.type) && (
           <>
             <div className="absolute -top-6 left-0 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md flex items-center gap-1 z-20">
               <span>{element.type}</span>
@@ -2746,10 +2981,41 @@ export function Canvas({
               </Button>
             </div>
 
-            {/* Resize handles */}
-            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-se-resize z-20" />
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-2 bg-primary rounded cursor-s-resize z-20" />
-            <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-3 bg-primary rounded cursor-e-resize z-20" />
+            {/* Resize handles: corners */}
+            <div
+              className="absolute -top-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-nw-resize z-20"
+              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "nw")}
+            />
+            <div
+              className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-ne-resize z-20"
+              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "ne")}
+            />
+            <div
+              className="absolute -bottom-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-sw-resize z-20"
+              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "sw")}
+            />
+            <div
+              className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-se-resize z-20"
+              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "se")}
+            />
+
+            {/* Resize handles: edges */}
+            <div
+              className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-2 bg-primary rounded cursor-n-resize z-20"
+              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "n")}
+            />
+            <div
+              className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-2 bg-primary rounded cursor-s-resize z-20"
+              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "s")}
+            />
+            <div
+              className="absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-3 bg-primary rounded cursor-w-resize z-20"
+              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "w")}
+            />
+            <div
+              className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-3 bg-primary rounded cursor-e-resize z-20"
+              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "e")}
+            />
           </>
         )}
       </div>
@@ -2758,12 +3024,9 @@ export function Canvas({
 
   return (
     <div
-      ref={canvasRef}
-      className={`relative w-full h-full min-h-[800px] bg-gradient-to-br from-canvas via-canvas to-canvas/95 overflow-auto transition-all duration-300 ${isDragOver ? "bg-drop-zone/20" : ""}`}
+      ref={setCanvasNode}
+      className={`relative w-full h-full min-h-[800px] bg-gradient-to-br from-canvas via-canvas to-canvas/95 overflow-auto transition-all duration-300 ${isOver ? "bg-drop-zone/20" : ""}`}
       onClick={handleCanvasClick}
-      onDragOver={handleCanvasDragOver}
-      onDragLeave={handleCanvasDragLeave}
-      onDrop={handleCanvasDrop}
       style={{ 
         transform: `scale(${zoom / 100})`,
         transformOrigin: 'top left',
@@ -2771,6 +3034,10 @@ export function Canvas({
         height: `${100 / (zoom / 100)}%`,
       }}
     >
+      {/* Partitions: interactive hover & boundaries (visible only when toggled) */}
+      {showPartitions && (
+        <PartitionsOverlay />
+      )}
       {/* Enhanced Grid overlay */}
       {showGrid && (
         <div
@@ -2814,7 +3081,7 @@ export function Canvas({
       ))}
 
       {/* Enhanced Drop zone indicator */}
-      {isDragOver && (
+      {isOver && (
         <div className="absolute inset-4 border-2 border-dashed border-primary rounded-xl flex items-center justify-center text-primary bg-gradient-to-br from-drop-zone/20 to-drop-zone/10 backdrop-blur-sm pointer-events-none z-20 animate-in zoom-in duration-300">
           <div className="text-center">
             <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 mx-auto animate-bounce">
@@ -2833,6 +3100,111 @@ export function Canvas({
         <div className="bg-muted/80 backdrop-blur-sm px-3 py-2 rounded-lg text-xs text-muted-foreground border border-border">
           {elements.length} elements • {currentBreakpoint} view
         </div>
+      </div>
+    </div>
+  )
+}
+
+// Lightweight internal component for partitions overlay
+function PartitionsOverlay() {
+  const [hoverRegion, setHoverRegion] = useState<null | "header" | "section" | "footer" | "h-bottom" | "s-top" | "s-bottom" | "f-top">(null)
+
+  const headerH = 96
+  const footerH = 96
+
+  const boundaryBtn = (style: React.CSSProperties, key: string) => (
+    <button
+      key={key}
+      type="button"
+      className="absolute -translate-x-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded-md bg-primary/10 text-primary border border-primary/30 shadow-sm hover:bg-primary/20"
+      style={style}
+      onMouseEnter={() => setHoverRegion(null)}
+      onClick={(e) => {
+        e.stopPropagation()
+        // TODO: Implement actual section split/insert logic.
+        // For now, no-op placeholder. This is where we'd add a new divider row or similar.
+      }}
+    >
+      + Add section
+    </button>
+  )
+
+  return (
+    <div className="absolute inset-0 z-0">
+      {/* Regions for hover visual only */}
+      <div
+        className="absolute left-0 right-0"
+        style={{ top: 0, height: `${headerH}px` }}
+        onMouseEnter={() => setHoverRegion("header")}
+        onMouseLeave={() => setHoverRegion(null)}
+      >
+        {hoverRegion === "header" && (
+          <div className="absolute inset-0 bg-emerald-400/10 border border-emerald-400/30">
+            <div className="absolute top-1 left-2 text-[11px] text-emerald-400">Header</div>
+          </div>
+        )}
+      </div>
+      <div
+        className="absolute left-0 right-0"
+        style={{ top: `${headerH}px`, bottom: `${footerH}px` }}
+        onMouseEnter={() => setHoverRegion("section")}
+        onMouseLeave={() => setHoverRegion(null)}
+      >
+        {hoverRegion === "section" && (
+          <div className="absolute inset-0 bg-blue-400/10 border border-blue-400/30">
+            <div className="absolute top-1 left-2 text-[11px] text-blue-400">Section</div>
+          </div>
+        )}
+      </div>
+      <div
+        className="absolute left-0 right-0"
+        style={{ bottom: 0, height: `${footerH}px` }}
+        onMouseEnter={() => setHoverRegion("footer")}
+        onMouseLeave={() => setHoverRegion(null)}
+      >
+        {hoverRegion === "footer" && (
+          <div className="absolute inset-0 bg-emerald-400/10 border border-emerald-400/30">
+            <div className="absolute top-1 left-2 text-[11px] text-emerald-400">Footer</div>
+          </div>
+        )}
+      </div>
+
+      {/* Boundary hotspots that reveal +Add section button on hover */}
+      {/* Header bottom */}
+      <div
+        className="absolute left-0 right-0"
+        style={{ top: `${headerH}px`, height: 10 }}
+        onMouseEnter={() => setHoverRegion("h-bottom")}
+        onMouseLeave={() => setHoverRegion(null)}
+      >
+        {hoverRegion === "h-bottom" && boundaryBtn({ left: '50%', top: 0 }, 'h-bottom')}
+      </div>
+      {/* Section top */}
+      <div
+        className="absolute left-0 right-0"
+        style={{ top: `${headerH}px`, height: 10 }}
+        onMouseEnter={() => setHoverRegion("s-top")}
+        onMouseLeave={() => setHoverRegion(null)}
+      >
+        {hoverRegion === "s-top" && boundaryBtn({ left: '50%', top: 0 }, 's-top')}
+      </div>
+      {/* Section bottom */}
+      <div
+        className="absolute left-0 right-0"
+        style={{ bottom: `${footerH}px`, height: 10 }}
+        onMouseEnter={() => setHoverRegion("s-bottom")}
+        onMouseLeave={() => setHoverRegion(null)}
+      >
+        {hoverRegion === "s-bottom" && boundaryBtn({ left: '50%', bottom: 0 }, 's-bottom')}
+      </div>
+      {/* Footer top */}
+      <div
+        className="absolute left-0 right-0"
+        style={{ bottom: `${footerH}px`, height: 10 }}
+        onMouseEnter={() => setHoverRegion("f-top")}
+        onMouseLeave={() => setHoverRegion(null)}
+      >
+        {hoverRegion === "f-top" && boundaryBtn({ left: '50%', bottom: 0 }, 'f-top')}
       </div>
     </div>
   )

@@ -46,9 +46,11 @@ export function useBuilderState() {
 
   const addElement = useCallback((element: BuilderElement, position?: { x: number; y: number }) => {
     setElements((prev) => {
+      const basePosition = element.position || { x: 100, y: 100, width: 200, height: 50 }
+      const mergedPosition = position ? { ...basePosition, ...position } : basePosition
       const newElement = {
         ...element,
-        position: position || element.position || { x: 100, y: 100, width: 200, height: 50 },
+        position: mergedPosition,
       }
       const newElements = [...prev, newElement]
       

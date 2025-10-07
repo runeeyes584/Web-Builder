@@ -235,21 +235,51 @@
   }
 
   /* Custom scrollbar */
+  /* Slightly thicker with a soft, constant glow */
+  .custom-scrollbar {
+    /* Firefox */
+    scrollbar-width: auto; /* wider than thin */
+    scrollbar-color: var(--color-primary) color-mix(in oklch, var(--color-muted) 60%, transparent);
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
+    width: 10px;
+    height: 10px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: var(--color-muted);
-    border-radius: 3px;
+    background: color-mix(in oklch, var(--color-muted) 60%, transparent);
+    border-radius: 9999px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: var(--color-primary);
-    border-radius: 3px;
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--color-primary) 85%, transparent) 0%,
+      var(--color-primary) 100%
+    );
+    border-radius: 9999px;
+    /* Subtle, always-on glow */
+    box-shadow: 0 0 8px color-mix(in oklch, var(--color-primary) 45%, transparent);
+    /* A thin border to keep definition on dark backgrounds */
+    border: 2px solid color-mix(in oklch, var(--color-muted) 40%, transparent);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: var(--color-primary)/80;
+    box-shadow: 0 0 10px color-mix(in oklch, var(--color-primary) 55%, transparent);
+  }
+
+  /* Custom drag animations */
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
   }
 }

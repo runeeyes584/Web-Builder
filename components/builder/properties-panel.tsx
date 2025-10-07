@@ -2208,8 +2208,10 @@ export function PropertiesPanel({
                         if (selectedElement) {
                           onUpdateElement(selectedElement.id, {
                             animations: {
-                              ...selectedElement.animations,
-                              type: value as any,
+                              type: value as "fadeIn" | "slideIn" | "zoomIn" | "bounce" | "pulse" | "shake" | "none",
+                              duration: selectedElement.animations?.duration || 600,
+                              delay: selectedElement.animations?.delay || 0,
+                              direction: selectedElement.animations?.direction,
                             }
                           })
                         }
@@ -2237,8 +2239,10 @@ export function PropertiesPanel({
                         if (selectedElement) {
                           onUpdateElement(selectedElement.id, {
                             animations: {
-                              ...selectedElement.animations,
+                              type: selectedElement.animations?.type || "none",
                               duration: value,
+                              delay: selectedElement.animations?.delay || 0,
+                              direction: selectedElement.animations?.direction,
                             }
                           })
                         }
@@ -2260,8 +2264,10 @@ export function PropertiesPanel({
                         if (selectedElement) {
                           onUpdateElement(selectedElement.id, {
                             animations: {
-                              ...selectedElement.animations,
+                              type: selectedElement.animations?.type || "none",
+                              duration: selectedElement.animations?.duration || 600,
                               delay: value,
+                              direction: selectedElement.animations?.direction,
                             }
                           })
                         }
