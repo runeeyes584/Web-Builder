@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import type { Breakpoint, BuilderElement } from "@/lib/builder-types"
-import { Copy, Download, Eye, Grid, Layers, Monitor, Moon, Redo, RotateCcw, Save, Smartphone, Sun, Tablet, Undo, ZoomIn, ZoomOut, Layout } from "lucide-react"
+import { Copy, Download, Eye, Grid, Layers, Layout, Monitor, Moon, Redo, RotateCcw, Smartphone, Sun, Tablet, Undo, ZoomIn, ZoomOut } from "lucide-react"
 import { useState } from "react"
 import { ExportModal } from "./export-modal"
 import { PreviewModal } from "./preview-modal"
@@ -206,10 +206,6 @@ export function TopToolbar({
             <Button variant="outline" size="sm" onClick={() => setShowExport(true)} className="bg-primary/5 hover:bg-primary/10">
               <Download className="w-4 h-4 mr-2" />
               Export
-            </Button>
-            <Button variant="outline" size="sm" className="bg-primary/5 hover:bg-primary/10">
-              <Save className="w-4 h-4 mr-2" />
-              Save
             </Button>
           </div>
 

@@ -315,6 +315,41 @@
     box-shadow: 0 0 10px color-mix(in oklch, var(--color-primary) 55%, transparent);
   }
 
+  /* Properties panel tab scroll - Enhanced */
+  .properties-tab-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-primary) color-mix(in oklch, var(--color-muted) 40%, transparent);
+  }
+
+  .properties-tab-scroll::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .properties-tab-scroll::-webkit-scrollbar-track {
+    background: color-mix(in oklch, var(--color-muted) 40%, transparent);
+    border-radius: 3px;
+  }
+
+  .properties-tab-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklch, var(--color-primary) 85%, transparent) 0%,
+      var(--color-primary) 100%
+    );
+    border-radius: 3px;
+    border: 1px solid color-mix(in oklch, var(--color-muted) 30%, transparent);
+    box-shadow: 0 0 4px color-mix(in oklch, var(--color-primary) 30%, transparent);
+  }
+
+  .properties-tab-scroll::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+      90deg,
+      var(--color-primary) 0%,
+      color-mix(in oklch, var(--color-primary) 85%, transparent) 100%
+    );
+    box-shadow: 0 0 6px color-mix(in oklch, var(--color-primary) 40%, transparent);
+  }
+
   /* Custom drag animations */
   @keyframes spin-slow {
     from {
@@ -327,5 +362,56 @@
 
   .animate-spin-slow {
     animation: spin-slow 3s linear infinite;
+  }
+
+  /* Ensure dark mode works properly */
+  html {
+    color-scheme: dark;
+  }
+  
+  html:not(.dark) {
+    color-scheme: light;
+  }
+  
+  /* Force background colors */
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  /* Light mode override */
+  :root:not(.dark) {
+    --color-background: oklch(0.98 0 0);
+    --color-foreground: oklch(0.15 0 0);
+    --color-card: oklch(1 0 0);
+    --color-card-foreground: oklch(0.15 0 0);
+    --color-popover: oklch(1 0 0);
+    --color-popover-foreground: oklch(0.15 0 0);
+    --color-primary: oklch(0.6 0.15 264);
+    --color-primary-foreground: oklch(0.98 0 0);
+    --color-secondary: oklch(0.95 0 0);
+    --color-secondary-foreground: oklch(0.15 0 0);
+    --color-muted: oklch(0.95 0 0);
+    --color-muted-foreground: oklch(0.45 0 0);
+    --color-accent: oklch(0.95 0 0);
+    --color-accent-foreground: oklch(0.15 0 0);
+    --color-destructive: oklch(0.6 0.2 25);
+    --color-destructive-foreground: oklch(0.98 0 0);
+    --color-border: oklch(0.9 0 0);
+    --color-input: oklch(0.9 0 0);
+    --color-ring: oklch(0.6 0.15 264);
+    --color-sidebar: oklch(0.96 0 0);
+    --color-sidebar-foreground: oklch(0.2 0 0);
+    --color-sidebar-primary: oklch(0.6 0.15 264);
+    --color-sidebar-primary-foreground: oklch(0.98 0 0);
+    --color-sidebar-accent: oklch(0.92 0 0);
+    --color-sidebar-accent-foreground: oklch(0.2 0 0);
+    --color-sidebar-border: oklch(0.85 0 0);
+    --color-sidebar-ring: oklch(0.6 0.15 264);
+    --color-canvas: oklch(0.98 0 0);
+    --color-canvas-grid: oklch(0.9 0 0);
+    --color-element-hover: oklch(0.6 0.15 264 / 0.1);
+    --color-element-selected: oklch(0.6 0.15 264 / 0.2);
+    --color-drop-zone: oklch(0.6 0.15 264 / 0.3);
   }
 }

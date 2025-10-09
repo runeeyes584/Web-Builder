@@ -5,14 +5,13 @@ import { ComponentLibrary } from "@/components/builder/component-library"
 import { LayersPanel } from "@/components/builder/layers-panel"
 import { PropertiesPanel } from "@/components/builder/properties-panel"
 import { TopToolbar } from "@/components/builder/top-toolbar"
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { useBuilderState } from "@/hooks/use-builder-state"
 import type { BuilderElement } from "@/lib/builder-types"
 import { componentCategories } from "@/lib/component-categories"
 import { useEffect, useState } from "react"
-import { DndProvider } from "react-dnd"
+import { DndProvider, useDragLayer } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
-import { useDragLayer } from "react-dnd"
 
 export default function WebsiteBuilder() {
   const {
@@ -41,6 +40,24 @@ export default function WebsiteBuilder() {
   const [showGrid, setShowGrid] = useState(true)
   const [showLayers, setShowLayers] = useState(false)
   const [showPartitions, setShowPartitions] = useState(false)
+
+  // Load dark mode preference from localStorage
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem('darkMode')
+    if (savedDarkMode !== null) {
+      setIsDarkMode(JSON.parse(savedDarkMode))
+    }
+  }, [])
+
+  // Apply dark mode to HTML and save preference
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode))
+  }, [isDarkMode])
   // Custom drag layer for smoother preview
   const DragLayer: React.FC = () => {
     const { isDragging, itemType, item, currentOffset } = useDragLayer((monitor) => ({

@@ -181,41 +181,45 @@ export function PropertiesPanel({
         )}
       </div>
 
-      {/* Enhanced Tab Navigation */}
-      <div className="flex border-b border-sidebar-border bg-gradient-to-r from-sidebar-accent/50 to-transparent">
-        {[
-          { id: "content", label: "Content", icon: Type },
-          { id: "style", label: "Style", icon: Palette },
-          { id: "layout", label: "Layout", icon: Layout },
-          { id: "effects", label: "Effects", icon: Shadow },
-          { id: "animations", label: "Animate", icon: Zap },
-          { id: "advanced", label: "Advanced", icon: Settings },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`flex-1 p-3 text-xs font-medium transition-all duration-200 relative ${
-              activeTab === tab.id
-                ? "bg-sidebar-accent text-sidebar-accent-foreground border-b-2 border-primary shadow-sm"
-                : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/30"
-            }`}
-          >
-            <tab.icon className="w-3 h-3 mx-auto mb-1" />
-            {tab.label}
-            {activeTab === tab.id && (
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>
-            )}
-          </button>
-        ))}
+      {/* Enhanced Tab Navigation with Horizontal Scroll */}
+      <div className="border-b border-sidebar-border bg-gradient-to-r from-sidebar-accent/50 to-transparent overflow-x-auto properties-tab-scroll">
+        <div className="flex min-w-max">
+          {[
+            { id: "content", label: "Content", icon: Type },
+            { id: "style", label: "Style", icon: Palette },
+            { id: "layout", label: "Layout", icon: Layout },
+            { id: "effects", label: "Effects", icon: Shadow },
+            { id: "animations", label: "Animate", icon: Zap },
+            { id: "advanced", label: "Advanced", icon: Settings },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex-shrink-0 px-3 py-2 text-xs font-medium transition-all duration-200 relative min-w-[60px] ${
+                activeTab === tab.id
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground border-b-2 border-primary shadow-sm"
+                  : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/30"
+              }`}
+            >
+              <div className="flex flex-col items-center gap-1">
+                <tab.icon className="w-3 h-3" />
+                <span className="text-[10px] leading-tight">{tab.label}</span>
+              </div>
+              {activeTab === tab.id && (
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        <div className="p-4 space-y-6">
+        <div className="p-3 space-y-4">
           {/* Content Tab */}
           {activeTab === "content" && (
             <>
               <div>
-                <Label className="text-sm font-medium mb-3 block">Content</Label>
+                <Label className="text-sm font-medium mb-2 block">Content</Label>
                 {selectedElement.type === "image" ? (
                   <div className="space-y-3">
                     <div>
@@ -224,7 +228,7 @@ export function PropertiesPanel({
                         placeholder="https://example.com/image.jpg"
                         value={selectedElement.content}
                         onChange={(e) => updateElementContent(e.target.value)}
-                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                        className="bg-sidebar-accent border-sidebar-border mt-1 text-xs"
                       />
                     </div>
                     <div>
