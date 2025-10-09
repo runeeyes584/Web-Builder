@@ -50,6 +50,52 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Fallback for custom CSS variables */
+  .bg-element-hover {
+    background-color: var(--color-element-hover, rgba(59, 130, 246, 0.1));
+  }
+  
+  .bg-element-selected {
+    background-color: var(--color-element-selected, rgba(59, 130, 246, 0.2));
+  }
+  
+  /* Ensure all Tailwind classes work properly */
+  .bg-card {
+    background-color: var(--color-card, #1f2937);
+  }
+  
+  .bg-canvas {
+    background-color: var(--color-canvas, #0f172a);
+  }
+  
+  .bg-sidebar {
+    background-color: var(--color-sidebar, #111827);
+  }
+  
+  .text-card-foreground {
+    color: var(--color-card-foreground, #f9fafb);
+  }
+  
+  .text-muted-foreground {
+    color: var(--color-muted-foreground, #9ca3af);
+  }
+  
+  .border-border {
+    border-color: var(--color-border, #374151);
+  }
+  
+  .bg-primary {
+    background-color: var(--color-primary, #3b82f6);
+  }
+  
+  .text-primary {
+    color: var(--color-primary, #3b82f6);
+  }
+  
+  .bg-muted {
+    background-color: var(--color-muted, #374151);
+  }
 
   /* Enhanced canvas grid pattern */
   .canvas-grid {

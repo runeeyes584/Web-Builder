@@ -3,9 +3,9 @@
 import type React from "react"
 
 import { Button } from "@/components/ui/button"
-import type { Breakpoint, BuilderElement, DragData } from "@/lib/builder-types"
+import type { Breakpoint, BuilderElement } from "@/lib/builder-types"
 import { Copy, Trash2 } from "lucide-react"
-import { useRef, useState, useCallback, useEffect } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useDrop } from "react-dnd"
 
 interface CanvasProps {
@@ -1583,8 +1583,9 @@ export function Canvas({
     document.addEventListener("mouseup", handleMouseUp)
   }
 
-  // Resizing support for Basic Elements
+  // Resizing support for all Elements
   const RESIZABLE_TYPES = new Set([
+    // Basic Elements
     "heading",
     "paragraph",
     "image",
@@ -1593,6 +1594,126 @@ export function Canvas({
     "quote",
     "separator",
     "list",
+    // Layout
+    "section",
+    "grid",
+    "navigation",
+    "footer",
+    "header",
+    "sidebar",
+    // Forms & Inputs
+    "form",
+    "input",
+    "textarea",
+    "select",
+    "checkbox",
+    "radio",
+    "switch",
+    // Media & Icons
+    "video",
+    "audio",
+    "gallery",
+    "icon",
+    "badge",
+    "avatar",
+    // Interactive
+    "modal",
+    "tooltip",
+    "dropdown",
+    "tabs",
+    "accordion",
+    "carousel",
+    // Data Display
+    "table",
+    "chart",
+    "progress",
+    "timeline",
+    "stats",
+    "counter",
+    // E-commerce
+    "product-card",
+    "price",
+    "rating",
+    "cart",
+    "checkout",
+    // Social & Contact
+    "social-links",
+    "contact-info",
+    "map",
+    "newsletter",
+    "team",
+    "testimonial",
+    // Advanced UI
+    "calendar",
+    "search-bar",
+    "filter",
+    "breadcrumb",
+    "pagination",
+    "spinner",
+    "skeleton",
+    "alert",
+    "toast",
+    "drawer",
+    // Content & Text
+    "code-block",
+    "markdown",
+    "rich-text",
+    "typography",
+    "link",
+    "tag",
+    "label",
+    // File & Media
+    "file-upload",
+    "file-download",
+    "pdf-viewer",
+    "document",
+    "folder",
+    "image-gallery",
+    "video-gallery",
+    "media-player",
+    // Navigation & Menu
+    "menu",
+    "tab-nav",
+    "side-menu",
+    "mobile-menu",
+    "back-button",
+    "home-button",
+    // Feedback & Status
+    "loading",
+    "progress-ring",
+    "status-badge",
+    "notification",
+    "alert-banner",
+    "success-message",
+    "error-message",
+    "warning-message",
+    // Utility & Tools
+    "divider",
+    "spacer",
+    "container",
+    "wrapper",
+    "flexbox",
+    "grid-container",
+    "center",
+    "stack",
+    // Business & Marketing
+    "pricing-table",
+    "feature-list",
+    "faq",
+    "blog-post",
+    "case-study",
+    "cta",
+    "hero",
+    "about",
+    // Forms & Validation
+    "contact-form",
+    "newsletter-signup",
+    "login-form",
+    "registration-form",
+    "survey-form",
+    "order-form",
+    "booking-form",
+    "feedback-form",
   ])
 
   const handleResizeMouseDown = (
@@ -1712,7 +1833,7 @@ export function Canvas({
         className={`
           absolute cursor-pointer rounded-md group
           ${isActiveMove || isActiveResize ? "transition-none" : "transition-all duration-200"}
-          ${isSelected ? "ring-2 ring-primary bg-element-selected" : "hover:bg-element-hover"}
+          ${isSelected ? "ring-2 ring-primary bg-primary/20" : "hover:bg-primary/10"}
           ${isActiveMove ? "z-50" : "z-10"}
         `}
         style={{
