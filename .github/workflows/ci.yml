@@ -1,0 +1,84 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: web_builder_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: 'npm'
+        cache-dependency-path: server/package-lock.json
+    
+    - name: Install backend dependencies
+      working-directory: ./server
+      run: npm ci
+    
+    - name: Setup test database
+      working-directory: ./server
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/web_builder_test
+      run: |
+        npx prisma migrate dev --name init
+        npx prisma generate
+    
+    - name: Run backend linting
+      working-directory: ./server
+      run: npm run lint
+    
+    - name: Run backend type check
+      working-directory: ./server
+      run: npm run type-check
+    
+    - name: Build backend
+      working-directory: ./server
+      run: npm run build
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: 'npm'
+        cache-dependency-path: client/package-lock.json
+    
+    - name: Install frontend dependencies
+      working-directory: ./client
+      run: npm ci
+    
+    - name: Run frontend linting
+      working-directory: ./client
+      run: npm run lint
+    
+    - name: Build frontend
+      working-directory: ./client
+      run: npm run build
