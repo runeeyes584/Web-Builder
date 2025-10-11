@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import type { Breakpoint, BuilderElement } from "@/lib/builder-types"
-import { Copy, Download, Eye, Grid, Layers, Layout, Monitor, Moon, Redo, RotateCcw, Smartphone, Sun, Tablet, Undo, ZoomIn, ZoomOut } from "lucide-react"
+import { Copy, Download, Eye, Grid, Layers, Monitor, Moon, Redo, RotateCcw, Smartphone, Sun, Tablet, Undo, ZoomIn, ZoomOut } from "lucide-react"
 import { useState } from "react"
 import { ExportModal } from "./export-modal"
 import { PreviewModal } from "./preview-modal"
@@ -28,8 +28,7 @@ interface TopToolbarProps {
   showLayers?: boolean
   onLayersToggle?: (show: boolean) => void
   onRotateSelected?: () => void
-  showPartitions?: boolean
-  onPartitionsToggle?: (show: boolean) => void
+  
 }
 
 export function TopToolbar({
@@ -52,17 +51,15 @@ export function TopToolbar({
   showLayers = false,
   onLayersToggle,
   onRotateSelected,
-  showPartitions = false,
-  onPartitionsToggle,
 }: TopToolbarProps) {
   const [showPreview, setShowPreview] = useState(false)
   const [showExport, setShowExport] = useState(false)
 
   return (
     <>
-      <div className="h-16 bg-gradient-to-r from-card via-card to-card/95 border-b border-border flex items-center justify-between px-4 backdrop-blur-sm overflow-hidden">
+      <div className="h-16 bg-gradient-to-r from-card via-card to-card/95 border-b border-border grid grid-cols-3 items-center gap-4 px-4 backdrop-blur-sm overflow-hidden">
         {/* Left Section - Logo & Project */}
-        <div className="flex items-center gap-4 flex-1 min-w-0">
+        <div className="flex items-center gap-4 min-w-0 justify-self-start">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg">
               <span className="text-primary-foreground font-bold text-lg">WB</span>
@@ -81,7 +78,7 @@ export function TopToolbar({
         </div>
 
         {/* Center Section - Breakpoint Controls & Tools */}
-        <div className="flex items-center gap-4 shrink-0">
+  <div className="flex items-center gap-4 shrink-0 min-w-0 justify-self-center">
           {/* Breakpoint Controls */}
           <div className="flex items-center gap-1 bg-gradient-to-r from-muted to-muted/80 rounded-xl p-1 shadow-sm">
             <Button
@@ -141,20 +138,11 @@ export function TopToolbar({
             >
               <Layers className="w-4 h-4" />
             </Button>
-            <Button
-              variant={showPartitions ? "default" : "ghost"}
-              size="sm"
-              onClick={() => onPartitionsToggle?.(!showPartitions)}
-              title="Show/Hide Partitions"
-            >
-              <Layout className="w-4 h-4 mr-2" />
-              Sections
-            </Button>
           </div>
         </div>
 
         {/* Right Section - Actions */}
-  <div className="flex items-center gap-2 shrink-0">
+  <div className="flex items-center gap-2 shrink-0 justify-self-end">
           {/* Edit Tools */}
           <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
             <Button 

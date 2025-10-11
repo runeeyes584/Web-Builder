@@ -39,7 +39,6 @@ export default function WebsiteBuilder() {
   const [zoom, setZoom] = useState(100)
   const [showGrid, setShowGrid] = useState(true)
   const [showLayers, setShowLayers] = useState(false)
-  const [showPartitions, setShowPartitions] = useState(false)
 
   // Load dark mode preference from localStorage
   useEffect(() => {
@@ -275,8 +274,6 @@ export default function WebsiteBuilder() {
         showLayers={showLayers}
         onLayersToggle={setShowLayers}
         onRotateSelected={handleRotateSelected}
-        showPartitions={showPartitions}
-        onPartitionsToggle={setShowPartitions}
       />
 
       {/* Main Layout */}
@@ -312,7 +309,6 @@ export default function WebsiteBuilder() {
                     snapSettings={snapSettings}
                     zoom={zoom}
                     showGrid={showGrid}
-                    showPartitions={showPartitions}
                   />
                 </div>
               </div>

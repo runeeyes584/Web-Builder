@@ -22,7 +22,6 @@ interface CanvasProps {
   snapSettings: { enabled: boolean; gridSize: number; snapToElements: boolean; snapDistance: number }
   zoom?: number
   showGrid?: boolean
-  showPartitions?: boolean
 }
 
 export function Canvas({
@@ -39,8 +38,27 @@ export function Canvas({
   snapSettings,
   zoom = 100,
   showGrid = true,
-  showPartitions = false,
 }: CanvasProps) {
+  // Partition dynamic sizes
+  const [headerHeight, setHeaderHeight] = useState<number>(96)
+  const [footerHeight, setFooterHeight] = useState<number>(96)
+  const MIN_HEADER = 48
+  const MIN_FOOTER = 48
+  const MIN_SECTION = 128
+
+  // Sections model: vertical stacks between header and footer
+  type Section = { id: string; height: number }
+  const DEFAULT_SECTION = 608 // 800 - 96 - 96 (matches initial min canvas height minus header/footer)
+  const [sections, setSections] = useState<Section[]>([
+    { id: `sec-${Date.now()}`, height: Math.max(MIN_SECTION, DEFAULT_SECTION) },
+  ])
+  const totalSectionsHeight = sections.reduce((sum, s) => sum + s.height, 0)
+  const contentHeight = headerHeight + totalSectionsHeight + footerHeight
+
+  // Focused region for persistent controls
+  const [focusedRegion, setFocusedRegion] = useState<null | "header" | "section" | "footer" >(null)
+  const [focusedSectionIndex, setFocusedSectionIndex] = useState<number | null>(null)
+
   const [draggedElementId, setDraggedElementId] = useState<string | null>(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [isResizing, setIsResizing] = useState<string | null>(null)
@@ -98,23 +116,31 @@ export function Canvas({
       let x = (client.x - rect.left) / scale
       let y = (client.y - rect.top) / scale
 
-      // Snap into partitions if enabled
-      if (showPartitions) {
-        const headerH = 96
-        const footerH = 96
-        const canvasHeight = rect.height / scale
+      // Snap into dynamic partitions (header/sections/footer)
+        const headerH = headerHeight
+        const footerTop = headerHeight + totalSectionsHeight
+        const canvasHeight = Math.max(contentHeight, rect.height / scale)
         const sectionTop = headerH
-        const sectionBottom = canvasHeight - footerH
-        const mid = (sectionTop + sectionBottom) / 2
+        const sectionBottom = footerTop
         if (y < sectionTop) {
           y = Math.max(8, y) // keep inside header
         } else if (y > sectionBottom) {
-          y = Math.min(canvasHeight - 8, y) // keep inside footer
+          // In footer area
+          y = Math.min(canvasHeight - 8, y)
         } else {
-          // inside section: snap roughly towards middle area a bit for convenience
-          if (Math.abs(y - mid) < 20) y = mid
+          // Inside sections: if near middle of the specific section, snap to its mid
+          let acc = sectionTop
+          for (let i = 0; i < sections.length; i++) {
+            const top = acc
+            const bottom = top + sections[i].height
+            const mid = (top + bottom) / 2
+            if (y >= top && y <= bottom) {
+              if (Math.abs(y - mid) < 20) y = mid
+              break
+            }
+            acc = bottom
+          }
         }
-      }
       
       console.log('Drop position:', { x, y, scale })
       
@@ -133,7 +159,7 @@ export function Canvas({
       console.log('Adding element:', newElement.type)
       onAddElement(newElement, { x: Math.max(0, snappedX), y: Math.max(0, snappedY) })
     },
-  }), [canvasEl, zoom, snapSettings, snapToGrid, onAddElement, showPartitions])
+  }), [canvasEl, zoom, snapSettings, snapToGrid, onAddElement, headerHeight, footerHeight, sections, totalSectionsHeight, contentHeight])
 
   const setCanvasNode = useCallback((node: HTMLDivElement | null) => {
     console.log('Setting canvas node:', !!node)
@@ -1810,7 +1836,98 @@ export function Canvas({
 
   const handleCanvasClick = () => {
     onElementSelect("")
+    setFocusedRegion(null)
+    setFocusedSectionIndex(null)
   }
+
+  // Resize partitions by dragging top/bottom boundaries
+  const boundaryDragRef = useRef<{
+    which: "header" | "footer"
+    startY: number
+    startHeader: number
+    startFooter: number
+    scale: number
+    canvasHeight: number
+  } | null>(null)
+
+  const startBoundaryResize = useCallback((which: "header" | "footer", clientY: number) => {
+    if (!canvasEl) return
+    const rect = canvasEl.getBoundingClientRect()
+    const scale = zoom / 100
+    boundaryDragRef.current = {
+      which,
+      startY: clientY,
+      startHeader: headerHeight,
+      startFooter: footerHeight,
+      scale,
+      canvasHeight: Math.max(contentHeight, rect.height / scale),
+    }
+
+    const onMouseMove = (ev: MouseEvent) => {
+      const state = boundaryDragRef.current
+      if (!state) return
+      const dy = (ev.clientY - state.startY) / state.scale
+      if (state.which === "header") {
+        // Move boundary between header and section
+        let nextHeader = state.startHeader + dy
+        const maxHeader = state.canvasHeight - state.startFooter - Math.max(MIN_SECTION, totalSectionsHeight)
+        nextHeader = Math.max(MIN_HEADER, Math.min(maxHeader, nextHeader))
+        setHeaderHeight(nextHeader)
+      } else {
+        // Move boundary (top of footer); positive dy moves boundary down -> footer shrinks
+        let nextFooter = state.startFooter - dy
+        const maxFooter = state.canvasHeight - headerHeight - Math.max(MIN_SECTION, totalSectionsHeight)
+        nextFooter = Math.max(MIN_FOOTER, Math.min(maxFooter, nextFooter))
+        setFooterHeight(nextFooter)
+      }
+    }
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove)
+      document.removeEventListener("mouseup", onMouseUp)
+      boundaryDragRef.current = null
+    }
+    document.addEventListener("mousemove", onMouseMove)
+    document.addEventListener("mouseup", onMouseUp)
+  }, [canvasEl, zoom, headerHeight, footerHeight, contentHeight, totalSectionsHeight])
+
+  // Resize between sections by dragging a divider line (index is boundary between index and index+1)
+  const sectionDividerDragRef = useRef<{
+    index: number
+    startY: number
+    scale: number
+    startTop: number
+    startBottom: number
+  } | null>(null)
+  const startSectionDividerResize = useCallback((index: number, clientY: number) => {
+    const scale = zoom / 100
+    sectionDividerDragRef.current = {
+      index,
+      startY: clientY,
+      scale,
+      startTop: sections[index].height,
+      startBottom: sections[index + 1].height,
+    }
+    const onMouseMove = (ev: MouseEvent) => {
+      const st = sectionDividerDragRef.current
+      if (!st) return
+      const dy = (ev.clientY - st.startY) / st.scale
+      setSections((prev) => {
+        const next = [...prev]
+        const topH = Math.max(MIN_SECTION, st.startTop + dy)
+        const bottomH = Math.max(MIN_SECTION, st.startBottom - dy)
+        next[st.index] = { ...next[st.index], height: topH }
+        next[st.index + 1] = { ...next[st.index + 1], height: bottomH }
+        return next
+      })
+    }
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove)
+      document.removeEventListener("mouseup", onMouseUp)
+      sectionDividerDragRef.current = null
+    }
+    document.addEventListener("mousemove", onMouseMove)
+    document.addEventListener("mouseup", onMouseUp)
+  }, [sections, zoom])
 
   const renderElement = (element: BuilderElement) => {
     const isSelected = selectedElements.includes(element.id)
@@ -3153,12 +3270,23 @@ export function Canvas({
         transformOrigin: 'top left',
         width: `${100 / (zoom / 100)}%`,
         height: `${100 / (zoom / 100)}%`,
+        minHeight: `${contentHeight}px`,
       }}
     >
       {/* Partitions: interactive hover & boundaries (visible only when toggled) */}
-      {showPartitions && (
-        <PartitionsOverlay />
-      )}
+      <PartitionsOverlay
+        headerHeight={headerHeight}
+        footerHeight={footerHeight}
+        sections={sections}
+        setSections={setSections}
+        focusedRegion={focusedRegion}
+        focusedSectionIndex={focusedSectionIndex}
+        setFocusedRegion={setFocusedRegion}
+        setFocusedSectionIndex={setFocusedSectionIndex}
+        onStartResize={startBoundaryResize}
+        onStartSectionResize={startSectionDividerResize}
+        defaultSectionHeight={DEFAULT_SECTION}
+      />
       {/* Enhanced Grid overlay */}
       {showGrid && (
         <div
@@ -3227,105 +3355,228 @@ export function Canvas({
 }
 
 // Lightweight internal component for partitions overlay
-function PartitionsOverlay() {
-  const [hoverRegion, setHoverRegion] = useState<null | "header" | "section" | "footer" | "h-bottom" | "s-top" | "s-bottom" | "f-top">(null)
+function PartitionsOverlay({
+  headerHeight,
+  footerHeight,
+  sections,
+  setSections,
+  focusedRegion,
+  focusedSectionIndex,
+  setFocusedRegion,
+  setFocusedSectionIndex,
+  onStartResize,
+  onStartSectionResize,
+  defaultSectionHeight,
+}: {
+  headerHeight: number
+  footerHeight: number
+  sections: { id: string; height: number }[]
+  setSections: React.Dispatch<React.SetStateAction<{ id: string; height: number }[]>>
+  focusedRegion: null | "header" | "section" | "footer"
+  focusedSectionIndex: number | null
+  setFocusedRegion: (r: null | "header" | "section" | "footer") => void
+  setFocusedSectionIndex: (i: number | null) => void
+  onStartResize: (which: "header" | "footer", clientY: number) => void
+  onStartSectionResize: (index: number, clientY: number) => void
+  defaultSectionHeight: number
+}) {
+  // Fine-grained hover states so sections act independently
+  const [hoverHeader, setHoverHeader] = useState(false)
+  const [hoverFooter, setHoverFooter] = useState(false)
+  const [hoverHeaderBottom, setHoverHeaderBottom] = useState(false)
+  const [hoverFooterTop, setHoverFooterTop] = useState(false)
+  const [hoverSectionIndex, setHoverSectionIndex] = useState<number | null>(null)
+  const [hoverSectionTopIndex, setHoverSectionTopIndex] = useState<number | null>(null)
+  const [hoverSectionBottomIndex, setHoverSectionBottomIndex] = useState<number | null>(null)
 
-  const headerH = 96
-  const footerH = 96
+  type BtnKind =
+    | { type: "header-bottom" }
+    | { type: "footer-top" }
+    | { type: "sec-top"; index: number }
+    | { type: "sec-bottom"; index: number }
 
-  const boundaryBtn = (style: React.CSSProperties, key: string) => (
-    <button
-      key={key}
-      type="button"
-      className="absolute -translate-x-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded-md bg-primary/10 text-primary border border-primary/30 shadow-sm hover:bg-primary/20"
-      style={style}
-      onMouseEnter={() => setHoverRegion(null)}
-      onClick={(e) => {
-        e.stopPropagation()
-        // TODO: Implement actual section split/insert logic.
-        // For now, no-op placeholder. This is where we'd add a new divider row or similar.
-      }}
-    >
-      + Add section
-    </button>
-  )
+  const boundaryBtn = (
+    style: React.CSSProperties,
+    kind: BtnKind,
+  ) => {
+    const isBottomAnchored = kind.type === "sec-bottom" || kind.type === "footer-top"
+    const translateY = isBottomAnchored ? "translate-y-1/2" : "-translate-y-1/2"
+    return (
+      <button
+        key={`${kind.type}-${'index' in kind ? kind.index : 'x'}`}
+        type="button"
+        className={`absolute -translate-x-1/2 ${translateY} text-xs px-2.5 py-1.5 rounded-md bg-primary text-primary-foreground border border-primary/80 shadow-md hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 transition-colors`}
+        style={style}
+        onMouseEnter={() => {
+          if (kind.type === "header-bottom") setHoverHeaderBottom(true)
+          if (kind.type === "footer-top") setHoverFooterTop(true)
+          if (kind.type === "sec-top") setHoverSectionTopIndex(kind.index)
+          if (kind.type === "sec-bottom") setHoverSectionBottomIndex(kind.index)
+        }}
+        onClick={(e) => {
+          e.stopPropagation()
+          // Insert a new section at the appropriate boundary
+          const mkSection = () => ({ id: `sec-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, height: defaultSectionHeight })
+          setSections((prev) => {
+            const next = [...prev]
+            if (kind.type === "header-bottom") {
+              next.splice(0, 0, mkSection())
+            } else if (kind.type === "footer-top") {
+              next.push(mkSection())
+            } else if (kind.type === "sec-top") {
+              const insertAt = Math.max(0, Math.min(kind.index, next.length))
+              next.splice(insertAt, 0, mkSection())
+            } else if (kind.type === "sec-bottom") {
+              const insertAt = Math.max(0, Math.min(kind.index + 1, next.length))
+              next.splice(insertAt, 0, mkSection())
+            }
+            // Return to non-focus default state after adding
+            setFocusedRegion(null); setFocusedSectionIndex(null)
+            // Clear hovers
+            setHoverHeaderBottom(false); setHoverFooterTop(false); setHoverSectionTopIndex(null); setHoverSectionBottomIndex(null); setHoverSectionIndex(null)
+            return next
+          })
+        }}
+      >
+        + Add section
+      </button>
+    )
+  }
+
+  // Decide which boundary button should be persistently visible based on focusedRegion
+  const focusBoundaryMap: Record<"header" | "section" | "footer", "h-bottom" | "s-bottom" | "f-top"> = {
+    header: "h-bottom",
+    section: "s-bottom",
+    footer: "f-top",
+  }
+  const focusedBoundary = focusedRegion ? focusBoundaryMap[focusedRegion] : null
+
+  // Compute top offsets for each section block (visual overlay only)
+  const sectionTops: number[] = []
+  {
+    let acc = headerHeight
+    for (const s of sections) {
+      sectionTops.push(acc)
+      acc += s.height
+    }
+  }
 
   return (
-    <div className="absolute inset-0 z-0">
-      {/* Regions for hover visual only */}
+    <div className="absolute inset-0 z-20 select-none">
+      {/* Regions */}
       <div
         className="absolute left-0 right-0"
-        style={{ top: 0, height: `${headerH}px` }}
-        onMouseEnter={() => setHoverRegion("header")}
-        onMouseLeave={() => setHoverRegion(null)}
+        style={{ top: 0, height: `${headerHeight}px` }}
+        onMouseEnter={() => setHoverHeader(true)}
+        onMouseLeave={() => setHoverHeader(false)}
+        onClick={(e) => {
+          e.stopPropagation()
+          setFocusedRegion("header")
+          setFocusedSectionIndex(null)
+        }}
       >
-        {hoverRegion === "header" && (
-          <div className="absolute inset-0 bg-emerald-400/10 border border-emerald-400/30">
+        {(hoverHeader || hoverHeaderBottom || focusedRegion === "header") && (
+          <div className={`absolute inset-0 ${focusedRegion === "header" ? "ring-1 ring-emerald-400/50" : ""} bg-emerald-400/10 border border-emerald-400/30 pointer-events-none`}>
             <div className="absolute top-1 left-2 text-[11px] text-emerald-400">Header</div>
           </div>
         )}
       </div>
-      <div
-        className="absolute left-0 right-0"
-        style={{ top: `${headerH}px`, bottom: `${footerH}px` }}
-        onMouseEnter={() => setHoverRegion("section")}
-        onMouseLeave={() => setHoverRegion(null)}
-      >
-        {hoverRegion === "section" && (
-          <div className="absolute inset-0 bg-blue-400/10 border border-blue-400/30">
-            <div className="absolute top-1 left-2 text-[11px] text-blue-400">Section</div>
+      {/* Render each section band */}
+      {sections.map((sec, idx) => (
+        <div
+          key={sec.id}
+          className="absolute left-0 right-0"
+          style={{ top: `${sectionTops[idx]}px`, height: `${sec.height}px` }}
+          onMouseEnter={() => setHoverSectionIndex(idx)}
+          onMouseLeave={() => setHoverSectionIndex((v) => (v === idx ? null : v))}
+          onClick={(e) => { e.stopPropagation(); setFocusedRegion("section"); setFocusedSectionIndex(idx) }}
+        >
+          {(hoverSectionIndex === idx
+            || focusedSectionIndex === idx
+            || hoverSectionTopIndex === idx
+            || hoverSectionBottomIndex === idx
+            || (hoverHeaderBottom && idx === 0)
+            || (hoverFooterTop && idx === sections.length - 1)
+          ) && (
+            <div className={`absolute inset-0 ${focusedSectionIndex === idx ? "ring-1 ring-blue-400/50" : ""} bg-blue-400/10 border border-blue-400/30 pointer-events-none`}>
+              <div className="absolute top-1 left-2 text-[11px] text-blue-400">Section {idx + 1}</div>
+            </div>
+          )}
+          {/* Per-section top add button (behaves like s-top for the first section; otherwise insert before idx) */}
+          <div
+            className="absolute left-0 right-0 pointer-events-auto"
+            style={{ top: 0, height: 24 }}
+            onMouseEnter={() => setHoverSectionTopIndex(idx)}
+            onMouseLeave={() => setHoverSectionTopIndex((v) => (v === idx ? null : v))}
+          >
+            {(hoverSectionTopIndex === idx || (focusedRegion === 'section' && focusedSectionIndex === idx)) && boundaryBtn({ left: '50%', top: 0 }, { type: 'sec-top', index: idx })}
           </div>
-        )}
-      </div>
+          {/* Per-section bottom add button and divider resize handle */}
+          <div
+            className="absolute left-0 right-0 pointer-events-auto"
+            style={{ bottom: 0, height: 24 }}
+            onMouseEnter={() => setHoverSectionBottomIndex(idx)}
+            onMouseLeave={() => setHoverSectionBottomIndex((v) => (v === idx ? null : v))}
+            onMouseDown={(e) => {
+              // Allow resizing between this section and the next if exists
+              if (idx < sections.length - 1) onStartSectionResize(idx, e.clientY)
+            }}
+          >
+            {(hoverSectionBottomIndex === idx || (focusedRegion === 'section' && focusedSectionIndex === idx)) && boundaryBtn({ left: '50%', bottom: 0 }, { type: 'sec-bottom', index: idx })}
+          </div>
+        </div>
+      ))}
       <div
         className="absolute left-0 right-0"
-        style={{ bottom: 0, height: `${footerH}px` }}
-        onMouseEnter={() => setHoverRegion("footer")}
-        onMouseLeave={() => setHoverRegion(null)}
+        style={{ bottom: 0, height: `${footerHeight}px` }}
+        onMouseEnter={() => setHoverFooter(true)}
+        onMouseLeave={() => setHoverFooter(false)}
+        onClick={(e) => {
+          e.stopPropagation()
+          setFocusedRegion("footer")
+          setFocusedSectionIndex(null)
+        }}
       >
-        {hoverRegion === "footer" && (
-          <div className="absolute inset-0 bg-emerald-400/10 border border-emerald-400/30">
+        {(hoverFooter || hoverFooterTop || focusedRegion === "footer") && (
+          <div className={`absolute inset-0 ${focusedRegion === "footer" ? "ring-1 ring-emerald-400/50" : ""} bg-emerald-400/10 border border-emerald-400/30 pointer-events-none`}>
             <div className="absolute top-1 left-2 text-[11px] text-emerald-400">Footer</div>
           </div>
         )}
       </div>
 
-      {/* Boundary hotspots that reveal +Add section button on hover */}
-      {/* Header bottom */}
+      {/* Resizable boundary hotspots with +Add button visibility */}
+      {/* Header bottom boundary */
+      }
       <div
-        className="absolute left-0 right-0"
-        style={{ top: `${headerH}px`, height: 10 }}
-        onMouseEnter={() => setHoverRegion("h-bottom")}
-        onMouseLeave={() => setHoverRegion(null)}
+        className="absolute left-0 right-0 pointer-events-auto cursor-ns-resize"
+        style={{ top: `${headerHeight}px`, height: 32 }}
+        onMouseEnter={() => setHoverHeaderBottom(true)}
+        onMouseLeave={() => setHoverHeaderBottom(false)}
+        onMouseDown={(e) => onStartResize("header", e.clientY)}
       >
-        {hoverRegion === "h-bottom" && boundaryBtn({ left: '50%', top: 0 }, 'h-bottom')}
+        {(hoverHeaderBottom || focusedBoundary === "h-bottom") && boundaryBtn({ left: '50%', top: 0 }, { type: 'header-bottom' })}
       </div>
-      {/* Section top */}
+
+      {/* Section top (same line as header bottom) */}
       <div
-        className="absolute left-0 right-0"
-        style={{ top: `${headerH}px`, height: 10 }}
-        onMouseEnter={() => setHoverRegion("s-top")}
-        onMouseLeave={() => setHoverRegion(null)}
+        className="absolute left-0 right-0 pointer-events-auto cursor-ns-resize"
+        style={{ top: `${headerHeight}px`, height: 32 }}
+        onMouseEnter={() => setHoverSectionTopIndex(0)}
+        onMouseLeave={() => setHoverSectionTopIndex((v) => (v === 0 ? null : v))}
+        onMouseDown={(e) => onStartResize("header", e.clientY)}
       >
-        {hoverRegion === "s-top" && boundaryBtn({ left: '50%', top: 0 }, 's-top')}
+        {(hoverSectionTopIndex === 0) && boundaryBtn({ left: '50%', top: 0 }, { type: 'sec-top', index: 0 })}
       </div>
-      {/* Section bottom */}
+
+      {/* Footer top boundary */}
       <div
-        className="absolute left-0 right-0"
-        style={{ bottom: `${footerH}px`, height: 10 }}
-        onMouseEnter={() => setHoverRegion("s-bottom")}
-        onMouseLeave={() => setHoverRegion(null)}
+        className="absolute left-0 right-0 pointer-events-auto cursor-ns-resize"
+        style={{ bottom: `${footerHeight}px`, height: 32 }}
+        onMouseEnter={() => setHoverFooterTop(true)}
+        onMouseLeave={() => setHoverFooterTop(false)}
+        onMouseDown={(e) => onStartResize("footer", e.clientY)}
       >
-        {hoverRegion === "s-bottom" && boundaryBtn({ left: '50%', bottom: 0 }, 's-bottom')}
-      </div>
-      {/* Footer top */}
-      <div
-        className="absolute left-0 right-0"
-        style={{ bottom: `${footerH}px`, height: 10 }}
-        onMouseEnter={() => setHoverRegion("f-top")}
-        onMouseLeave={() => setHoverRegion(null)}
-      >
-        {hoverRegion === "f-top" && boundaryBtn({ left: '50%', bottom: 0 }, 'f-top')}
+        {(hoverFooterTop || focusedBoundary === "f-top") && boundaryBtn({ left: '50%', bottom: 0 }, { type: 'footer-top' })}
       </div>
     </div>
   )
