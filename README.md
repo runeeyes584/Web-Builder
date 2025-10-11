@@ -168,10 +168,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Team
 
 - **Developer**: Nguyễn Hùng Sơn, Lê Anh Tiến, Dương Phúc Khang 
-- **GitHub**: 
-    **Hùng Sơn**: https://github.com/hungson1002
-    **Anh Tiến**: https://github.com/runeeyes584
-    **Phúc Khang**: https://github.com/Flower-unfurl
+- **GitHub**: [**Hùng Sơn**](https://github.com/hungson1002), [**Anh Tiến**](https://github.com/runeeyes584) và [**Phúc Khang**](https://github.com/Flower-unfurl)
 
 ## 🐛 Bug Reports & Feature Requests
 
