@@ -167,8 +167,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👨‍💻 Team
 
-- **Developer**: hungson1002
-- **GitHub**: https://github.com/hungson1002
+- **Developer**: Nguyễn Hùng Sơn, Lê Anh Tiến, Dương Phúc Khang 
+- **GitHub**: 
+    **Hùng Sơn**: https://github.com/hungson1002
+    **Anh Tiến**: https://github.com/runeeyes584
+    **Phúc Khang**: https://github.com/Flower-unfurl
 
 ## 🐛 Bug Reports & Feature Requests
 
@@ -180,7 +183,7 @@ Sử dụng [GitHub Issues](https://github.com/hungson1002/Web-Builder/issues) �
 ## 📞 Support
 
 Nếu bạn có câu hỏi hoặc cần hỗ trợ:
-- 📧 Email: [your-email]
+- 📧 Email: [anhtienle428@gmail.com]
 - 💬 GitHub Discussions
 - 📋 GitHub Issues
 
