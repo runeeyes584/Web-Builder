@@ -22,6 +22,7 @@ interface CanvasProps {
   snapSettings: { enabled: boolean; gridSize: number; snapToElements: boolean; snapDistance: number }
   zoom?: number
   showGrid?: boolean
+  showSections?: boolean
 }
 
 export function Canvas({
@@ -38,6 +39,7 @@ export function Canvas({
   snapSettings,
   zoom = 100,
   showGrid = true,
+  showSections = true,
 }: CanvasProps) {
   // Partition dynamic sizes
   const [headerHeight, setHeaderHeight] = useState<number>(96)
@@ -3274,19 +3276,21 @@ export function Canvas({
       }}
     >
       {/* Partitions: interactive hover & boundaries (visible only when toggled) */}
-      <PartitionsOverlay
-        headerHeight={headerHeight}
-        footerHeight={footerHeight}
-        sections={sections}
-        setSections={setSections}
-        focusedRegion={focusedRegion}
-        focusedSectionIndex={focusedSectionIndex}
-        setFocusedRegion={setFocusedRegion}
-        setFocusedSectionIndex={setFocusedSectionIndex}
-        onStartResize={startBoundaryResize}
-        onStartSectionResize={startSectionDividerResize}
-        defaultSectionHeight={DEFAULT_SECTION}
-      />
+      {showSections && (
+        <PartitionsOverlay
+          headerHeight={headerHeight}
+          footerHeight={footerHeight}
+          sections={sections}
+          setSections={setSections}
+          focusedRegion={focusedRegion}
+          focusedSectionIndex={focusedSectionIndex}
+          setFocusedRegion={setFocusedRegion}
+          setFocusedSectionIndex={setFocusedSectionIndex}
+          onStartResize={startBoundaryResize}
+          onStartSectionResize={startSectionDividerResize}
+          defaultSectionHeight={DEFAULT_SECTION}
+        />
+      )}
       {/* Enhanced Grid overlay */}
       {showGrid && (
         <div

@@ -1,10 +1,11 @@
-import express from 'express';
+import bodyParser from "body-parser";
 import cors from 'cors';
-import morgan from 'morgan';
 import dotenv from 'dotenv';
-import { healthRouter } from './routes/health';
-import { exampleRouter } from './routes/example';
+import express from 'express';
+import morgan from 'morgan';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { healthRouter } from './routes/health';
+import userRouter from './routes/Users.route';
 
 dotenv.config();
 
@@ -16,9 +17,15 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
+app.use(bodyParser.json({
+  verify: (req: any, res, buf) => {
+    req.rawBody = buf;
+  },
+}));
+
 // Routes
+app.use('/api/users', userRouter);
 app.use('/health', healthRouter);
-app.use('/api/example', exampleRouter);
 
 app.get('/', (_req: any, res: { json: (arg0: { ok: boolean; service: string; }) => void; }) => {
     res.json({ ok: true, service: 'web-builder-server' });

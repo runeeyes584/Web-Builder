@@ -9,6 +9,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { useBuilderState } from "@/hooks/use-builder-state"
 import type { BuilderElement } from "@/lib/builder-types"
 import { componentCategories } from "@/lib/component-categories"
+import { SignedIn, SignedOut } from "@clerk/nextjs"
 import { useEffect, useState } from "react"
 import { DndProvider, useDragLayer } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
@@ -21,6 +22,8 @@ export default function WebsiteBuilder() {
     currentBreakpoint,
     setCurrentBreakpoint,
     snapSettings,
+    showSections,
+    setShowSections,
     addElement,
     updateElement,
     updateElementResponsiveStyle,
@@ -57,6 +60,8 @@ export default function WebsiteBuilder() {
     }
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode))
   }, [isDarkMode])
+
+
   // Custom drag layer for smoother preview
   const DragLayer: React.FC = () => {
     const { isDragging, itemType, item, currentOffset } = useDragLayer((monitor) => ({
@@ -248,9 +253,20 @@ export default function WebsiteBuilder() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [undo, redo, selectedElements, duplicateElement, handleRotateSelected])
 
+
+
   return (
-    <DndProvider backend={HTML5Backend}>
-  <div className="h-screen bg-background text-foreground flex flex-col">
+    <>
+      <SignedOut>
+        {/* This should not show as middleware redirects to /welcome */}
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </SignedOut>
+
+      <SignedIn>
+        <DndProvider backend={HTML5Backend}>
+          <div className="h-screen bg-background text-foreground flex flex-col">
       {/* Top Toolbar */}
       <TopToolbar
         currentBreakpoint={currentBreakpoint}
@@ -274,6 +290,8 @@ export default function WebsiteBuilder() {
         showLayers={showLayers}
         onLayersToggle={setShowLayers}
         onRotateSelected={handleRotateSelected}
+        showSections={showSections}
+        onSectionsToggle={setShowSections}
       />
 
       {/* Main Layout */}
@@ -309,6 +327,7 @@ export default function WebsiteBuilder() {
                     snapSettings={snapSettings}
                     zoom={zoom}
                     showGrid={showGrid}
+                    showSections={showSections}
                   />
                 </div>
               </div>
@@ -343,8 +362,10 @@ export default function WebsiteBuilder() {
         isOpen={showLayers}
         onClose={() => setShowLayers(false)}
       />
-    </div>
-    <DragLayer />
-    </DndProvider>
+          </div>
+          <DragLayer />
+        </DndProvider>
+      </SignedIn>
+    </>
   )
 }

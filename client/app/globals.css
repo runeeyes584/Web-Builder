@@ -415,3 +415,11 @@
     --color-drop-zone: oklch(0.6 0.15 264 / 0.3);
   }
 }
+
+/* Welcome Page Grid Pattern */
+.bg-grid-pattern {
+  background-image: 
+    linear-gradient(hsl(var(--border) / 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--border) / 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+}

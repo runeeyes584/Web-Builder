@@ -44,6 +44,8 @@ export function useBuilderState() {
     snapDistance: 5,
   })
 
+  const [showSections, setShowSections] = useState<boolean>(false)
+
   const addElement = useCallback((element: BuilderElement, position?: { x: number; y: number }) => {
     setElements((prev) => {
       const basePosition = element.position || { x: 100, y: 100, width: 200, height: 50 }
@@ -191,6 +193,8 @@ export function useBuilderState() {
     setDraggedElement,
     snapSettings,
     setSnapSettings,
+    showSections,
+    setShowSections,
     addElement,
     updateElement,
     updateElementResponsiveStyle,
