@@ -82,12 +82,15 @@ export function PropertiesPanel({
     if (responsiveMode) {
       onUpdateElementResponsiveStyle(selectedElement.id, currentBreakpoint, { [property]: value })
     } else {
+      // When not in responsive mode, update both base styles and responsive styles for current breakpoint
       onUpdateElement(selectedElement.id, {
         styles: {
           ...selectedElement.styles,
           [property]: value,
         },
       })
+      // Also update responsive styles for current breakpoint to prevent override
+      onUpdateElementResponsiveStyle(selectedElement.id, currentBreakpoint, { [property]: value })
     }
   }
 
