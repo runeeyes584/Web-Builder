@@ -11,21 +11,21 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import type { Breakpoint, BuilderElement } from "@/lib/builder-types"
 import {
-    AlignCenter,
-    AlignJustify,
-    AlignLeft,
-    AlignRight,
-    FolderIcon as BorderIcon,
-    Code,
-    Layout,
-    Monitor,
-    Palette,
-    Settings,
-    Shapes as Shadow,
-    Smartphone,
-    Tablet,
-    Type,
-    Zap
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
+  FolderIcon as BorderIcon,
+  Code,
+  Layout,
+  Monitor,
+  Palette,
+  Settings,
+  Shapes as Shadow,
+  Smartphone,
+  Tablet,
+  Type,
+  Zap
 } from "lucide-react"
 import { useEffect, useState } from "react"
 
@@ -121,6 +121,1063 @@ export function PropertiesPanel({
         return Smartphone
     }
   }
+
+  const renderFormElementsStyling = () => (
+    <>
+      <Separator className="bg-sidebar-border" />
+      <div>
+        <Label className="text-sm font-medium mb-3 block">Form Elements Styling</Label>
+        
+        {/* Form Title */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Form Title</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.titleFontSize) || 14]}
+                  onValueChange={([value]) => updateElementProps({ titleFontSize: `${value}px` })}
+                  max={32}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.titleFontSize) || 14}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Alignment</Label>
+                <Select
+                  value={selectedElement?.props?.titleAlign || "left"}
+                  onValueChange={(value) => updateElementProps({ titleAlign: value })}
+                >
+                  <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="left">Left</SelectItem>
+                    <SelectItem value="center">Center</SelectItem>
+                    <SelectItem value="right">Right</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.titleColor || "#ffffff"}
+                  onChange={(e) => updateElementProps({ titleColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Input Fields */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Input Fields</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.inputFontSize) || 12]}
+                  onValueChange={([value]) => updateElementProps({ inputFontSize: `${value}px` })}
+                  max={24}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.inputFontSize) || 12}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Padding</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.inputPadding) || 8]}
+                  onValueChange={([value]) => updateElementProps({ inputPadding: `${value}px` })}
+                  max={20}
+                  min={4}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.inputPadding) || 8}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.inputBorderRadius) || 4]}
+                  onValueChange={([value]) => updateElementProps({ inputBorderRadius: `${value}px` })}
+                  max={20}
+                  min={0}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.inputBorderRadius) || 4}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Border Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.inputBorderColor || "#374151"}
+                  onChange={(e) => updateElementProps({ inputBorderColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Background Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.inputBackgroundColor || "#1f2937"}
+                  onChange={(e) => updateElementProps({ inputBackgroundColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Button */}
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Submit Button</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.buttonFontSize) || 12]}
+                  onValueChange={([value]) => updateElementProps({ buttonFontSize: `${value}px` })}
+                  max={24}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.buttonFontSize) || 12}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Padding</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.buttonPadding) || 8]}
+                  onValueChange={([value]) => updateElementProps({ buttonPadding: `${value}px` })}
+                  max={20}
+                  min={4}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.buttonPadding) || 8}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.buttonBorderRadius) || 4]}
+                  onValueChange={([value]) => updateElementProps({ buttonBorderRadius: `${value}px` })}
+                  max={20}
+                  min={0}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.buttonBorderRadius) || 4}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Background Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.buttonBackgroundColor || "#3b82f6"}
+                  onChange={(e) => updateElementProps({ buttonBackgroundColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.buttonTextColor || "#ffffff"}
+                  onChange={(e) => updateElementProps({ buttonTextColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+
+  const renderSurveyFormStyling = () => (
+    <>
+      <Separator className="bg-sidebar-border" />
+      <div>
+        <Label className="text-sm font-medium mb-3 block">Survey Form Styling</Label>
+        
+        {/* Form Title */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Form Title</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.titleFontSize) || 14]}
+                  onValueChange={([value]) => updateElementProps({ titleFontSize: `${value}px` })}
+                  max={32}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.titleFontSize) || 14}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Alignment</Label>
+                <Select
+                  value={selectedElement?.props?.titleAlign || "left"}
+                  onValueChange={(value) => updateElementProps({ titleAlign: value })}
+                >
+                  <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="left">Left</SelectItem>
+                    <SelectItem value="center">Center</SelectItem>
+                    <SelectItem value="right">Right</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.titleColor || "#ffffff"}
+                  onChange={(e) => updateElementProps({ titleColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Question */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Question</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.questionFontSize) || 12]}
+                  onValueChange={([value]) => updateElementProps({ questionFontSize: `${value}px` })}
+                  max={24}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.questionFontSize) || 12}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.questionColor || "#ffffff"}
+                  onChange={(e) => updateElementProps({ questionColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Rating Buttons */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Rating Buttons</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Button Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.ratingButtonSize) || 24]}
+                  onValueChange={([value]) => updateElementProps({ ratingButtonSize: `${value}px` })}
+                  max={40}
+                  min={16}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.ratingButtonSize) || 24}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.ratingButtonFontSize) || 12]}
+                  onValueChange={([value]) => updateElementProps({ ratingButtonFontSize: `${value}px` })}
+                  max={20}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.ratingButtonFontSize) || 12}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Border Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.ratingButtonBorderColor || "#374151"}
+                  onChange={(e) => updateElementProps({ ratingButtonBorderColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Background Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.ratingButtonBackgroundColor || "#1f2937"}
+                  onChange={(e) => updateElementProps({ ratingButtonBackgroundColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.ratingButtonTextColor || "#ffffff"}
+                  onChange={(e) => updateElementProps({ ratingButtonTextColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Textarea */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Comment Textarea</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.textareaFontSize) || 12]}
+                  onValueChange={([value]) => updateElementProps({ textareaFontSize: `${value}px` })}
+                  max={24}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.textareaFontSize) || 12}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Padding</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.textareaPadding) || 8]}
+                  onValueChange={([value]) => updateElementProps({ textareaPadding: `${value}px` })}
+                  max={20}
+                  min={4}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.textareaPadding) || 8}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Height (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.textareaHeight) || 48]}
+                  onValueChange={([value]) => updateElementProps({ textareaHeight: `${value}px` })}
+                  max={120}
+                  min={32}
+                  step={4}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.textareaHeight) || 48}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.textareaBorderRadius) || 4]}
+                  onValueChange={([value]) => updateElementProps({ textareaBorderRadius: `${value}px` })}
+                  max={20}
+                  min={0}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.textareaBorderRadius) || 4}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Border Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.textareaBorderColor || "#374151"}
+                  onChange={(e) => updateElementProps({ textareaBorderColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Background Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.textareaBackgroundColor || "#1f2937"}
+                  onChange={(e) => updateElementProps({ textareaBackgroundColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.textareaTextColor || "#ffffff"}
+                  onChange={(e) => updateElementProps({ textareaTextColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Submit Button */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Submit Button</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.buttonFontSize) || 12]}
+                  onValueChange={([value]) => updateElementProps({ buttonFontSize: `${value}px` })}
+                  max={24}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.buttonFontSize) || 12}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Padding</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.buttonPadding) || 8]}
+                  onValueChange={([value]) => updateElementProps({ buttonPadding: `${value}px` })}
+                  max={20}
+                  min={4}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.buttonPadding) || 8}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.buttonBorderRadius) || 4]}
+                  onValueChange={([value]) => updateElementProps({ buttonBorderRadius: `${value}px` })}
+                  max={20}
+                  min={0}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.buttonBorderRadius) || 4}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Background Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.buttonBackgroundColor || "#3b82f6"}
+                  onChange={(e) => updateElementProps({ buttonBackgroundColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.buttonTextColor || "#ffffff"}
+                  onChange={(e) => updateElementProps({ buttonTextColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+
+  const renderFeedbackFormStyling = () => (
+    <>
+      <Separator className="bg-sidebar-border" />
+      <div>
+        <Label className="text-sm font-medium mb-3 block">Feedback Form Styling</Label>
+        
+        {/* Form Title */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Form Title</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.titleFontSize) || 14]}
+                  onValueChange={([value]) => updateElementProps({ titleFontSize: `${value}px` })}
+                  max={32}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.titleFontSize) || 14}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Alignment</Label>
+                <Select
+                  value={selectedElement?.props?.titleAlign || "left"}
+                  onValueChange={(value) => updateElementProps({ titleAlign: value })}
+                >
+                  <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="left">Left</SelectItem>
+                    <SelectItem value="center">Center</SelectItem>
+                    <SelectItem value="right">Right</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.titleColor || "#ffffff"}
+                  onChange={(e) => updateElementProps({ titleColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Select Dropdown */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Category Select</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.selectFontSize) || 12]}
+                  onValueChange={([value]) => updateElementProps({ selectFontSize: `${value}px` })}
+                  max={24}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.selectFontSize) || 12}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Padding</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.selectPadding) || 8]}
+                  onValueChange={([value]) => updateElementProps({ selectPadding: `${value}px` })}
+                  max={20}
+                  min={4}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.selectPadding) || 8}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.selectBorderRadius) || 4]}
+                  onValueChange={([value]) => updateElementProps({ selectBorderRadius: `${value}px` })}
+                  max={20}
+                  min={0}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.selectBorderRadius) || 4}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Border Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.selectBorderColor || "#374151"}
+                  onChange={(e) => updateElementProps({ selectBorderColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Background Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.selectBackgroundColor || "#1f2937"}
+                  onChange={(e) => updateElementProps({ selectBackgroundColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.selectTextColor || "#ffffff"}
+                  onChange={(e) => updateElementProps({ selectTextColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Textarea */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Feedback Textarea</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.textareaFontSize) || 12]}
+                  onValueChange={([value]) => updateElementProps({ textareaFontSize: `${value}px` })}
+                  max={24}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.textareaFontSize) || 12}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Padding</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.textareaPadding) || 8]}
+                  onValueChange={([value]) => updateElementProps({ textareaPadding: `${value}px` })}
+                  max={20}
+                  min={4}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.textareaPadding) || 8}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Height (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.textareaHeight) || 64]}
+                  onValueChange={([value]) => updateElementProps({ textareaHeight: `${value}px` })}
+                  max={120}
+                  min={32}
+                  step={4}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.textareaHeight) || 64}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.textareaBorderRadius) || 4]}
+                  onValueChange={([value]) => updateElementProps({ textareaBorderRadius: `${value}px` })}
+                  max={20}
+                  min={0}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.textareaBorderRadius) || 4}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Border Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.textareaBorderColor || "#374151"}
+                  onChange={(e) => updateElementProps({ textareaBorderColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Background Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.textareaBackgroundColor || "#1f2937"}
+                  onChange={(e) => updateElementProps({ textareaBackgroundColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.textareaTextColor || "#ffffff"}
+                  onChange={(e) => updateElementProps({ textareaTextColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Submit Button */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Submit Button</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.buttonFontSize) || 12]}
+                  onValueChange={([value]) => updateElementProps({ buttonFontSize: `${value}px` })}
+                  max={24}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.buttonFontSize) || 12}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Padding</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.buttonPadding) || 8]}
+                  onValueChange={([value]) => updateElementProps({ buttonPadding: `${value}px` })}
+                  max={20}
+                  min={4}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.buttonPadding) || 8}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.buttonBorderRadius) || 4]}
+                  onValueChange={([value]) => updateElementProps({ buttonBorderRadius: `${value}px` })}
+                  max={20}
+                  min={0}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.buttonBorderRadius) || 4}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Background Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.buttonBackgroundColor || "#3b82f6"}
+                  onChange={(e) => updateElementProps({ buttonBackgroundColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.buttonTextColor || "#ffffff"}
+                  onChange={(e) => updateElementProps({ buttonTextColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+
+  const renderNewsletterSignupStyling = () => (
+    <>
+      <Separator className="bg-sidebar-border" />
+      <div>
+        <Label className="text-sm font-medium mb-3 block">Newsletter Signup Styling</Label>
+        
+        {/* Form Title */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Form Title</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.titleFontSize) || 14]}
+                  onValueChange={([value]) => updateElementProps({ titleFontSize: `${value}px` })}
+                  max={32}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.titleFontSize) || 14}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Alignment</Label>
+                <Select
+                  value={selectedElement?.props?.titleAlign || "center"}
+                  onValueChange={(value) => updateElementProps({ titleAlign: value })}
+                >
+                  <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="left">Left</SelectItem>
+                    <SelectItem value="center">Center</SelectItem>
+                    <SelectItem value="right">Right</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.titleColor || "#ffffff"}
+                  onChange={(e) => updateElementProps({ titleColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Description */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Description Text</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Description Text</Label>
+                <Input
+                  placeholder="Stay updated with our latest news"
+                  value={selectedElement?.props?.description || ""}
+                  onChange={(e) => updateElementProps({ description: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.descriptionFontSize) || 12]}
+                  onValueChange={([value]) => updateElementProps({ descriptionFontSize: `${value}px` })}
+                  max={24}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.descriptionFontSize) || 12}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.descriptionColor || "#9ca3af"}
+                  onChange={(e) => updateElementProps({ descriptionColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Email Input */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Email Input</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.inputFontSize) || 12]}
+                  onValueChange={([value]) => updateElementProps({ inputFontSize: `${value}px` })}
+                  max={24}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.inputFontSize) || 12}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Padding</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.inputPadding) || 8]}
+                  onValueChange={([value]) => updateElementProps({ inputPadding: `${value}px` })}
+                  max={20}
+                  min={4}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.inputPadding) || 8}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.inputBorderRadius) || 4]}
+                  onValueChange={([value]) => updateElementProps({ inputBorderRadius: `${value}px` })}
+                  max={20}
+                  min={0}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.inputBorderRadius) || 4}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Border Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.inputBorderColor || "#374151"}
+                  onChange={(e) => updateElementProps({ inputBorderColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Background Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.inputBackgroundColor || "#1f2937"}
+                  onChange={(e) => updateElementProps({ inputBackgroundColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.inputTextColor || "#ffffff"}
+                  onChange={(e) => updateElementProps({ inputTextColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Subscribe Button */}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block">Subscribe Button</Label>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Button Text</Label>
+                <Input
+                  placeholder="Subscribe"
+                  value={selectedElement?.props?.buttonText || ""}
+                  onChange={(e) => updateElementProps({ buttonText: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.buttonFontSize) || 12]}
+                  onValueChange={([value]) => updateElementProps({ buttonFontSize: `${value}px` })}
+                  max={24}
+                  min={8}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.buttonFontSize) || 12}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Padding</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.buttonPadding) || 8]}
+                  onValueChange={([value]) => updateElementProps({ buttonPadding: `${value}px` })}
+                  max={20}
+                  min={4}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.buttonPadding) || 8}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                <Slider
+                  value={[Number.parseInt(selectedElement?.props?.buttonBorderRadius) || 4]}
+                  onValueChange={([value]) => updateElementProps({ buttonBorderRadius: `${value}px` })}
+                  max={20}
+                  min={0}
+                  step={1}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Number.parseInt(selectedElement?.props?.buttonBorderRadius) || 4}px
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Background Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.buttonBackgroundColor || "#3b82f6"}
+                  onChange={(e) => updateElementProps({ buttonBackgroundColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Text Color</Label>
+                <Input
+                  type="color"
+                  value={selectedElement?.props?.buttonTextColor || "#ffffff"}
+                  onChange={(e) => updateElementProps({ buttonTextColor: e.target.value })}
+                  className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  )
 
   if (selectedElements.length === 0) {
     return (
@@ -384,6 +1441,185 @@ export function PropertiesPanel({
                           <SelectItem value="DELETE">DELETE</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Button Text</Label>
+                      <Input
+                        placeholder="Submit"
+                        value={selectedElement.props?.buttonText || "Submit"}
+                        onChange={(e) => updateElementProps({ buttonText: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={selectedElement.props?.enableScaling || false}
+                        onCheckedChange={(checked) => updateElementProps({ enableScaling: checked })}
+                      />
+                      <Label className="text-xs text-muted-foreground">Scale elements with form size</Label>
+                    </div>
+                    
+                    {/* Form Elements Styling */}
+                    <Separator className="bg-sidebar-border" />
+                    <div>
+                      <Label className="text-sm font-medium mb-3 block">Form Elements Styling</Label>
+                      
+                      {/* Input Fields */}
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-xs text-muted-foreground mb-2 block">Input Fields</Label>
+                          <div className="space-y-2">
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                              <Slider
+                                value={[Number.parseInt(selectedElement.props?.inputFontSize) || 12]}
+                                onValueChange={([value]) => updateElementProps({ inputFontSize: `${value}px` })}
+                                max={24}
+                                min={8}
+                                step={1}
+                                className="mt-2"
+                              />
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {Number.parseInt(selectedElement.props?.inputFontSize) || 12}px
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Padding</Label>
+                              <Slider
+                                value={[Number.parseInt(selectedElement.props?.inputPadding) || 8]}
+                                onValueChange={([value]) => updateElementProps({ inputPadding: `${value}px` })}
+                                max={20}
+                                min={4}
+                                step={1}
+                                className="mt-2"
+                              />
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {Number.parseInt(selectedElement.props?.inputPadding) || 8}px
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                              <Slider
+                                value={[Number.parseInt(selectedElement.props?.inputBorderRadius) || 4]}
+                                onValueChange={([value]) => updateElementProps({ inputBorderRadius: `${value}px` })}
+                                max={20}
+                                min={0}
+                                step={1}
+                                className="mt-2"
+                              />
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {Number.parseInt(selectedElement.props?.inputBorderRadius) || 4}px
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Border Color</Label>
+                              <Input
+                                type="color"
+                                value={selectedElement.props?.inputBorderColor || "#374151"}
+                                onChange={(e) => updateElementProps({ inputBorderColor: e.target.value })}
+                                className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Background Color</Label>
+                              <Input
+                                type="color"
+                                value={selectedElement.props?.inputBackgroundColor || "#1f2937"}
+                                onChange={(e) => updateElementProps({ inputBackgroundColor: e.target.value })}
+                                className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Textarea */}
+                        <div>
+                          <Label className="text-xs text-muted-foreground mb-2 block">Textarea</Label>
+                          <div className="space-y-2">
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Min Height (px)</Label>
+                              <Slider
+                                value={[Number.parseInt(selectedElement.props?.textareaMinHeight) || 64]}
+                                onValueChange={([value]) => updateElementProps({ textareaMinHeight: `${value}px` })}
+                                max={200}
+                                min={40}
+                                step={4}
+                                className="mt-2"
+                              />
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {Number.parseInt(selectedElement.props?.textareaMinHeight) || 64}px
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Button */}
+                        <div>
+                          <Label className="text-xs text-muted-foreground mb-2 block">Submit Button</Label>
+                          <div className="space-y-2">
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                              <Slider
+                                value={[Number.parseInt(selectedElement.props?.buttonFontSize) || 12]}
+                                onValueChange={([value]) => updateElementProps({ buttonFontSize: `${value}px` })}
+                                max={24}
+                                min={8}
+                                step={1}
+                                className="mt-2"
+                              />
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {Number.parseInt(selectedElement.props?.buttonFontSize) || 12}px
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Padding</Label>
+                              <Slider
+                                value={[Number.parseInt(selectedElement.props?.buttonPadding) || 8]}
+                                onValueChange={([value]) => updateElementProps({ buttonPadding: `${value}px` })}
+                                max={20}
+                                min={4}
+                                step={1}
+                                className="mt-2"
+                              />
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {Number.parseInt(selectedElement.props?.buttonPadding) || 8}px
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                              <Slider
+                                value={[Number.parseInt(selectedElement.props?.buttonBorderRadius) || 4]}
+                                onValueChange={([value]) => updateElementProps({ buttonBorderRadius: `${value}px` })}
+                                max={20}
+                                min={0}
+                                step={1}
+                                className="mt-2"
+                              />
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {Number.parseInt(selectedElement.props?.buttonBorderRadius) || 4}px
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Background Color</Label>
+                              <Input
+                                type="color"
+                                value={selectedElement.props?.buttonBackgroundColor || "#3b82f6"}
+                                onChange={(e) => updateElementProps({ buttonBackgroundColor: e.target.value })}
+                                className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Text Color</Label>
+                              <Input
+                                type="color"
+                                value={selectedElement.props?.buttonTextColor || "#ffffff"}
+                                onChange={(e) => updateElementProps({ buttonTextColor: e.target.value })}
+                                className="bg-sidebar-accent border-sidebar-border mt-1 h-8"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ) : selectedElement.type === "input" ? (
@@ -825,6 +2061,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
+                    {renderNewsletterSignupStyling()}
                   </div>
                 ) : selectedElement.type === "login-form" ? (
                   <div className="space-y-3">
@@ -855,6 +2092,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
+                    {renderFormElementsStyling()}
                   </div>
                 ) : selectedElement.type === "registration-form" ? (
                   <div className="space-y-3">
@@ -876,6 +2114,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
+                    {renderFormElementsStyling()}
                   </div>
                 ) : selectedElement.type === "survey-form" ? (
                   <div className="space-y-3">
@@ -906,6 +2145,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
+                    {renderSurveyFormStyling()}
                   </div>
                 ) : selectedElement.type === "order-form" ? (
                   <div className="space-y-3">
@@ -927,6 +2167,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
+                    {renderFormElementsStyling()}
                   </div>
                 ) : selectedElement.type === "booking-form" ? (
                   <div className="space-y-3">
@@ -948,6 +2189,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
+                    {renderFormElementsStyling()}
                   </div>
                 ) : selectedElement.type === "feedback-form" ? (
                   <div className="space-y-3">
@@ -969,6 +2211,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
+                    {renderFeedbackFormStyling()}
                   </div>
                 ) : selectedElement.type === "navigation" ? (
                   <div className="space-y-3">

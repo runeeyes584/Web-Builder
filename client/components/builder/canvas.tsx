@@ -1525,6 +1525,24 @@ export function Canvas({
     return { ...baseStyles, ...responsiveStyles }
   }
 
+  const getFormInputStyles = (element: BuilderElement) => ({
+    padding: element.props?.inputPadding || '8px 12px',
+    fontSize: element.props?.inputFontSize || '12px',
+    borderRadius: element.props?.inputBorderRadius || '4px',
+    borderColor: element.props?.inputBorderColor || '#374151',
+    backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
+  })
+
+  const getFormButtonStyles = (element: BuilderElement) => ({
+    padding: element.props?.buttonPadding || '8px 12px',
+    fontSize: element.props?.buttonFontSize || '12px',
+    borderRadius: element.props?.buttonBorderRadius || '4px',
+    backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
+    color: element.props?.buttonTextColor || '#ffffff',
+    border: 'none',
+    cursor: 'pointer'
+  })
+
   // overlay uses `isOver` directly
 
   const handleElementMouseDown = (e: React.MouseEvent, elementId: string) => {
@@ -2413,13 +2431,95 @@ export function Canvas({
     )}
     {element.type === "form" && (
       <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-        <div className="space-y-3">
-          <h3 className="font-semibold text-sm">{element.content}</h3>
-          <div className="space-y-2">
-            <input type="text" placeholder="Name" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-            <input type="email" placeholder="Email" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-            <textarea placeholder="Message" className="w-full px-2 py-1 text-xs border border-border rounded bg-background h-16 resize-none"></textarea>
-            <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Submit</button>
+        <div className="space-y-3 h-full flex flex-col">
+          <h3 
+            className="font-semibold flex-shrink-0" 
+            style={{
+              fontSize: element.props?.titleFontSize || '14px',
+              textAlign: element.props?.titleAlign || 'left',
+              color: element.props?.titleColor || '#ffffff'
+            }}
+          >
+            {element.content}
+          </h3>
+          <div className="space-y-2 flex-1 flex flex-col">
+            <input 
+              type="text" 
+              placeholder="Name" 
+              className="w-full border flex-shrink-0" 
+              style={element.props?.enableScaling ? {
+                padding: `${Math.max(4, (element.position?.height || 200) * 0.02)}px ${Math.max(8, (element.position?.width || 300) * 0.03)}px`,
+                fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
+                borderRadius: element.props?.inputBorderRadius || '4px',
+                borderColor: element.props?.inputBorderColor || '#374151',
+                backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
+              } : {
+                padding: element.props?.inputPadding || '8px 12px',
+                fontSize: element.props?.inputFontSize || '12px',
+                borderRadius: element.props?.inputBorderRadius || '4px',
+                borderColor: element.props?.inputBorderColor || '#374151',
+                backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
+              }}
+            />
+            <input 
+              type="email" 
+              placeholder="Email" 
+              className="w-full border flex-shrink-0" 
+              style={element.props?.enableScaling ? {
+                padding: `${Math.max(4, (element.position?.height || 200) * 0.02)}px ${Math.max(8, (element.position?.width || 300) * 0.03)}px`,
+                fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
+                borderRadius: element.props?.inputBorderRadius || '4px',
+                borderColor: element.props?.inputBorderColor || '#374151',
+                backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
+              } : {
+                padding: element.props?.inputPadding || '8px 12px',
+                fontSize: element.props?.inputFontSize || '12px',
+                borderRadius: element.props?.inputBorderRadius || '4px',
+                borderColor: element.props?.inputBorderColor || '#374151',
+                backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
+              }}
+            />
+            <textarea 
+              placeholder="Message" 
+              className="w-full border resize-none flex-1" 
+              style={element.props?.enableScaling ? {
+                padding: `${Math.max(4, (element.position?.height || 200) * 0.02)}px ${Math.max(8, (element.position?.width || 300) * 0.03)}px`,
+                fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
+                minHeight: `${Math.max(40, (element.position?.height || 200) * 0.2)}px`,
+                borderRadius: element.props?.inputBorderRadius || '4px',
+                borderColor: element.props?.inputBorderColor || '#374151',
+                backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
+              } : {
+                padding: element.props?.inputPadding || '8px 12px',
+                fontSize: element.props?.inputFontSize || '12px',
+                minHeight: element.props?.textareaMinHeight || '64px',
+                borderRadius: element.props?.inputBorderRadius || '4px',
+                borderColor: element.props?.inputBorderColor || '#374151',
+                backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
+              }}
+            />
+            <button 
+              className="w-full rounded flex-shrink-0" 
+              style={element.props?.enableScaling ? {
+                padding: `${Math.max(6, (element.position?.height || 200) * 0.03)}px ${Math.max(12, (element.position?.width || 300) * 0.04)}px`,
+                fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
+                borderRadius: element.props?.buttonBorderRadius || '4px',
+                backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
+                color: element.props?.buttonTextColor || '#ffffff',
+                border: 'none',
+                cursor: 'pointer'
+              } : {
+                padding: element.props?.buttonPadding || '8px 12px',
+                fontSize: element.props?.buttonFontSize || '12px',
+                borderRadius: element.props?.buttonBorderRadius || '4px',
+                backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
+                color: element.props?.buttonTextColor || '#ffffff',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              {element.props?.buttonText || "Submit"}
+            </button>
           </div>
         </div>
       </div>
@@ -3091,11 +3191,53 @@ export function Canvas({
     {element.type === "newsletter-signup" && (
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full flex flex-col items-center justify-center text-center space-y-3">
-          <h3 className="text-sm font-medium">{element.content}</h3>
-          <p className="text-xs text-muted-foreground">Stay updated with our latest news</p>
+          <h3 
+            className="font-medium" 
+            style={{
+              fontSize: element.props?.titleFontSize || '14px',
+              textAlign: element.props?.titleAlign || 'center',
+              color: element.props?.titleColor || '#ffffff'
+            }}
+          >
+            {element.content}
+          </h3>
+          <p 
+            className="text-muted-foreground" 
+            style={{
+              fontSize: element.props?.descriptionFontSize || '12px',
+              color: element.props?.descriptionColor || '#9ca3af'
+            }}
+          >
+            {element.props?.description || "Stay updated with our latest news"}
+          </p>
           <div className="flex gap-2 w-full">
-            <input type="email" placeholder="Enter email" className="flex-1 px-2 py-1 text-xs border border-border rounded bg-background" />
-            <button className="px-3 py-1 text-xs bg-primary text-primary-foreground rounded">Subscribe</button>
+            <input 
+              type="email" 
+              placeholder="Enter email" 
+              className="flex-1 border" 
+              style={{
+                padding: element.props?.inputPadding || '8px 12px',
+                fontSize: element.props?.inputFontSize || '12px',
+                borderRadius: element.props?.inputBorderRadius || '4px',
+                borderColor: element.props?.inputBorderColor || '#374151',
+                backgroundColor: element.props?.inputBackgroundColor || '#1f2937',
+                color: element.props?.inputTextColor || '#ffffff'
+              }}
+            />
+            <button 
+              className="rounded" 
+              style={{
+                padding: element.props?.buttonPadding || '8px 12px',
+                fontSize: element.props?.buttonFontSize || '12px',
+                borderRadius: element.props?.buttonBorderRadius || '4px',
+                backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
+                color: element.props?.buttonTextColor || '#ffffff',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              {element.props?.buttonText || "Subscribe"}
+            </button>
           </div>
         </div>
       </div>
@@ -3103,12 +3245,36 @@ export function Canvas({
     {element.type === "login-form" && (
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-3">
-          <h3 className="text-sm font-medium">{element.content}</h3>
+          <h3 
+            className="font-medium" 
+            style={{
+              fontSize: element.props?.titleFontSize || '14px',
+              textAlign: element.props?.titleAlign || 'left',
+              color: element.props?.titleColor || '#ffffff'
+            }}
+          >
+            {element.content}
+          </h3>
           <div className="space-y-2">
-            <input type="email" placeholder="Email" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-            <input type="password" placeholder="Password" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-            <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Login</button>
-            <div className="text-xs text-center text-muted-foreground">Forgot password?</div>
+            <input 
+              type="email" 
+              placeholder="Email" 
+              className="w-full border" 
+              style={getFormInputStyles(element)}
+            />
+            <input 
+              type="password" 
+              placeholder="Password" 
+              className="w-full border" 
+              style={getFormInputStyles(element)}
+            />
+            <button 
+              className="w-full rounded" 
+              style={getFormButtonStyles(element)}
+            >
+              {element.props?.submitText || "Login"}
+            </button>
+            <div className="text-xs text-center text-muted-foreground">{element.props?.forgotPasswordText || "Forgot password?"}</div>
           </div>
         </div>
       </div>
@@ -3116,13 +3282,24 @@ export function Canvas({
     {element.type === "registration-form" && (
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-2">
-          <h3 className="text-sm font-medium">{element.content}</h3>
+          <h3 
+            className="font-medium" 
+            style={{
+              fontSize: element.props?.titleFontSize || '14px',
+              textAlign: element.props?.titleAlign || 'left',
+              color: element.props?.titleColor || '#ffffff'
+            }}
+          >
+            {element.content}
+          </h3>
           <div className="space-y-1">
-            <input type="text" placeholder="Full Name" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-            <input type="email" placeholder="Email" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-            <input type="password" placeholder="Password" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-            <input type="password" placeholder="Confirm Password" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-            <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Register</button>
+            <input type="text" placeholder="Full Name" className="w-full border" style={getFormInputStyles(element)} />
+            <input type="email" placeholder="Email" className="w-full border" style={getFormInputStyles(element)} />
+            <input type="password" placeholder="Password" className="w-full border" style={getFormInputStyles(element)} />
+            <input type="password" placeholder="Confirm Password" className="w-full border" style={getFormInputStyles(element)} />
+            <button className="w-full rounded" style={getFormButtonStyles(element)}>
+              {element.props?.submitText || "Register"}
+            </button>
           </div>
         </div>
       </div>
@@ -3130,16 +3307,63 @@ export function Canvas({
     {element.type === "survey-form" && (
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-3">
-          <h3 className="text-sm font-medium">{element.content}</h3>
+          <h3 
+            className="font-medium" 
+            style={{
+              fontSize: element.props?.titleFontSize || '14px',
+              textAlign: element.props?.titleAlign || 'left',
+              color: element.props?.titleColor || '#ffffff'
+            }}
+          >
+            {element.content}
+          </h3>
           <div className="space-y-2">
-            <div className="text-xs font-medium">How satisfied are you?</div>
+            <div 
+              className="font-medium" 
+              style={{
+                fontSize: element.props?.questionFontSize || '12px',
+                color: element.props?.questionColor || '#ffffff'
+              }}
+            >
+              {element.props?.question || "How satisfied are you?"}
+            </div>
             <div className="flex gap-1">
               {[1,2,3,4,5].map(i => (
-                <button key={i} className="w-6 h-6 text-xs border border-border rounded hover:bg-muted">{i}</button>
+                <button 
+                  key={i} 
+                  className="border rounded hover:bg-muted" 
+                  style={{
+                    width: element.props?.ratingButtonSize || '24px',
+                    height: element.props?.ratingButtonSize || '24px',
+                    fontSize: element.props?.ratingButtonFontSize || '12px',
+                    borderColor: element.props?.ratingButtonBorderColor || '#374151',
+                    backgroundColor: element.props?.ratingButtonBackgroundColor || '#1f2937',
+                    color: element.props?.ratingButtonTextColor || '#ffffff'
+                  }}
+                >
+                  {i}
+                </button>
               ))}
             </div>
-            <textarea placeholder="Additional comments" className="w-full px-2 py-1 text-xs border border-border rounded bg-background h-12 resize-none"></textarea>
-            <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Submit</button>
+            <textarea 
+              placeholder="Additional comments" 
+              className="w-full border resize-none" 
+              style={{
+                padding: element.props?.textareaPadding || '8px 12px',
+                fontSize: element.props?.textareaFontSize || '12px',
+                borderRadius: element.props?.textareaBorderRadius || '4px',
+                borderColor: element.props?.textareaBorderColor || '#374151',
+                backgroundColor: element.props?.textareaBackgroundColor || '#1f2937',
+                color: element.props?.textareaTextColor || '#ffffff',
+                height: element.props?.textareaHeight || '48px'
+              }}
+            />
+            <button 
+              className="w-full rounded" 
+              style={getFormButtonStyles(element)}
+            >
+              {element.props?.submitText || "Submit"}
+            </button>
           </div>
         </div>
       </div>
@@ -3147,12 +3371,41 @@ export function Canvas({
     {element.type === "order-form" && (
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-3">
-          <h3 className="text-sm font-medium">{element.content}</h3>
+          <h3 
+            className="font-medium" 
+            style={{
+              fontSize: element.props?.titleFontSize || '14px',
+              textAlign: element.props?.titleAlign || 'left',
+              color: element.props?.titleColor || '#ffffff'
+            }}
+          >
+            {element.content}
+          </h3>
           <div className="space-y-2">
-            <input type="text" placeholder="Product Name" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-            <input type="number" placeholder="Quantity" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-            <input type="text" placeholder="Shipping Address" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-            <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Place Order</button>
+            <input 
+              type="text" 
+              placeholder="Product Name" 
+              className="w-full border" 
+              style={getFormInputStyles(element)}
+            />
+            <input 
+              type="number" 
+              placeholder="Quantity" 
+              className="w-full border" 
+              style={getFormInputStyles(element)}
+            />
+            <input 
+              type="text" 
+              placeholder="Shipping Address" 
+              className="w-full border" 
+              style={getFormInputStyles(element)}
+            />
+            <button 
+              className="w-full rounded" 
+              style={getFormButtonStyles(element)}
+            >
+              {element.props?.submitText || "Place Order"}
+            </button>
           </div>
         </div>
       </div>
@@ -3160,12 +3413,39 @@ export function Canvas({
     {element.type === "booking-form" && (
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-3">
-          <h3 className="text-sm font-medium">{element.content}</h3>
+          <h3 
+            className="font-medium" 
+            style={{
+              fontSize: element.props?.titleFontSize || '14px',
+              textAlign: element.props?.titleAlign || 'left',
+              color: element.props?.titleColor || '#ffffff'
+            }}
+          >
+            {element.content}
+          </h3>
           <div className="space-y-2">
-            <input type="text" placeholder="Service" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-            <input type="date" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-            <input type="time" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-            <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Book Now</button>
+            <input 
+              type="text" 
+              placeholder="Service" 
+              className="w-full border" 
+              style={getFormInputStyles(element)}
+            />
+            <input 
+              type="date" 
+              className="w-full border" 
+              style={getFormInputStyles(element)}
+            />
+            <input 
+              type="time" 
+              className="w-full border" 
+              style={getFormInputStyles(element)}
+            />
+            <button 
+              className="w-full rounded" 
+              style={getFormButtonStyles(element)}
+            >
+              {element.props?.submitText || "Book Now"}
+            </button>
           </div>
         </div>
       </div>
@@ -3173,16 +3453,52 @@ export function Canvas({
     {element.type === "feedback-form" && (
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-3">
-          <h3 className="text-sm font-medium">{element.content}</h3>
+          <h3 
+            className="font-medium" 
+            style={{
+              fontSize: element.props?.titleFontSize || '14px',
+              textAlign: element.props?.titleAlign || 'left',
+              color: element.props?.titleColor || '#ffffff'
+            }}
+          >
+            {element.content}
+          </h3>
           <div className="space-y-2">
-            <select className="w-full px-2 py-1 text-xs border border-border rounded bg-background">
+            <select 
+              className="w-full border" 
+              style={{
+                padding: element.props?.selectPadding || '8px 12px',
+                fontSize: element.props?.selectFontSize || '12px',
+                borderRadius: element.props?.selectBorderRadius || '4px',
+                borderColor: element.props?.selectBorderColor || '#374151',
+                backgroundColor: element.props?.selectBackgroundColor || '#1f2937',
+                color: element.props?.selectTextColor || '#ffffff'
+              }}
+            >
               <option>Select Category</option>
               <option>Bug Report</option>
               <option>Feature Request</option>
               <option>General Feedback</option>
             </select>
-            <textarea placeholder="Your feedback" className="w-full px-2 py-1 text-xs border border-border rounded bg-background h-16 resize-none"></textarea>
-            <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Submit Feedback</button>
+            <textarea 
+              placeholder="Your feedback" 
+              className="w-full border resize-none" 
+              style={{
+                padding: element.props?.textareaPadding || '8px 12px',
+                fontSize: element.props?.textareaFontSize || '12px',
+                borderRadius: element.props?.textareaBorderRadius || '4px',
+                borderColor: element.props?.textareaBorderColor || '#374151',
+                backgroundColor: element.props?.textareaBackgroundColor || '#1f2937',
+                color: element.props?.textareaTextColor || '#ffffff',
+                height: element.props?.textareaHeight || '64px'
+              }}
+            />
+            <button 
+              className="w-full rounded" 
+              style={getFormButtonStyles(element)}
+            >
+              {element.props?.submitText || "Submit Feedback"}
+            </button>
           </div>
         </div>
       </div>

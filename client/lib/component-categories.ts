@@ -1,4 +1,4 @@
-import { Activity, AlertCircle, AlignLeft, Award, BarChart, Bell, Brush, Calendar, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Code, CreditCard, DollarSign, Download, File, FileText, Filter, Flag, Folder, FormInput, Grid3X3, Hash, Home, ImageIcon, Info, Layout, Link, List, Lock, Mail, MapPin, Maximize, Menu, MessageSquare, Minimize, Minus, Move, Music, Navigation, Phone, Play, Quote, RotateCcw, Search, Share, ShoppingCart, Smartphone, Square, Star, Tag, Target, ToggleLeft, TrendingUp, Type, Upload, User, Users, Video, X } from "lucide-react"
+import { Activity, AlertCircle, AlignLeft, Award, BarChart, Bell, Brush, Calendar, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Code, CreditCard, DollarSign, Download, File, FileText, Filter, Flag, Folder, FormInput, Grid3X3, Hash, Home, ImageIcon, Info, Layout, Link, List, Lock, Mail, MapPin, Maximize, Menu, MessageSquare, Minimize, Music, Navigation, Phone, Play, Quote, RotateCcw, Search, Share, ShoppingCart, Smartphone, Square, Star, Tag, Target, ToggleLeft, TrendingUp, Type, Upload, User, Users, Video, X } from "lucide-react"
 
 export const componentCategories = [
   {
@@ -99,8 +99,6 @@ export const componentCategories = [
       { name: "Filter", icon: Filter, description: "Filter controls", type: "filter" },
       { name: "Breadcrumb", icon: ChevronRight, description: "Navigation breadcrumbs", type: "breadcrumb" },
       { name: "Pagination", icon: ChevronLeft, description: "Page navigation", type: "pagination" },
-      { name: "Spinner", icon: RotateCcw, description: "Loading spinner", type: "spinner" },
-      { name: "Skeleton", icon: Square, description: "Loading skeleton", type: "skeleton" },
       { name: "Alert", icon: AlertCircle, description: "Alert messages", type: "alert" },
       { name: "Toast", icon: Bell, description: "Toast notifications", type: "toast" },
       { name: "Drawer", icon: Minimize, description: "Side drawer", type: "drawer" },
@@ -126,8 +124,6 @@ export const componentCategories = [
       { name: "PDF Viewer", icon: File, description: "PDF display", type: "pdf-viewer" },
       { name: "Document", icon: FileText, description: "Document viewer", type: "document" },
       { name: "Folder", icon: Folder, description: "Folder structure", type: "folder" },
-      { name: "Image Gallery", icon: Camera, description: "Photo gallery", type: "image-gallery" },
-      { name: "Video Gallery", icon: Video, description: "Video collection", type: "video-gallery" },
       { name: "Media Player", icon: Play, description: "Media controls", type: "media-player" },
     ],
   },
@@ -149,7 +145,6 @@ export const componentCategories = [
       { name: "Progress Ring", icon: Circle, description: "Circular progress", type: "progress-ring" },
       { name: "Status Badge", icon: Award, description: "Status indicator", type: "status-badge" },
       { name: "Notification", icon: Bell, description: "Notification bell", type: "notification" },
-      { name: "Alert Banner", icon: AlertCircle, description: "Alert banner", type: "alert-banner" },
       { name: "Success Message", icon: Check, description: "Success alert", type: "success-message" },
       { name: "Error Message", icon: X, description: "Error alert", type: "error-message" },
       { name: "Warning Message", icon: AlertCircle, description: "Warning alert", type: "warning-message" },
@@ -158,7 +153,6 @@ export const componentCategories = [
   {
     name: "Utility & Tools",
     components: [
-      { name: "Divider", icon: Minus, description: "Content divider", type: "divider" },
       { name: "Spacer", icon: Square, description: "Empty space", type: "spacer" },
       { name: "Container", icon: Square, description: "Content wrapper", type: "container" },
       { name: "Wrapper", icon: Layout, description: "Element wrapper", type: "wrapper" },
@@ -184,7 +178,6 @@ export const componentCategories = [
   {
     name: "Forms & Validation",
     components: [
-      { name: "Contact Form", icon: Mail, description: "Contact us form", type: "contact-form" },
       { name: "Newsletter Signup", icon: Mail, description: "Email subscription", type: "newsletter-signup" },
       { name: "Login Form", icon: Lock, description: "User login", type: "login-form" },
       { name: "Registration Form", icon: User, description: "User signup", type: "registration-form" },
