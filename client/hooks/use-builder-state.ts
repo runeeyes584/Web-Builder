@@ -9,7 +9,7 @@ export function useBuilderState() {
       id: "1",
       type: "heading",
       content: "Welcome to Your Website",
-      styles: { fontSize: "2rem", fontWeight: "bold", marginBottom: "1rem" },
+      styles: { fontSize: "2rem", marginBottom: "1rem" },
       responsiveStyles: {
         desktop: { fontSize: "2rem" },
         tablet: { fontSize: "1.75rem" },
@@ -65,8 +65,23 @@ export function useBuilderState() {
   }, [historyIndex])
 
   const updateElement = useCallback((id: string, updates: Partial<BuilderElement>) => {
+    console.log('🔄 updateElement called:', { id, updates, updateKeys: Object.keys(updates) });
     setElements((prev) => {
-      const newElements = prev.map((el) => (el.id === id ? { ...el, ...updates } : el))
+      const newElements = prev.map((el) => {
+        if (el.id === id) {
+          const updated = { ...el, ...updates };
+          console.log('📝 Element updated:', { 
+            id, 
+            oldProps: el.props, 
+            newProps: updates.props,
+            finalProps: updated.props 
+          });
+          return updated;
+        }
+        return el;
+      });
+      
+      console.log('✅ Elements state updated, count:', newElements.length);
       
       // Save to history
       setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])

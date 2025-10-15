@@ -196,14 +196,14 @@ export function Canvas({
         animations: { type: "slideIn", duration: 800, delay: 200, direction: "up" },
       },
       image: {
-        content: "/placeholder.svg?height=200&width=400",
+        content: "/placeholder.svg?height=250&width=300",
         styles: { width: "100%", height: "auto", marginBottom: "1rem", borderRadius: "0.5rem" },
         responsiveStyles: {
-          desktop: { width: "100%", maxWidth: "400px" },
-          tablet: { width: "100%", maxWidth: "350px" },
-          mobile: { width: "100%", maxWidth: "300px" },
+          desktop: { width: "100%" },
+          tablet: { width: "100%" },
+          mobile: { width: "100%" },
         },
-        position: { x: 100, y: 100, width: 400, height: 200 },
+        position: { x: 100, y: 100, width: 300, height: 250 },
         animations: { type: "zoomIn", duration: 700, delay: 100 },
       },
       button: {
@@ -223,7 +223,7 @@ export function Canvas({
           tablet: { padding: "0.65rem 1.25rem", fontSize: "0.95rem" },
           mobile: { padding: "0.6rem 1rem", fontSize: "0.9rem" },
         },
-        position: { x: 100, y: 100, width: 120, height: 40 },
+        position: { x: 100, y: 100, width: 150, height: 50 },
         animations: { type: "bounce", duration: 600, delay: 300 },
       },
       section: {
@@ -240,7 +240,7 @@ export function Canvas({
           tablet: { padding: "1.5rem" },
           mobile: { padding: "1rem" },
         },
-        position: { x: 100, y: 100, width: 500, height: 200 },
+        position: { x: 100, y: 100, width: 600, height: 250 },
         animations: { type: "slideIn", duration: 800, delay: 0, direction: "up" },
       },
       card: {
@@ -258,7 +258,7 @@ export function Canvas({
           tablet: { padding: "1.25rem" },
           mobile: { padding: "1rem" },
         },
-        position: { x: 100, y: 100, width: 300, height: 200 },
+        position: { x: 100, y: 100, width: 350, height: 250 },
         animations: { type: "fadeIn", duration: 600, delay: 200 },
       },
       quote: {
@@ -271,23 +271,33 @@ export function Canvas({
           fontSize: "1.1rem",
           borderRadius: "0.5rem",
         },
+        props: {
+          author: "Author Name",
+          authorFontSize: "12px",
+          authorFontWeight: "400",
+        },
         responsiveStyles: {
           desktop: { fontSize: "1.1rem" },
           tablet: { fontSize: "1rem" },
           mobile: { fontSize: "0.95rem" },
         },
-        position: { x: 100, y: 100, width: 400, height: 120 },
+        position: { x: 100, y: 100, width: 450, height: 140 },
         animations: { type: "slideIn", duration: 700, delay: 100, direction: "left" },
       },
       separator: {
         content: "",
         styles: {
-          height: "1px",
-          backgroundColor: "var(--color-border)",
-          margin: "2rem 0",
+          height: "2px",
+          backgroundColor: "#6b7280",
+          margin: "0",
           width: "100%",
         },
-        position: { x: 100, y: 100, width: 300, height: 1 },
+        position: { x: 100, y: 100, width: 300, height: 2 },
+        props: {
+          thickness: "2px",
+          orientation: "horizontal",
+          separatorStyle: "solid"
+        },
         animations: { type: "fadeIn", duration: 500, delay: 0 },
       },
       list: {
@@ -303,7 +313,7 @@ export function Canvas({
           tablet: { fontSize: "0.95rem" },
           mobile: { fontSize: "0.9rem" },
         },
-        position: { x: 100, y: 100, width: 250, height: 120 },
+        position: { x: 100, y: 100, width: 300, height: 140 },
         animations: { type: "slideIn", duration: 600, delay: 200, direction: "up" },
       },
       input: {
@@ -322,7 +332,7 @@ export function Canvas({
           tablet: { padding: "0.65rem", fontSize: "0.95rem" },
           mobile: { padding: "0.6rem", fontSize: "0.9rem" },
         },
-        position: { x: 100, y: 100, width: 200, height: 40 },
+        position: { x: 100, y: 100, width: 250, height: 50 },
         animations: { type: "fadeIn", duration: 500, delay: 100 },
       },
       textarea: {
@@ -342,7 +352,7 @@ export function Canvas({
           tablet: { padding: "0.65rem", fontSize: "0.95rem" },
           mobile: { padding: "0.6rem", fontSize: "0.9rem" },
         },
-        position: { x: 100, y: 100, width: 300, height: 100 },
+        position: { x: 100, y: 100, width: 350, height: 120 },
         animations: { type: "fadeIn", duration: 500, delay: 100 },
       },
       select: {
@@ -1522,26 +1532,119 @@ export function Canvas({
   const getElementStyles = (element: BuilderElement): Record<string, any> => {
     const baseStyles = element.styles || {}
     const responsiveStyles = element.responsiveStyles?.[currentBreakpoint] || {}
-    return { ...baseStyles, ...responsiveStyles }
+    
+    // Only apply auto-scaling if enabled
+    if (element.props?.autoScale === false) {
+      return { ...baseStyles, ...responsiveStyles }
+    }
+    
+    // Calculate scale factor for auto-scaling content
+    const originalPosition = element.position || { x: 0, y: 0, width: 200, height: 50 }
+    const currentPosition = {
+      width: transientRef.current.get(element.id)?.width ?? originalPosition.width,
+      height: transientRef.current.get(element.id)?.height ?? originalPosition.height,
+    }
+    
+    const scaleX = currentPosition.width / originalPosition.width
+    const scaleY = currentPosition.height / originalPosition.height
+    
+    // Apply scaling to font sizes and other scalable properties
+    const scaledStyles: Record<string, any> = {}
+    
+    Object.entries({ ...baseStyles, ...responsiveStyles }).forEach(([key, value]) => {
+      if (typeof value === 'string' && value.includes('px')) {
+        const numericValue = parseFloat(value)
+        if (!isNaN(numericValue)) {
+          // Scale font sizes, padding, margins, etc.
+          if (key.includes('fontSize') || key.includes('padding') || key.includes('margin') || 
+              key.includes('borderRadius') || key.includes('gap') || key.includes('lineHeight')) {
+            scaledStyles[key] = `${numericValue * Math.min(scaleX, scaleY)}px`
+          }
+          // Scale width/height properties
+          else if (key.includes('width') || key.includes('height')) {
+            if (key.includes('width')) {
+              scaledStyles[key] = `${numericValue * scaleX}px`
+            } else {
+              scaledStyles[key] = `${numericValue * scaleY}px`
+            }
+          }
+          else {
+            scaledStyles[key] = value
+          }
+        } else {
+          scaledStyles[key] = value
+        }
+      } else {
+        scaledStyles[key] = value
+      }
+    })
+    
+    return scaledStyles
   }
 
-  const getFormInputStyles = (element: BuilderElement) => ({
-    padding: element.props?.inputPadding || '8px 12px',
-    fontSize: element.props?.inputFontSize || '12px',
-    borderRadius: element.props?.inputBorderRadius || '4px',
-    borderColor: element.props?.inputBorderColor || '#374151',
-    backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
-  })
+  const getFormInputStyles = (element: BuilderElement) => {
+    const baseStyles = {
+      padding: element.props?.inputPadding || '8px 12px',
+      fontSize: element.props?.inputFontSize || '12px',
+      borderRadius: element.props?.inputBorderRadius || '4px',
+      borderColor: element.props?.inputBorderColor || '#374151',
+      backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
+    }
+    
+    // Only apply scaling if autoScale is enabled
+    if (element.props?.autoScale === false) {
+      return baseStyles
+    }
+    
+    const originalPosition = element.position || { x: 0, y: 0, width: 200, height: 50 }
+    const currentPosition = {
+      width: transientRef.current.get(element.id)?.width ?? originalPosition.width,
+      height: transientRef.current.get(element.id)?.height ?? originalPosition.height,
+    }
+    
+    const scaleX = currentPosition.width / originalPosition.width
+    const scaleY = currentPosition.height / originalPosition.height
+    const scale = Math.min(scaleX, scaleY)
+    
+    return {
+      ...baseStyles,
+      fontSize: `${(parseFloat(element.props?.inputFontSize) || 12) * scale}px`,
+      borderRadius: `${(parseFloat(element.props?.inputBorderRadius) || 4) * scale}px`,
+    }
+  }
 
-  const getFormButtonStyles = (element: BuilderElement) => ({
-    padding: element.props?.buttonPadding || '8px 12px',
-    fontSize: element.props?.buttonFontSize || '12px',
-    borderRadius: element.props?.buttonBorderRadius || '4px',
-    backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
-    color: element.props?.buttonTextColor || '#ffffff',
-    border: 'none',
-    cursor: 'pointer'
-  })
+  const getFormButtonStyles = (element: BuilderElement) => {
+    const baseStyles = {
+      padding: element.props?.buttonPadding || '8px 12px',
+      fontSize: element.props?.buttonFontSize || '12px',
+      borderRadius: element.props?.buttonBorderRadius || '4px',
+      backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
+      color: element.props?.buttonTextColor || '#ffffff',
+      border: 'none',
+      cursor: 'pointer'
+    }
+    
+    // Only apply scaling if autoScale is enabled
+    if (element.props?.autoScale === false) {
+      return baseStyles
+    }
+    
+    const originalPosition = element.position || { x: 0, y: 0, width: 200, height: 50 }
+    const currentPosition = {
+      width: transientRef.current.get(element.id)?.width ?? originalPosition.width,
+      height: transientRef.current.get(element.id)?.height ?? originalPosition.height,
+    }
+    
+    const scaleX = currentPosition.width / originalPosition.width
+    const scaleY = currentPosition.height / originalPosition.height
+    const scale = Math.min(scaleX, scaleY)
+    
+    return {
+      ...baseStyles,
+      fontSize: `${(parseFloat(element.props?.buttonFontSize) || 12) * scale}px`,
+      borderRadius: `${(parseFloat(element.props?.buttonBorderRadius) || 4) * scale}px`,
+    }
+  }
 
   // overlay uses `isOver` directly
 
@@ -1997,12 +2100,19 @@ export function Canvas({
             </p>
           )}
           {element.type === "image" && (
-            <img
-              src={element.content || "/placeholder.svg"}
-              alt="Element"
-              className="w-full h-full object-cover"
-              style={elementStyles}
-            />
+            <div 
+              className="w-full h-full flex items-center justify-center"
+              style={{
+                transform: `rotate(${element.props?.rotation || 0}deg)`,
+              }}
+            >
+              <img
+                src={element.content || "/placeholder.svg"}
+                alt="Element"
+                className="max-w-full max-h-full object-contain"
+                style={elementStyles}
+              />
+            </div>
           )}
           {element.type === "button" && (
             <button className="text-card-foreground w-full h-full hover:opacity-90 transition-opacity" style={elementStyles}>
@@ -2016,28 +2126,148 @@ export function Canvas({
           )}
           {element.type === "card" && (
             <div className="text-card-foreground w-full h-full" style={elementStyles}>
-              <h3 className="font-semibold mb-2">Card Title</h3>
-              <p className="text-sm text-muted-foreground">{element.content}</p>
+              <h3 
+                className="mb-2"
+                style={{
+                  fontSize: element.props?.titleFontSize || "1.125rem",
+                  fontWeight: element.props?.titleFontWeight || "600",
+                  textAlign: element.props?.titleTextAlign || "left",
+                  fontFamily: element.props?.fontFamily || "inherit",
+                }}
+              >
+                {element.props?.title || "Card Title"}
+              </h3>
+              <p 
+                className="text-sm text-muted-foreground"
+                style={{
+                  fontSize: element.props?.descriptionFontSize || "0.875rem",
+                  fontWeight: element.props?.descriptionFontWeight || "400",
+                  textAlign: element.props?.descriptionTextAlign || "left",
+                  fontFamily: element.props?.fontFamily || "inherit",
+                }}
+              >
+                {element.props?.description || element.content}
+              </p>
+              {element.props?.buttonText && (
+                <button 
+                  className="mt-3 px-3 py-1 bg-primary text-primary-foreground text-xs rounded hover:opacity-90"
+                  style={{
+                    fontSize: element.props?.buttonFontSize || "0.75rem",
+                    fontWeight: element.props?.buttonFontWeight || "500",
+                    fontFamily: element.props?.fontFamily || "inherit",
+                  }}
+                >
+                  {element.props.buttonText}
+                </button>
+              )}
             </div>
           )}
           {element.type === "quote" && (
             <div className="text-card-foreground w-full h-full" style={elementStyles}>
-              <p className="text-sm italic">"{element.content}"</p>
+              <p 
+                className="text-sm italic mb-2"
+                style={{
+                  fontSize: element.props?.fontSize || "0.875rem",
+                  fontWeight: element.props?.fontWeight || "400",
+                  textAlign: element.props?.textAlign || "left",
+                  fontFamily: element.props?.fontFamily || "inherit",
+                  fontStyle: element.props?.fontStyle || "italic",
+                }}
+              >
+                "{element.content}"
+              </p>
+              {element.props?.author && (
+                <p 
+                  className="text-xs text-muted-foreground"
+                  style={{
+                    fontSize: element.props?.authorFontSize || "12px",
+                    fontWeight: element.props?.authorFontWeight || "400",
+                    textAlign: element.props?.textAlign || "left",
+                    fontFamily: element.props?.fontFamily || "inherit",
+                  }}
+                >
+                  — {element.props.author} —
+                </p>
+              )}
             </div>
           )}
           {element.type === "separator" && (
-            <div className="w-full h-full" style={elementStyles}></div>
+            <div 
+              className="w-full flex items-center justify-center" 
+              style={{
+                ...elementStyles,
+                height: element.props?.orientation === "vertical" ? "100%" : element.props?.thickness || "2px",
+                minHeight: element.props?.orientation === "vertical" ? "100%" : element.props?.thickness || "2px",
+              }}
+            >
+              <div 
+                className="bg-gray-500"
+                style={{
+                  height: element.props?.orientation === "vertical" ? "100%" : element.props?.thickness || "2px",
+                  width: element.props?.orientation === "vertical" ? element.props?.thickness || "2px" : "100%",
+                  borderStyle: element.props?.separatorStyle || "solid",
+                  borderWidth: element.props?.separatorStyle !== "solid" ? "1px" : "0",
+                  borderColor: element.props?.separatorStyle !== "solid" ? "currentColor" : "transparent",
+                  backgroundColor: element.styles?.backgroundColor || "#6b7280",
+                  minHeight: "2px",
+                  minWidth: "2px",
+                }}
+              ></div>
+            </div>
           )}
     {element.type === "list" && (
       <div className="text-card-foreground w-full h-full" style={elementStyles}>
-        <ul className="text-sm space-y-1">
-          {element.content.split('\n').map((item, index) => (
-            <li key={index} className="flex items-center">
-              <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
-              {item.replace('• ', '')}
-            </li>
-          ))}
-        </ul>
+        {element.props?.title && (
+          <h3 
+            className="mb-3"
+            style={{
+              fontSize: element.props?.titleFontSize || "1.125rem",
+              fontWeight: element.props?.titleFontWeight || "600",
+              textAlign: element.props?.titleTextAlign || "left",
+              fontFamily: element.props?.fontFamily || "inherit",
+              fontStyle: element.props?.titleFontStyle || "normal",
+            }}
+          >
+            {element.props.title}
+          </h3>
+        )}
+        {element.props?.listType === "ol" ? (
+          <ol 
+            className="space-y-1"
+            style={{
+              fontFamily: element.props?.fontFamily || "inherit",
+              fontSize: element.props?.itemsFontSize || "0.875rem",
+              fontWeight: element.props?.itemsFontWeight || "400",
+              fontStyle: element.props?.itemsFontStyle || "normal",
+              textAlign: element.props?.itemsTextAlign || "left",
+            }}
+          >
+            {(element.props?.listItems || element.content.split('\n')).map((item: string, index: number) => (
+              <li key={index} className="flex items-center">
+                <span className="mr-2 font-medium">{index + 1}.</span>
+                {item.replace('• ', '')}
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <ul 
+            className="space-y-1"
+            style={{
+              fontFamily: element.props?.fontFamily || "inherit",
+              fontSize: element.props?.itemsFontSize || "0.875rem",
+              fontWeight: element.props?.itemsFontWeight || "400",
+              fontStyle: element.props?.itemsFontStyle || "normal",
+              textAlign: element.props?.itemsTextAlign || "left",
+            }}
+          >
+            {(element.props?.listItems || element.content.split('\n')).map((item: string, index: number) => (
+              <li key={index} className="flex items-center">
+                <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
+                {item.replace('• ', '')}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     )}
     {element.type === "input" && (

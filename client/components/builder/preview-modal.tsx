@@ -1,13 +1,11 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Monitor, Tablet, Smartphone, X } from "lucide-react"
-import type { BuilderElement, Breakpoint } from "@/lib/builder-types"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import type { Breakpoint, BuilderElement } from "@/lib/builder-types"
+import { Monitor, Smartphone, Tablet, X } from "lucide-react"
+import { useState } from "react"
 
 interface PreviewModalProps {
   isOpen: boolean

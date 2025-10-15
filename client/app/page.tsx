@@ -345,6 +345,7 @@ export default function WebsiteBuilder() {
                 currentBreakpoint={currentBreakpoint}
                 onUpdateElement={updateElement}
                 onUpdateElementResponsiveStyle={updateElementResponsiveStyle}
+                onUpdateElementPosition={updateElementPosition}
               />
             </div>
           </ResizablePanel>

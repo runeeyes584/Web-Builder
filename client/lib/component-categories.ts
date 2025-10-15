@@ -157,7 +157,6 @@ export const componentCategories = [
       { name: "Container", icon: Square, description: "Content wrapper", type: "container" },
       { name: "Wrapper", icon: Layout, description: "Element wrapper", type: "wrapper" },
       { name: "Flexbox", icon: Layout, description: "Flex container", type: "flexbox" },
-      { name: "Grid Container", icon: Grid3X3, description: "Grid wrapper", type: "grid-container" },
       { name: "Center", icon: Circle, description: "Centered content", type: "center" },
       { name: "Stack", icon: Layout, description: "Vertical stack", type: "stack" },
     ],
