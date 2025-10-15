@@ -31,7 +31,6 @@ interface TopToolbarProps {
   onRotateSelected?: () => void
   showSections?: boolean
   onSectionsToggle?: (show: boolean) => void
-  
 }
 
 export function TopToolbar({
@@ -204,7 +203,7 @@ export function TopToolbar({
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowPreview(true)} className="bg-primary/5 hover:bg-primary/10">
               <Eye className="w-4 h-4 mr-2" />
-              Preview
+              Preview Window
             </Button>
             <Button variant="outline" size="sm" onClick={() => setShowExport(true)} className="bg-primary/5 hover:bg-primary/10">
               <Download className="w-4 h-4 mr-2" />

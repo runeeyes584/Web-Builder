@@ -11,23 +11,23 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import type { Breakpoint, BuilderElement } from "@/lib/builder-types"
 import {
-  AlignCenter,
-  AlignJustify,
-  AlignLeft,
-  AlignRight,
-  FolderIcon as BorderIcon,
-  Code,
-  Layout,
-  Monitor,
-  Palette,
-  Plus,
-  Settings,
-  Shapes as Shadow,
-  Smartphone,
-  Tablet,
-  Trash2,
-  Type,
-  Zap
+    AlignCenter,
+    AlignJustify,
+    AlignLeft,
+    AlignRight,
+    FolderIcon as BorderIcon,
+    Code,
+    Layout,
+    Monitor,
+    Palette,
+    Plus,
+    Settings,
+    Shapes as Shadow,
+    Smartphone,
+    Tablet,
+    Trash2,
+    Type,
+    Zap
 } from "lucide-react"
 import { useEffect, useState } from "react"
 
@@ -38,6 +38,8 @@ interface PropertiesPanelProps {
   onUpdateElement: (id: string, updates: Partial<BuilderElement>) => void
   onUpdateElementResponsiveStyle: (id: string, breakpoint: Breakpoint, styles: Record<string, any>) => void
   onUpdateElementPosition: (id: string, position: { x: number; y: number; width?: number; height?: number }) => void
+  isPreviewMode?: boolean
+  onPreviewModeToggle?: (enabled: boolean) => void
 }
 
 export function PropertiesPanel({
@@ -47,6 +49,8 @@ export function PropertiesPanel({
   onUpdateElement,
   onUpdateElementResponsiveStyle,
   onUpdateElementPosition,
+  isPreviewMode = false,
+  onPreviewModeToggle,
 }: PropertiesPanelProps) {
   const [activeTab, setActiveTab] = useState<"content" | "style" | "layout" | "effects" | "animations" | "advanced">("content")
   const [responsiveMode, setResponsiveMode] = useState(false)
@@ -1968,11 +1972,35 @@ export function PropertiesPanel({
                     <div>
                       <Label className="text-xs text-muted-foreground">Video URL</Label>
                       <Input
-                        placeholder="https://example.com/video.mp4"
+                        placeholder="YouTube, Vimeo, Facebook or direct video URL"
                         value={selectedElement.content}
                         onChange={(e) => updateElementContent(e.target.value)}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        ✅ YouTube • Vimeo • Facebook • Direct links (.mp4, .webm)
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Or Upload Video</Label>
+                      <Input
+                        type="file"
+                        accept="video/mp4,video/webm,video/ogg,video/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            const url = URL.createObjectURL(file)
+                            updateElementContent(url)
+                            updateElementProps({ videoFileName: file.name })
+                          }
+                        }}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                      {selectedElement.props?.videoFileName && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          📹 {selectedElement.props.videoFileName}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center space-x-2">
                       <Switch
@@ -1980,6 +2008,90 @@ export function PropertiesPanel({
                         onCheckedChange={(checked) => updateElementProps({ autoplay: checked })}
                       />
                       <Label className="text-xs text-muted-foreground">Autoplay</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={selectedElement.props?.controls !== false}
+                        onCheckedChange={(checked) => updateElementProps({ controls: checked })}
+                      />
+                      <Label className="text-xs text-muted-foreground">Show Controls</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={selectedElement.props?.loop || false}
+                        onCheckedChange={(checked) => updateElementProps({ loop: checked })}
+                      />
+                      <Label className="text-xs text-muted-foreground">Loop</Label>
+                    </div>
+                    <Separator className="my-3" />
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={isPreviewMode || false}
+                        onCheckedChange={(checked) => onPreviewModeToggle?.(checked)}
+                      />
+                      <Label className="text-xs text-muted-foreground">🎬 Preview Mode (Interact with video)</Label>
+                    </div>
+                  </div>
+                ) : selectedElement.type === "audio" ? (
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Audio URL</Label>
+                      <Input
+                        placeholder="https://example.com/audio.mp3"
+                        value={selectedElement.content}
+                        onChange={(e) => updateElementContent(e.target.value)}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Upload Audio</Label>
+                      <div className="mt-1">
+                        <Input
+                          type="file"
+                          accept="audio/*"
+                          id={`audio-upload-${selectedElement.id}`}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              const url = URL.createObjectURL(file)
+                              updateElementContent(url)
+                              updateElementProps({ 
+                                audioFileName: file.name
+                              })
+                            }
+                          }}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => document.getElementById(`audio-upload-${selectedElement.id}`)?.click()}
+                          className="w-full"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          {selectedElement.props?.audioFileName ? 'Change Audio' : 'Upload Audio'}
+                        </Button>
+                      </div>
+                      {selectedElement.props?.audioFileName && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          🎵 {selectedElement.props.audioFileName}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={selectedElement.props?.autoplay || false}
+                        onCheckedChange={(checked) => updateElementProps({ autoplay: checked })}
+                      />
+                      <Label className="text-xs text-muted-foreground">Autoplay</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={selectedElement.props?.muted || false}
+                        onCheckedChange={(checked) => updateElementProps({ muted: checked })}
+                      />
+                      <Label className="text-xs text-muted-foreground">Mute</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Switch
@@ -1994,32 +2106,6 @@ export function PropertiesPanel({
                         onCheckedChange={(checked) => updateElementProps({ loop: checked })}
                       />
                       <Label className="text-xs text-muted-foreground">Loop</Label>
-                    </div>
-                  </div>
-                ) : selectedElement.type === "audio" ? (
-                  <div className="space-y-3">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Audio URL</Label>
-                      <Input
-                        placeholder="https://example.com/audio.mp3"
-                        value={selectedElement.content}
-                        onChange={(e) => updateElementContent(e.target.value)}
-                        className="bg-sidebar-accent border-sidebar-border mt-1"
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={selectedElement.props?.autoplay || false}
-                        onCheckedChange={(checked) => updateElementProps({ autoplay: checked })}
-                      />
-                      <Label className="text-xs text-muted-foreground">Autoplay</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={selectedElement.props?.controls || true}
-                        onCheckedChange={(checked) => updateElementProps({ controls: checked })}
-                      />
-                      <Label className="text-xs text-muted-foreground">Show Controls</Label>
                     </div>
                   </div>
                 ) : selectedElement.type === "table" ? (
@@ -2801,43 +2887,179 @@ export function PropertiesPanel({
                       />
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Columns</Label>
-                      <Input
-                        type="number"
-                        placeholder="3"
-                        value={selectedElement.props?.columns || 3}
-                        onChange={(e) => updateElementProps({ columns: parseInt(e.target.value) || 3 })}
-                        className="bg-sidebar-accent border-sidebar-border mt-1"
-                      />
+                      <Label className="text-xs text-muted-foreground">Upload Images</Label>
+                      <div className="mt-1">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          id={`gallery-upload-${selectedElement.id}`}
+                          key={selectedElement.props?.images?.length || 0}
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || [])
+                            console.log('Files selected:', files.length, files)
+                            if (files.length > 0) {
+                              const imageUrls = files.map(file => {
+                                const url = URL.createObjectURL(file)
+                                console.log('Created blob URL:', url, 'for file:', file.name)
+                                return url
+                              })
+                              const imageNames = files.map(file => file.name)
+                              console.log('Updating element props with:', { imageUrls, imageNames })
+                              updateElementProps({ 
+                                images: imageUrls,
+                                imageNames: imageNames,
+                                imageCount: files.length
+                              })
+                            } else {
+                              console.log('No files selected')
+                            }
+                          }}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => document.getElementById(`gallery-upload-${selectedElement.id}`)?.click()}
+                          className="w-full"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          {selectedElement.props?.images?.length > 0 ? 'Change Images' : 'Choose Images'}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Select multiple images (Ctrl/Cmd + Click)
+                      </p>
+                      {selectedElement.props?.imageNames && selectedElement.props.imageNames.length > 0 && (
+                        <div className="text-xs text-muted-foreground mt-2 p-2 bg-sidebar-accent rounded">
+                          <p className="font-medium mb-1">📷 {selectedElement.props.imageNames.length} images uploaded:</p>
+                          <div className="max-h-24 overflow-y-auto space-y-0.5">
+                            {selectedElement.props.imageNames.map((name: string, i: number) => (
+                              <p key={i} className="truncate text-xs">• {name}</p>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Layout</Label>
+                      <Select
+                        value={selectedElement.props?.layout || 'grid'}
+                        onValueChange={(value) => updateElementProps({ layout: value })}
+                      >
+                        <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="grid">Grid (Multiple Rows)</SelectItem>
+                          <SelectItem value="row">Single Row (Horizontal)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {selectedElement.props?.layout !== 'row' && (
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Columns</Label>
+                        <Input
+                          type="number"
+                          placeholder="3"
+                          value={selectedElement.props?.columns || 3}
+                          onChange={(e) => updateElementProps({ columns: parseInt(e.target.value) || 3 })}
+                          className="bg-sidebar-accent border-sidebar-border mt-1"
+                        />
+                      </div>
+                    )}
                   </div>
                 ) : selectedElement.type === "icon" ? (
                   <div className="space-y-3">
                     <div>
                       <Label className="text-xs text-muted-foreground">Icon Name</Label>
                       <Input
-                        placeholder="heart"
+                        placeholder="⭐ (emoji) or heart"
                         value={selectedElement.content}
                         onChange={(e) => updateElementContent(e.target.value)}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Enter emoji or icon name
+                      </p>
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Icon Size</Label>
-                      <Select
-                        value={selectedElement.props?.size || "24"}
-                        onValueChange={(value) => updateElementProps({ size: value })}
-                      >
-                        <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="16">Small (16px)</SelectItem>
-                          <SelectItem value="24">Medium (24px)</SelectItem>
-                          <SelectItem value="32">Large (32px)</SelectItem>
-                          <SelectItem value="48">Extra Large (48px)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label className="text-xs text-muted-foreground">Upload Image</Label>
+                      <div className="mt-1">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          id={`icon-upload-${selectedElement.id}`}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              const url = URL.createObjectURL(file)
+                              updateElementProps({ 
+                                iconImage: url,
+                                iconFileName: file.name
+                              })
+                            }
+                          }}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => document.getElementById(`icon-upload-${selectedElement.id}`)?.click()}
+                          className="w-full"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          {selectedElement.props?.iconImage ? 'Change Image' : 'Upload Image'}
+                        </Button>
+                      </div>
+                      {selectedElement.props?.iconFileName && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          📷 {selectedElement.props.iconFileName}
+                        </p>
+                      )}
+                      {selectedElement.props?.iconImage && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => updateElementProps({ iconImage: null, iconFileName: null })}
+                          className="w-full mt-1 text-destructive"
+                        >
+                          Remove Image
+                        </Button>
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <Label className="text-xs text-muted-foreground">Icon Size</Label>
+                        <span className="text-xs text-muted-foreground">{selectedElement.props?.size || 24}px</span>
+                      </div>
+                      <Slider
+                        value={[parseInt(selectedElement.props?.size || "24")]}
+                        onValueChange={(value) => {
+                          const newSize = value[0]
+                          updateElementProps({ size: newSize.toString() })
+                          
+                          // Auto-adjust icon container size to fit the icon
+                          const padding = 20 // Add some padding around icon
+                          const containerSize = newSize + padding
+                          
+                          if (selectedElement.position) {
+                            onUpdateElementPosition(selectedElement.id, {
+                              x: selectedElement.position.x || 0,
+                              y: selectedElement.position.y || 0,
+                              width: containerSize,
+                              height: containerSize
+                            })
+                          }
+                        }}
+                        min={12}
+                        max={128}
+                        step={1}
+                        className="mt-1"
+                      />
                     </div>
                   </div>
                 ) : selectedElement.type === "badge" ? (
@@ -2874,11 +3096,14 @@ export function PropertiesPanel({
                     <div>
                       <Label className="text-xs text-muted-foreground">Avatar Name</Label>
                       <Input
-                        placeholder="John Doe"
+                        placeholder="John Doe or 👤"
                         value={selectedElement.content}
                         onChange={(e) => updateElementContent(e.target.value)}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Display name or emoji
+                      </p>
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground">Avatar URL</Label>
@@ -2890,19 +3115,79 @@ export function PropertiesPanel({
                       />
                     </div>
                     <div>
+                      <Label className="text-xs text-muted-foreground">Upload Image</Label>
+                      <div className="mt-1">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          id={`avatar-upload-${selectedElement.id}`}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              const url = URL.createObjectURL(file)
+                              updateElementProps({ 
+                                src: url,
+                                avatarFileName: file.name
+                              })
+                            }
+                          }}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => document.getElementById(`avatar-upload-${selectedElement.id}`)?.click()}
+                          className="w-full"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          {selectedElement.props?.src ? 'Change Image' : 'Upload Image'}
+                        </Button>
+                      </div>
+                      {selectedElement.props?.avatarFileName && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          📷 {selectedElement.props.avatarFileName}
+                        </p>
+                      )}
+                      {selectedElement.props?.src && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => updateElementProps({ src: null, avatarFileName: null })}
+                          className="w-full mt-1 text-destructive"
+                        >
+                          Remove Image
+                        </Button>
+                      )}
+                    </div>
+                    <div>
                       <Label className="text-xs text-muted-foreground">Avatar Size</Label>
                       <Select
-                        value={selectedElement.props?.size || "md"}
-                        onValueChange={(value) => updateElementProps({ size: value })}
+                        value={selectedElement.props?.avatarSize || "60"}
+                        onValueChange={(value) => {
+                          updateElementProps({ avatarSize: value })
+                          
+                          // Update container size to match
+                          const size = parseInt(value)
+                          if (selectedElement.position) {
+                            onUpdateElementPosition(selectedElement.id, {
+                              x: selectedElement.position.x || 0,
+                              y: selectedElement.position.y || 0,
+                              width: size,
+                              height: size
+                            })
+                          }
+                        }}
                       >
                         <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="sm">Small</SelectItem>
-                          <SelectItem value="md">Medium</SelectItem>
-                          <SelectItem value="lg">Large</SelectItem>
-                          <SelectItem value="xl">Extra Large</SelectItem>
+                          <SelectItem value="40">Small (40px)</SelectItem>
+                          <SelectItem value="60">Medium (60px)</SelectItem>
+                          <SelectItem value="80">Large (80px)</SelectItem>
+                          <SelectItem value="120">Extra Large (120px)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -3655,7 +3940,7 @@ export function PropertiesPanel({
               )}
 
               {/* Typography */}
-              {["heading", "paragraph", "button"].includes(selectedElement.type) && (
+              {["heading", "paragraph", "button", "badge"].includes(selectedElement.type) && (
                 <>
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -3750,27 +4035,29 @@ export function PropertiesPanel({
                           </SelectContent>
                         </Select>
                       </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Text Alignment</Label>
-                        <div className="flex gap-1 mt-1">
-                          {[
-                            { value: "left", icon: AlignLeft },
-                            { value: "center", icon: AlignCenter },
-                            { value: "right", icon: AlignRight },
-                            { value: "justify", icon: AlignJustify },
-                          ].map((align) => (
-                            <Button
-                              key={align.value}
-                              variant={currentStyles?.textAlign === align.value ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => updateElementStyle("textAlign", align.value)}
-                              className="flex-1"
-                            >
-                              <align.icon className="w-4 h-4" />
-                            </Button>
-                          ))}
+                      {selectedElement.type !== "badge" && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Text Alignment</Label>
+                          <div className="flex gap-1 mt-1">
+                            {[
+                              { value: "left", icon: AlignLeft },
+                              { value: "center", icon: AlignCenter },
+                              { value: "right", icon: AlignRight },
+                              { value: "justify", icon: AlignJustify },
+                            ].map((align) => (
+                              <Button
+                                key={align.value}
+                                variant={currentStyles?.textAlign === align.value ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => updateElementStyle("textAlign", align.value)}
+                                className="flex-1"
+                              >
+                                <align.icon className="w-4 h-4" />
+                              </Button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
 

@@ -8,6 +8,12 @@ import { Copy, Trash2 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useDrop } from "react-dnd"
 
+// Components that should fill the entire box without padding
+const NO_PADDING_COMPONENTS: ReadonlySet<BuilderElement["type"]> = new Set([
+  "video",
+  "image",
+])
+
 interface CanvasProps {
   elements: BuilderElement[]
   selectedElements: string[]
@@ -23,6 +29,7 @@ interface CanvasProps {
   zoom?: number
   showGrid?: boolean
   showSections?: boolean
+  isPreviewMode?: boolean
 }
 
 export function Canvas({
@@ -40,6 +47,7 @@ export function Canvas({
   zoom = 100,
   showGrid = true,
   showSections = true,
+  isPreviewMode = false,
 }: CanvasProps) {
   // Partition dynamic sizes
   const [headerHeight, setHeaderHeight] = useState<number>(96)
@@ -426,19 +434,19 @@ export function Canvas({
         animations: { type: "fadeIn", duration: 500, delay: 100 },
       },
       video: {
-        content: "/placeholder.svg?height=200&width=400",
+        content: "/placeholder.svg?height=300&width=500",
         styles: {
           width: "100%",
-          height: "auto",
+          height: "100%",
           borderRadius: "0.5rem",
           backgroundColor: "var(--color-muted)",
         },
         responsiveStyles: {
-          desktop: { width: "100%", maxWidth: "400px" },
-          tablet: { width: "100%", maxWidth: "350px" },
-          mobile: { width: "100%", maxWidth: "300px" },
+          desktop: { width: "100%", height: "100%" },
+          tablet: { width: "100%", height: "100%" },
+          mobile: { width: "100%", height: "100%" },
         },
-        position: { x: 100, y: 100, width: 400, height: 200 },
+        position: { x: 100, y: 100, width: 500, height: 300 },
         animations: { type: "zoomIn", duration: 700, delay: 100 },
       },
       audio: {
@@ -2095,7 +2103,12 @@ export function Canvas({
         onMouseDown={(e) => handleElementMouseDown(e, element.id)}
       >
         {/* Element content */}
-        <div className="p-2 w-full h-full overflow-hidden">
+        <div 
+          className="w-full h-full overflow-hidden"
+          style={{
+            padding: NO_PADDING_COMPONENTS.has(element.type) ? 0 : '0.5rem'
+          }}
+        >
           {element.type === "heading" && (
             <h1 className="text-card-foreground truncate" style={elementStyles}>
               {element.content}
@@ -2321,54 +2334,361 @@ export function Canvas({
       </div>
     )}
     {element.type === "video" && (
-      <div className="w-full h-full bg-muted rounded-lg flex items-center justify-center" style={elementStyles}>
-        <div className="text-center text-muted-foreground">
-          <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-2">
-            <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-          </div>
-          <p className="text-sm">Video Player</p>
-        </div>
+      <div className="w-full h-full bg-muted rounded-lg flex items-center justify-center overflow-hidden relative" style={elementStyles}>
+        {(() => {
+          const videoUrl = element.content || ''
+          
+          // Check for YouTube URL (supports all formats including short links with ?si parameter)
+          const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+          const youtubeMatch = videoUrl.match(youtubeRegex)
+          
+          // Check for Vimeo URL
+          const vimeoRegex = /vimeo\.com\/(?:.*\/)?(\d+)/
+          const vimeoMatch = videoUrl.match(vimeoRegex)
+          
+          // Check for Facebook video URL
+          const facebookRegex = /facebook\.com\/.*\/videos\/(\d+)|fb\.watch\/([a-zA-Z0-9_-]+)/
+          const facebookMatch = videoUrl.match(facebookRegex)
+          
+          if (youtubeMatch) {
+            // Render YouTube embed
+            const videoId = youtubeMatch[1]
+            const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${element.props?.autoplay ? 1 : 0}&controls=${element.props?.controls !== false ? 1 : 0}&loop=${element.props?.loop ? 1 : 0}${element.props?.loop ? `&playlist=${videoId}` : ''}&rel=0`
+            
+            return (
+              <>
+                <iframe
+                  src={embedUrl}
+                  className="w-full h-full"
+                  style={{ border: 'none', borderRadius: 'inherit' }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  loading="lazy"
+                  title="YouTube video player"
+                />
+                {/* Overlay to prevent iframe interaction in edit mode */}
+                {!isPreviewMode && (
+                  <div 
+                    className="absolute inset-0 cursor-pointer"
+                    style={{ pointerEvents: 'auto' }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onElementSelect(element.id)
+                    }}
+                  />
+                )}
+              </>
+            )
+          } else if (vimeoMatch) {
+            // Render Vimeo embed
+            const videoId = vimeoMatch[1]
+            return (
+              <>
+                <iframe
+                  src={`https://player.vimeo.com/video/${videoId}?autoplay=${element.props?.autoplay ? 1 : 0}&loop=${element.props?.loop ? 1 : 0}`}
+                  className="w-full h-full"
+                  style={{ border: 'none', borderRadius: 'inherit' }}
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                  title="Vimeo video player"
+                />
+                {/* Overlay to prevent iframe interaction in edit mode */}
+                {!isPreviewMode && (
+                  <div 
+                    className="absolute inset-0 cursor-pointer"
+                    style={{ pointerEvents: 'auto' }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onElementSelect(element.id)
+                    }}
+                  />
+                )}
+              </>
+            )
+          } else if (facebookMatch) {
+            // Render Facebook embed
+            return (
+              <>
+                <iframe
+                  src={`https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(videoUrl)}&show_text=false&autoplay=${element.props?.autoplay ? 'true' : 'false'}`}
+                  className="w-full h-full"
+                  style={{ border: 'none', borderRadius: 'inherit' }}
+                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                  allowFullScreen
+                  title="Facebook video player"
+                />
+                {/* Overlay to prevent iframe interaction in edit mode */}
+                {!isPreviewMode && (
+                  <div 
+                    className="absolute inset-0 cursor-pointer"
+                    style={{ pointerEvents: 'auto' }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onElementSelect(element.id)
+                    }}
+                  />
+                )}
+              </>
+            )
+          } else if (videoUrl.startsWith('blob:')) {
+            // Show uploaded video file
+            return (
+              <>
+                <video
+                  src={videoUrl}
+                  controls={element.props?.controls !== false}
+                  autoPlay={element.props?.autoplay || false}
+                  loop={element.props?.loop || false}
+                  className="w-full h-full object-cover"
+                  style={{ borderRadius: 'inherit' }}
+                >
+                  Your browser does not support the video tag.
+                </video>
+                {/* Overlay to prevent video interaction in edit mode */}
+                {!isPreviewMode && (
+                  <div 
+                    className="absolute inset-0 cursor-pointer"
+                    style={{ pointerEvents: 'auto' }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onElementSelect(element.id)
+                    }}
+                  />
+                )}
+              </>
+            )
+          } else if (videoUrl && (videoUrl.startsWith('http://') || videoUrl.startsWith('https://'))) {
+            // Show direct video URL (.mp4, .webm, etc.)
+            return (
+              <>
+                <video
+                  src={videoUrl}
+                  controls={element.props?.controls !== false}
+                  autoPlay={element.props?.autoplay || false}
+                  loop={element.props?.loop || false}
+                  className="w-full h-full object-cover"
+                  style={{ borderRadius: 'inherit' }}
+                >
+                  Your browser does not support the video tag.
+                </video>
+                {/* Overlay to prevent video interaction in edit mode */}
+                {!isPreviewMode && (
+                  <div 
+                    className="absolute inset-0 cursor-pointer"
+                    style={{ pointerEvents: 'auto' }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onElementSelect(element.id)
+                    }}
+                  />
+                )}
+              </>
+            )
+          } else {
+            // Show placeholder if no video
+            return (
+              <div className="text-center text-muted-foreground">
+                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </div>
+                <p className="text-sm">Video Player</p>
+              </div>
+            )
+          }
+        })()}
       </div>
     )}
     {element.type === "audio" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
-        <div className="text-center">
-          <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-2">
-            <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-            </svg>
+      <div 
+        className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden" 
+        style={{
+          ...elementStyles,
+          background: 'transparent',
+          border: 'none',
+          borderRadius: 0,
+        }}
+      >
+        {element.content ? (
+          <audio
+            src={element.content}
+            controls={element.props?.controls !== false}
+            autoPlay={element.props?.autoplay || false}
+            muted={element.props?.muted || false}
+            loop={element.props?.loop || false}
+            className="w-full"
+            style={{ 
+              maxWidth: '100%',
+              outline: 'none',
+            }}
+          />
+        ) : (
+          <div className="text-center">
+            <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-2">
+              <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+              </svg>
+            </div>
+            <p className="text-sm text-muted-foreground">Audio Player</p>
+            <p className="text-xs text-muted-foreground mt-1">Upload audio in properties</p>
           </div>
-          <p className="text-sm">{element.content}</p>
-        </div>
+        )}
       </div>
     )}
     {element.type === "gallery" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
-        <div className="text-center">
-          <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+      <div className="w-full h-full bg-card border border-border rounded-lg p-3 overflow-auto" style={elementStyles}>
+        {element.props?.images && element.props.images.length > 0 ? (
+          <div 
+            className={element.props?.layout === 'row' ? 'flex gap-2 h-full overflow-x-auto' : 'grid gap-2'}
+            style={element.props?.layout === 'row' ? {} : { 
+              gridTemplateColumns: `repeat(${element.props?.columns || 3}, 1fr)`,
+            }}
+          >
+            {element.props.images.map((imageUrl: string, index: number) => (
+              <div 
+                key={index}
+                className={`relative bg-muted rounded overflow-hidden ${element.props?.layout === 'row' ? 'flex-shrink-0 h-full' : 'w-full'}`}
+                style={element.props?.layout === 'row' 
+                  ? { aspectRatio: '1/1' } 
+                  : { paddingBottom: '100%', position: 'relative' }
+                }
+              >
+                <img 
+                  src={imageUrl} 
+                  alt={element.props?.imageNames?.[index] || `Image ${index + 1}`}
+                  className={element.props?.layout === 'row' 
+                    ? 'w-full h-full object-cover' 
+                    : 'absolute inset-0 w-full h-full object-cover'
+                  }
+                  style={{ pointerEvents: 'none' }}
+                />
+              </div>
+            ))}
           </div>
-          <p className="text-sm">{element.content}</p>
-        </div>
+        ) : (
+          <div className="text-center h-full flex flex-col items-center justify-center">
+            <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+              <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <p className="text-sm text-muted-foreground">{element.content || 'Image Gallery'}</p>
+            <p className="text-xs text-muted-foreground mt-1">Upload images in properties</p>
+          </div>
+        )}
       </div>
     )}
     {element.type === "icon" && (
       <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-        <span className="text-4xl">{element.content}</span>
+        {element.props?.iconImage ? (
+          <img 
+            src={element.props.iconImage} 
+            alt={element.props?.iconFileName || 'Icon'}
+            style={{ 
+              pointerEvents: 'none',
+              width: `${element.props?.size || 24}px`,
+              height: `${element.props?.size || 24}px`,
+              objectFit: 'contain'
+            }}
+          />
+        ) : (
+          <span style={{ fontSize: `${element.props?.size || 24}px` }}>
+            {element.content}
+          </span>
+        )}
       </div>
     )}
     {element.type === "badge" && (
-      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-        <span className="text-sm font-medium">{element.content}</span>
+      <div 
+        className="w-full h-full flex items-center justify-center" 
+        style={{
+          ...elementStyles,
+          padding: '0.25rem 0.75rem',
+          borderRadius: '9999px',
+          fontFamily: elementStyles.fontFamily,
+          fontSize: elementStyles.fontSize,
+          fontWeight: elementStyles.fontWeight,
+          ...(element.props?.variant === 'default' && {
+            backgroundColor: 'var(--color-primary)',
+            color: 'var(--color-primary-foreground)',
+          }),
+          ...(element.props?.variant === 'secondary' && {
+            backgroundColor: 'var(--color-secondary)',
+            color: 'var(--color-secondary-foreground)',
+          }),
+          ...(element.props?.variant === 'destructive' && {
+            backgroundColor: 'var(--color-destructive)',
+            color: 'var(--color-destructive-foreground)',
+          }),
+          ...(element.props?.variant === 'outline' && {
+            backgroundColor: 'transparent',
+            color: 'var(--color-foreground)',
+            border: '1px solid var(--color-border)',
+          }),
+          ...(!element.props?.variant && {
+            backgroundColor: 'var(--color-primary)',
+            color: 'var(--color-primary-foreground)',
+          }),
+        }}
+      >
+        {element.content}
       </div>
     )}
     {element.type === "avatar" && (
-      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-        <span className="text-2xl">{element.content}</span>
+      <div 
+        className="w-full h-full" 
+        style={{
+          ...elementStyles,
+          padding: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          // Override any width/height from elementStyles
+          width: '100%',
+          height: '100%',
+        }}
+      >
+        {element.props?.src ? (
+          <img 
+            src={element.props.src} 
+            alt={element.content || 'Avatar'}
+            style={{
+              width: '100%',
+              height: '100%',
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'cover',
+              borderRadius: '50%',
+              pointerEvents: 'none'
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              maxWidth: '100%',
+              maxHeight: '100%',
+              borderRadius: '50%',
+              backgroundColor: elementStyles.backgroundColor || 'var(--color-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: (() => {
+                // Use avatarSize from props, fallback to position height
+                const size = element.props?.avatarSize 
+                  ? parseInt(element.props.avatarSize) 
+                  : (element.position?.height || 60);
+                // Icon size is 40% of container
+                return `${size * 0.4}px`;
+              })(),
+              color: elementStyles.color || 'var(--color-foreground)',
+            }}
+          >
+            {element.content || '👤'}
+          </div>
+        )}
       </div>
     )}
     {element.type === "modal" && (

@@ -45,6 +45,7 @@ export function useBuilderState() {
   })
 
   const [showSections, setShowSections] = useState<boolean>(false)
+  const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false)
 
   const addElement = useCallback((element: BuilderElement, position?: { x: number; y: number }) => {
     setElements((prev) => {
@@ -210,6 +211,8 @@ export function useBuilderState() {
     setSnapSettings,
     showSections,
     setShowSections,
+    isPreviewMode,
+    setIsPreviewMode,
     addElement,
     updateElement,
     updateElementResponsiveStyle,

@@ -24,6 +24,8 @@ export default function WebsiteBuilder() {
     snapSettings,
     showSections,
     setShowSections,
+    isPreviewMode,
+    setIsPreviewMode,
     addElement,
     updateElement,
     updateElementResponsiveStyle,
@@ -328,6 +330,7 @@ export default function WebsiteBuilder() {
                     zoom={zoom}
                     showGrid={showGrid}
                     showSections={showSections}
+                    isPreviewMode={isPreviewMode}
                   />
                 </div>
               </div>
@@ -346,6 +349,8 @@ export default function WebsiteBuilder() {
                 onUpdateElement={updateElement}
                 onUpdateElementResponsiveStyle={updateElementResponsiveStyle}
                 onUpdateElementPosition={updateElementPosition}
+                isPreviewMode={isPreviewMode}
+                onPreviewModeToggle={setIsPreviewMode}
               />
             </div>
           </ResizablePanel>
