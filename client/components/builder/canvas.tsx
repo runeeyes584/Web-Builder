@@ -977,6 +977,13 @@ export function Canvas({
           justifyContent: "space-between",
           alignItems: "center",
         },
+        props: {
+          logo: "Logo",
+          menuItems: ["Home", "About", "Contact"],
+          menuItemFontSize: "14px",
+          menuItemFontWeight: "400",
+          menuItemFontFamily: "inherit"
+        },
         responsiveStyles: {
           desktop: { padding: "1rem" },
           tablet: { padding: "0.875rem" },
@@ -1545,8 +1552,8 @@ export function Canvas({
       height: transientRef.current.get(element.id)?.height ?? originalPosition.height,
     }
     
-    const scaleX = currentPosition.width / originalPosition.width
-    const scaleY = currentPosition.height / originalPosition.height
+    const scaleX = (currentPosition.width || 200) / (originalPosition.width || 200)
+    const scaleY = (currentPosition.height || 50) / (originalPosition.height || 50)
     
     // Apply scaling to font sizes and other scalable properties
     const scaledStyles: Record<string, any> = {}
@@ -1602,8 +1609,8 @@ export function Canvas({
       height: transientRef.current.get(element.id)?.height ?? originalPosition.height,
     }
     
-    const scaleX = currentPosition.width / originalPosition.width
-    const scaleY = currentPosition.height / originalPosition.height
+    const scaleX = (currentPosition.width || 200) / (originalPosition.width || 200)
+    const scaleY = (currentPosition.height || 50) / (originalPosition.height || 50)
     const scale = Math.min(scaleX, scaleY)
     
     return {
@@ -1635,8 +1642,8 @@ export function Canvas({
       height: transientRef.current.get(element.id)?.height ?? originalPosition.height,
     }
     
-    const scaleX = currentPosition.width / originalPosition.width
-    const scaleY = currentPosition.height / originalPosition.height
+    const scaleX = (currentPosition.width || 200) / (originalPosition.width || 200)
+    const scaleY = (currentPosition.height || 50) / (originalPosition.height || 50)
     const scale = Math.min(scaleX, scaleY)
     
     return {
@@ -2622,39 +2629,140 @@ export function Canvas({
       </div>
     )}
     {element.type === "navigation" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-between px-4" style={elementStyles}>
-        <div className="font-semibold text-sm">Logo</div>
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center px-4" style={{
+        ...elementStyles,
+        justifyContent: element.props?.logoPosition === "center" ? "center" : 
+                        element.props?.logoPosition === "right" ? "flex-end" : "space-between"
+      }}>
+        {element.props?.logoType === "image" && element.props?.logoImageUrl ? (
+          <img 
+            src={element.props.logoImageUrl}
+            alt="Logo"
+            className="object-contain"
+            style={{
+              height: element.props?.autoScale ? 
+                `${Math.min(Number.parseInt(element.props?.logoImageHeight) || 32, (element.position?.height || 50) - 20)}px` :
+                element.props?.logoImageHeight || '32px',
+              width: element.props?.autoScale ? 
+                `${Math.min(Number.parseInt(element.props?.logoImageWidth) || 120, (element.position?.width || 300) * 0.4)}px` :
+                element.props?.logoImageWidth || '120px',
+              maxHeight: element.props?.logoImageHeight || '32px',
+              maxWidth: element.props?.logoImageWidth || '120px'
+            }}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'
+            }}
+          />
+        ) : (
+          <div 
+            className="font-semibold text-sm"
+            style={{
+              fontSize: element.props?.logoFontSize || '16px',
+              fontWeight: element.props?.logoFontWeight || '600',
+              fontFamily: element.props?.logoFontFamily || 'inherit'
+            }}
+          >
+            {element.props?.logo || 'Logo'}
+          </div>
+        )}
         <div className="flex gap-4">
-          <span className="text-sm">Home</span>
-          <span className="text-sm">About</span>
-          <span className="text-sm">Contact</span>
+          {(element.props?.menuItems || ['Home', 'About', 'Contact']).map((item: string, index: number) => (
+            <span 
+              key={index}
+              className="text-sm"
+              style={{
+                fontSize: element.props?.menuItemFontSize || '14px',
+                fontWeight: element.props?.menuItemFontWeight || '400',
+                fontFamily: element.props?.menuItemFontFamily || 'inherit'
+              }}
+            >
+              {item}
+            </span>
+          ))}
         </div>
       </div>
     )}
     {element.type === "footer" && (
-      <div className="text-card-foreground w-full h-full bg-muted border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
-        <div className="text-center">
-          <p className="text-sm font-medium mb-1">{element.content}</p>
-          <p className="text-xs text-muted-foreground">© 2024 Your Company</p>
+      <div className="text-card-foreground w-full h-full bg-muted border border-border rounded-lg flex flex-col justify-center px-4" style={elementStyles}>
+        <div className="w-full" style={{ fontFamily: element.props?.fontFamily || "inherit" }}>
+          <p 
+            className="mb-1"
+            style={{
+              fontSize: element.props?.titleFontSize || "18px",
+              fontWeight: element.props?.titleFontWeight || "600",
+              color: element.styles?.color || "#ffffff",
+              textAlign: element.props?.titlePosition || "center"
+            }}
+          >
+            {element.content}
+          </p>
+          <p 
+            className="text-muted-foreground"
+            style={{
+              fontSize: element.props?.textFontSize || "14px",
+              fontWeight: element.props?.textFontWeight || "400",
+              color: element.styles?.color || "#ffffff",
+              textAlign: element.props?.textPosition || "center"
+            }}
+          >
+            {element.props?.copyright || "© 2024 Your Company"}
+          </p>
         </div>
       </div>
     )}
     {element.type === "header" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
-        <div className="text-center">
-          <h1 className="text-lg font-bold mb-1">{element.content}</h1>
-          <p className="text-sm text-muted-foreground align-center">Welcome to our website</p>
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center px-4" style={elementStyles}>
+        <div className="w-full" style={{ fontFamily: element.props?.fontFamily || "inherit" }}>
+          <h1 
+            className="mb-1"
+            style={{
+              fontSize: element.props?.titleFontSize || "24px",
+              fontWeight: element.props?.titleFontWeight || "700",
+              textAlign: element.props?.titlePosition || "center"
+            }}
+          >
+            {element.content}
+          </h1>
+          <p 
+            className="text-muted-foreground"
+            style={{
+              fontSize: element.props?.subtitleFontSize || "16px",
+              fontWeight: element.props?.subtitleFontWeight || "400",
+              textAlign: element.props?.subtitlePosition || "center"
+            }}
+          >
+            {element.props?.subtitle || "Welcome to our website"}
+          </p>
         </div>
       </div>
     )}
     {element.type === "sidebar" && (
       <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-        <div className="space-y-3">
-          <div className="text-sm font-medium">Menu</div>
+        <div className="space-y-3" style={{ fontFamily: element.props?.fontFamily || "inherit" }}>
+          <div 
+            className="font-medium"
+            style={{
+              fontSize: element.props?.titleFontSize || "14px",
+              fontWeight: element.props?.titleFontWeight || "500",
+              textAlign: element.props?.titlePosition || "left"
+            }}
+          >
+            {element.content || "Menu"}
+          </div>
           <div className="space-y-2">
-            <div className="text-xs text-muted-foreground">• Dashboard</div>
-            <div className="text-xs text-muted-foreground">• Settings</div>
-            <div className="text-xs text-muted-foreground">• Profile</div>
+            {(element.props?.sidebarItems || ["Dashboard", "Settings", "Profile", "Logout"]).map((item: string, index: number) => (
+              <div 
+                key={index} 
+                className="text-muted-foreground"
+                style={{
+                  fontSize: element.props?.itemFontSize || "12px",
+                  fontWeight: element.props?.itemFontWeight || "400",
+                  textAlign: element.props?.itemPosition || "left"
+                }}
+              >
+                • {item}
+              </div>
+            ))}
           </div>
         </div>
       </div>
