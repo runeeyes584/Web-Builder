@@ -3,6 +3,8 @@
 import type React from "react"
 
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import type { Breakpoint, BuilderElement } from "@/lib/builder-types"
 import { Copy, Trash2 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -13,6 +15,130 @@ const NO_PADDING_COMPONENTS: ReadonlySet<BuilderElement["type"]> = new Set([
   "video",
   "image",
 ])
+
+// Carousel Component - Clean Version
+function CarouselComponent({ element }: { element: BuilderElement }) {
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(false)
+
+  // Sync with element props
+  useEffect(() => {
+    setIsPlaying(element.props?.autoplay || false)
+  }, [element.props?.autoplay])
+  
+  const slideCount = element.props?.slideCount || 5
+  const uploadedImages = element.props?.uploadedImages || []
+  
+  // Create slides array
+  const slides = Array.from({ length: slideCount }, (_, i) => ({
+    id: `slide-${i}`,
+    image: uploadedImages[i] || `https://picsum.photos/400/300?random=${i + 1}`
+  }))
+
+  // Autoplay functionality
+  useEffect(() => {
+    if (isPlaying) {
+      const intervalTime = (element.props?.autoplayInterval || 3) * 1000
+      const interval = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % slideCount)
+      }, intervalTime)
+      return () => clearInterval(interval)
+    }
+  }, [isPlaying, slideCount, element.props?.autoplayInterval])
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % slideCount)
+  }
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + slideCount) % slideCount)
+  }
+
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index)
+  }
+
+  return (
+    <div className="text-card-foreground bg-card border border-border rounded-lg overflow-hidden w-full h-full relative">
+      {/* Carousel Container */}
+      <div className="relative w-full h-full">
+        {/* Slides */}
+        <div className="relative w-full h-full overflow-hidden">
+          {slides.map((slide, index) => (
+            <div
+              key={slide.id}
+              className={`absolute inset-0 transition-transform duration-500 ease-in-out ${
+                index === currentSlide ? 'translate-x-0' : 
+                index < currentSlide ? '-translate-x-full' : 'translate-x-full'
+              }`}
+            >
+              <div className="w-full h-full flex items-center justify-center p-4">
+                <img
+                  src={slide.image}
+                  alt={`Slide ${index + 1}`}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Navigation Arrows */}
+        <button
+          onClick={prevSlide}
+          className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        
+        <button
+          onClick={nextSlide}
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
+        {/* Dots Indicator */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => goToSlide(index)}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                index === currentSlide ? 'bg-primary' : 'bg-white/50 hover:bg-white/70'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Play/Pause Button */}
+        <button
+          onClick={() => setIsPlaying(!isPlaying)}
+          className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
+        >
+          {isPlaying ? (
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          )}
+        </button>
+
+        {/* Slide Counter */}
+        <div className="absolute top-4 left-4 bg-black/50 text-white px-2 py-1 rounded text-xs">
+          {currentSlide + 1} / {slideCount}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 interface CanvasProps {
   elements: BuilderElement[]
@@ -2692,34 +2818,502 @@ export function Canvas({
       </div>
     )}
     {element.type === "modal" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg flex items-center justify-center" style={elementStyles}>
-        <div className="text-center">
-          <h3 className="font-semibold mb-2">Modal</h3>
-          <p className="text-sm text-muted-foreground">{element.content}</p>
-        </div>
+      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        {element.props?.previewMode ? (
+          // Preview Mode - Show modal directly in canvas (exact same as popup)
+          <div 
+            className="w-full h-full bg-black/80 overflow-auto"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1rem'
+            }}
+          >
+            {(() => {
+              const modalType = element.props?.modalType || 'default';
+              const modalSize = element.props?.modalSize || 'medium';
+              const showInputs = element.props?.showInputs || false;
+              
+              // Modal type colors and icons (SAME as popup)
+              const typeConfig: any = {
+                default: { 
+                  bg: 'bg-card', 
+                  icon: '', 
+                  iconColor: '',
+                  cancelBg: 'bg-muted hover:bg-muted/80',
+                  cancelText: 'text-foreground',
+                  confirmBg: 'bg-primary hover:bg-primary/90',
+                  confirmText: 'text-primary-foreground'
+                },
+                success: { 
+                  bg: 'bg-green-950', 
+                  icon: '✓', 
+                  iconColor: 'text-green-400',
+                  cancelBg: 'bg-green-900/50 hover:bg-green-900/70',
+                  cancelText: 'text-green-200',
+                  confirmBg: 'bg-green-600 hover:bg-green-700',
+                  confirmText: 'text-white'
+                },
+                error: { 
+                  bg: 'bg-red-950', 
+                  icon: '✕', 
+                  iconColor: 'text-red-400',
+                  cancelBg: 'bg-red-900/50 hover:bg-red-900/70',
+                  cancelText: 'text-red-200',
+                  confirmBg: 'bg-red-600 hover:bg-red-700',
+                  confirmText: 'text-white'
+                },
+                warning: { 
+                  bg: 'bg-yellow-950', 
+                  icon: '⚠', 
+                  iconColor: 'text-yellow-400',
+                  cancelBg: 'bg-yellow-900/50 hover:bg-yellow-900/70',
+                  cancelText: 'text-yellow-200',
+                  confirmBg: 'bg-yellow-600 hover:bg-yellow-700',
+                  confirmText: 'text-white'
+                },
+                info: { 
+                  bg: 'bg-blue-950', 
+                  icon: 'ℹ', 
+                  iconColor: 'text-blue-400',
+                  cancelBg: 'bg-blue-900/50 hover:bg-blue-900/70',
+                  cancelText: 'text-blue-200',
+                  confirmBg: 'bg-blue-600 hover:bg-blue-700',
+                  confirmText: 'text-white'
+                }
+              };
+              
+              // Modal size (SAME as popup)
+              const sizeStyles: any = {
+                small: { width: '384px', maxWidth: '90%' },
+                medium: { width: '448px', maxWidth: '90%' },
+                large: { width: '672px', maxWidth: '90%' },
+                fullscreen: { width: '95%', height: '95%', maxHeight: '95vh', overflow: 'auto' }
+              };
+              
+              return (
+                <div 
+                  className={`${typeConfig[modalType].bg} border border-border rounded-lg shadow-2xl p-6`}
+                  style={sizeStyles[modalSize]}
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      {typeConfig[modalType].icon && (
+                        <div className={`text-2xl ${typeConfig[modalType].iconColor}`}>
+                          {typeConfig[modalType].icon}
+                        </div>
+                      )}
+                      <h3 
+                        className="text-lg font-semibold"
+                        style={{
+                          ...(element.props?.titleFontFamily && element.props.titleFontFamily !== 'inherit' && { fontFamily: element.props.titleFontFamily }),
+                          ...(element.props?.titleFontSize && { fontSize: element.props.titleFontSize + 'px' }),
+                          ...(element.props?.titleFontWeight && { fontWeight: element.props.titleFontWeight }),
+                          ...(element.props?.titleColor && { color: element.props.titleColor })
+                        }}
+                      >
+                        {element.content || 'Modal Title'}
+                      </h3>
+                    </div>
+                    <button className="text-muted-foreground hover:text-foreground text-xl leading-none">✕</button>
+                  </div>
+                  
+                  {/* Body */}
+                  <div 
+                    className="text-sm text-muted-foreground mb-4"
+                    style={{
+                      ...(element.props?.contentFontFamily && element.props.contentFontFamily !== 'inherit' && { fontFamily: element.props.contentFontFamily }),
+                      ...(element.props?.contentFontSize && { fontSize: element.props.contentFontSize + 'px' }),
+                      ...(element.props?.contentFontWeight && { fontWeight: element.props.contentFontWeight }),
+                      ...(element.props?.contentColor && { color: element.props.contentColor })
+                    }}
+                  >
+                    {element.props?.modalContent || 'Modal Content'}
+                  </div>
+                  
+                  {/* Input fields */}
+                  {showInputs && (
+                    <div className="space-y-3 my-4">
+                      <div>
+                        <label className="text-xs text-muted-foreground block mb-1">
+                          {element.props?.input1Label || 'Email'}
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={element.props?.input1Placeholder || 'Enter your email'}
+                          className="w-full px-3 py-2 bg-sidebar-accent border border-sidebar-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                          readOnly
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground block mb-1">
+                          {element.props?.input2Label || 'Password'}
+                        </label>
+                        <input
+                          type="password"
+                          placeholder={element.props?.input2Placeholder || 'Enter your password'}
+                          className="w-full px-3 py-2 bg-sidebar-accent border border-sidebar-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                          readOnly
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Footer - SAME styling as popup */}
+                  <div className="mt-6 flex justify-end gap-2">
+                    <button className={`px-4 py-2 text-sm rounded-md transition-colors ${typeConfig[modalType].cancelBg} ${typeConfig[modalType].cancelText}`}>
+                      Cancel
+                    </button>
+                    <button className={`px-4 py-2 text-sm rounded-md transition-colors ${typeConfig[modalType].confirmBg} ${typeConfig[modalType].confirmText}`}>
+                      Confirm
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        ) : (
+          // Normal Mode - Show button
+        <button
+          onClick={() => {
+            const modalType = element.props?.modalType || 'default';
+            const modalSize = element.props?.modalSize || 'medium';
+            const showInputs = element.props?.showInputs || false;
+            const confirmAction = element.props?.confirmAction || 'close';
+            
+            // Modal type colors and icons
+            const typeConfig: any = {
+              default: { 
+                bg: 'bg-card', 
+                icon: '', 
+                iconColor: '',
+                cancelBg: 'bg-muted hover:bg-muted/80',
+                cancelText: 'text-foreground',
+                confirmBg: 'bg-primary hover:bg-primary/90',
+                confirmText: 'text-primary-foreground'
+              },
+              success: { 
+                bg: 'bg-green-950', 
+                icon: '✓', 
+                iconColor: 'text-green-400',
+                cancelBg: 'bg-green-900/50 hover:bg-green-900/70',
+                cancelText: 'text-green-200',
+                confirmBg: 'bg-green-600 hover:bg-green-700',
+                confirmText: 'text-white'
+              },
+              error: { 
+                bg: 'bg-red-950', 
+                icon: '✕', 
+                iconColor: 'text-red-400',
+                cancelBg: 'bg-red-900/50 hover:bg-red-900/70',
+                cancelText: 'text-red-200',
+                confirmBg: 'bg-red-600 hover:bg-red-700',
+                confirmText: 'text-white'
+              },
+              warning: { 
+                bg: 'bg-yellow-950', 
+                icon: '⚠', 
+                iconColor: 'text-yellow-400',
+                cancelBg: 'bg-yellow-900/50 hover:bg-yellow-900/70',
+                cancelText: 'text-yellow-200',
+                confirmBg: 'bg-yellow-600 hover:bg-yellow-700',
+                confirmText: 'text-white'
+              },
+              info: { 
+                bg: 'bg-blue-950', 
+                icon: 'ℹ', 
+                iconColor: 'text-blue-400',
+                cancelBg: 'bg-blue-900/50 hover:bg-blue-900/70',
+                cancelText: 'text-blue-200',
+                confirmBg: 'bg-blue-600 hover:bg-blue-700',
+                confirmText: 'text-white'
+              }
+            };
+            
+            // Modal size classes
+            const sizeConfig: any = {
+              small: 'max-w-sm',
+              medium: 'max-w-md',
+              large: 'max-w-2xl',
+              fullscreen: 'max-w-[95vw] max-h-[95vh] overflow-auto'
+            };
+            
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4';
+            overlay.style.animation = 'fadeIn 0.2s ease-out';
+            
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.className = typeConfig[modalType].bg + ' border border-border rounded-lg shadow-2xl p-6 ' + sizeConfig[modalSize] + ' w-full relative';
+            modalContent.style.animation = 'slideIn 0.3s ease-out';
+            
+            // Modal header with icon
+            const header = document.createElement('div');
+            header.className = 'flex items-center justify-between mb-4';
+            
+            const titleContainer = document.createElement('div');
+            titleContainer.className = 'flex items-center gap-3';
+            
+            if (typeConfig[modalType].icon) {
+              const icon = document.createElement('div');
+              icon.className = 'text-2xl ' + typeConfig[modalType].iconColor;
+              icon.textContent = typeConfig[modalType].icon;
+              titleContainer.appendChild(icon);
+            }
+            
+            const title = document.createElement('h3');
+            title.className = 'text-lg font-semibold';
+            title.textContent = element.content || 'Modal Title';
+            // Apply typography styles
+            if (element.props?.titleFontFamily && element.props.titleFontFamily !== 'inherit') {
+              title.style.fontFamily = element.props.titleFontFamily;
+            }
+            if (element.props?.titleFontSize) {
+              title.style.fontSize = element.props.titleFontSize + 'px';
+            }
+            if (element.props?.titleFontWeight) {
+              title.style.fontWeight = element.props.titleFontWeight;
+            }
+            if (element.props?.titleColor) {
+              title.style.color = element.props.titleColor;
+            }
+            titleContainer.appendChild(title);
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '✕';
+            closeBtn.className = 'text-muted-foreground hover:text-foreground text-xl leading-none';
+            closeBtn.onclick = () => document.body.removeChild(overlay);
+            
+            header.appendChild(titleContainer);
+            header.appendChild(closeBtn);
+            
+            // Modal body
+            const body = document.createElement('div');
+            body.className = 'text-sm text-muted-foreground mb-4';
+            body.textContent = element.props?.modalContent || 'Modal Content';
+            // Apply typography styles
+            if (element.props?.contentFontFamily && element.props.contentFontFamily !== 'inherit') {
+              body.style.fontFamily = element.props.contentFontFamily;
+            }
+            if (element.props?.contentFontSize) {
+              body.style.fontSize = element.props.contentFontSize + 'px';
+            }
+            if (element.props?.contentFontWeight) {
+              body.style.fontWeight = element.props.contentFontWeight;
+            }
+            if (element.props?.contentColor) {
+              body.style.color = element.props.contentColor;
+            }
+            
+            // Input fields (if enabled)
+            if (showInputs) {
+              const inputsContainer = document.createElement('div');
+              inputsContainer.className = 'space-y-3 my-4';
+              
+              // Input 1
+              const input1Container = document.createElement('div');
+              const label1 = document.createElement('label');
+              label1.className = 'text-xs text-muted-foreground block mb-1';
+              label1.textContent = element.props?.input1Label || 'Email';
+              const input1 = document.createElement('input');
+              input1.type = 'text';
+              input1.placeholder = element.props?.input1Placeholder || 'Enter your email';
+              input1.className = 'w-full px-3 py-2 bg-sidebar-accent border border-sidebar-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary';
+              input1Container.appendChild(label1);
+              input1Container.appendChild(input1);
+              
+              // Input 2
+              const input2Container = document.createElement('div');
+              const label2 = document.createElement('label');
+              label2.className = 'text-xs text-muted-foreground block mb-1';
+              label2.textContent = element.props?.input2Label || 'Password';
+              const input2 = document.createElement('input');
+              input2.type = 'password';
+              input2.placeholder = element.props?.input2Placeholder || 'Enter your password';
+              input2.className = 'w-full px-3 py-2 bg-sidebar-accent border border-sidebar-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary';
+              input2Container.appendChild(label2);
+              input2Container.appendChild(input2);
+              
+              inputsContainer.appendChild(input1Container);
+              inputsContainer.appendChild(input2Container);
+              body.appendChild(inputsContainer);
+            }
+            
+            // Modal footer
+            const footer = document.createElement('div');
+            footer.className = 'mt-6 flex justify-end gap-2';
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.className = 'px-4 py-2 text-sm rounded-md transition-colors ' + typeConfig[modalType].cancelBg + ' ' + typeConfig[modalType].cancelText;
+            cancelBtn.onclick = () => document.body.removeChild(overlay);
+            const confirmBtn = document.createElement('button');
+            confirmBtn.textContent = 'Confirm';
+            confirmBtn.className = 'px-4 py-2 text-sm rounded-md transition-colors ' + typeConfig[modalType].confirmBg + ' ' + typeConfig[modalType].confirmText;
+            confirmBtn.onclick = () => {
+              if (confirmAction === 'link' && element.props?.confirmUrl) {
+                window.location.href = element.props.confirmUrl;
+              } else if (confirmAction === 'alert') {
+                alert(element.props?.alertMessage || 'Action completed!');
+                document.body.removeChild(overlay);
+              } else {
+                document.body.removeChild(overlay);
+              }
+            };
+            footer.appendChild(cancelBtn);
+            footer.appendChild(confirmBtn);
+            
+            modalContent.appendChild(header);
+            modalContent.appendChild(body);
+            modalContent.appendChild(footer);
+            overlay.appendChild(modalContent);
+            
+            // Close on overlay click
+            overlay.onclick = (e) => {
+              if (e.target === overlay) document.body.removeChild(overlay);
+            };
+            
+            document.body.appendChild(overlay);
+          }}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+          style={{
+            ...(element.props?.buttonFontFamily && element.props.buttonFontFamily !== 'inherit' && { fontFamily: element.props.buttonFontFamily }),
+            ...(element.props?.buttonFontSize && { fontSize: element.props.buttonFontSize + 'px' }),
+            ...(element.props?.buttonFontWeight && { fontWeight: element.props.buttonFontWeight }),
+            ...(element.props?.buttonTextColor && { color: element.props.buttonTextColor }),
+            ...(element.props?.buttonBgColor && { backgroundColor: element.props.buttonBgColor })
+          }}
+        >
+          {element.props?.buttonText || 'Open Modal'}
+        </button>
+        )}
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+        `}} />
       </div>
     )}
     {element.type === "tooltip" && (
-      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-        <span className="text-sm">{element.content}</span>
-      </div>
+      <>
+        {/* Normal Tooltip */}
+        {!element.props?.previewMode && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div 
+                className="w-full h-full flex items-center justify-center text-sm text-muted-foreground hover:text-foreground cursor-help transition-colors duration-200"
+                style={{
+                  ...elementStyles,
+                  ...(element.props?.triggerFontFamily && element.props.triggerFontFamily !== 'inherit' && { fontFamily: element.props.triggerFontFamily }),
+                  ...(element.props?.triggerFontSize && { fontSize: element.props.triggerFontSize + 'px' }),
+                  ...(element.props?.triggerFontWeight && { fontWeight: element.props.triggerFontWeight }),
+                  ...(element.props?.triggerTextColor && { color: element.props.triggerTextColor })
+                }}
+              >
+                <span>
+                  {element.props?.triggerText || 'Hover me'}
+                </span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent 
+              side={element.props?.position || 'top'}
+              className="max-w-xs"
+              style={{
+                ...(element.props?.tooltipFontFamily && element.props.tooltipFontFamily !== 'inherit' && { fontFamily: element.props.tooltipFontFamily }),
+                ...(element.props?.tooltipFontSize && { fontSize: element.props.tooltipFontSize + 'px' }),
+                ...(element.props?.tooltipFontWeight && { fontWeight: element.props.tooltipFontWeight }),
+                ...(element.props?.tooltipTextColor && { color: element.props.tooltipTextColor })
+              }}
+            >
+              {element.content || 'Tooltip text'}
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* Preview Mode - Always Visible Tooltip */}
+        {element.props?.previewMode && (
+          <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground hover:text-foreground cursor-help transition-colors duration-200" style={elementStyles}>
+            <span style={{
+              ...(element.props?.triggerFontFamily && element.props.triggerFontFamily !== 'inherit' && { fontFamily: element.props.triggerFontFamily }),
+              ...(element.props?.triggerFontSize && { fontSize: element.props.triggerFontSize + 'px' }),
+              ...(element.props?.triggerFontWeight && { fontWeight: element.props.triggerFontWeight }),
+              ...(element.props?.triggerTextColor && { color: element.props.triggerTextColor })
+            }}>
+              {element.props?.triggerText || 'Hover me'}
+            </span>
+            
+            {/* Always visible tooltip */}
+            <div 
+              className="absolute z-50 w-fit origin-center rounded-lg px-3 py-2 text-xs text-balance shadow-lg bg-gradient-to-br from-popover via-popover to-popover/95 border border-border/50 backdrop-blur-sm text-popover-foreground animate-in fade-in-0 zoom-in-95 duration-200"
+              style={{
+                ...(element.props?.position === 'top' && { bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: '4px' }),
+                ...(element.props?.position === 'bottom' && { top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: '4px' }),
+                ...(element.props?.position === 'left' && { right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: '4px' }),
+                ...(element.props?.position === 'right' && { left: '100%', top: '50%', transform: 'translateY(-50%)', marginLeft: '4px' }),
+                ...(element.props?.tooltipFontFamily && element.props.tooltipFontFamily !== 'inherit' && { fontFamily: element.props.tooltipFontFamily }),
+                ...(element.props?.tooltipFontSize && { fontSize: element.props.tooltipFontSize + 'px' }),
+                ...(element.props?.tooltipFontWeight && { fontWeight: element.props.tooltipFontWeight }),
+                ...(element.props?.tooltipTextColor && { color: element.props.tooltipTextColor })
+              }}
+            >
+              {element.content || 'Tooltip text'}
+            </div>
+          </div>
+        )}
+      </>
     )}
     {element.type === "dropdown" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-between px-3" style={elementStyles}>
-        <span className="text-sm">{element.content}</span>
-        <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+      <div className="w-full h-full flex items-center" style={elementStyles}>
+        <Select defaultValue={element.props?.defaultValue || ""}>
+          <SelectTrigger 
+            className="w-full h-auto min-h-[40px] text-card-foreground hover:bg-card/80 transition-colors"
+            style={{
+              ...(element.props?.labelFontFamily && element.props.labelFontFamily !== 'inherit' && element.props.labelFontFamily !== 'default' && { fontFamily: element.props.labelFontFamily }),
+              ...(element.props?.labelFontSize && { fontSize: element.props.labelFontSize + 'px' }),
+              ...(element.props?.labelFontWeight && { fontWeight: element.props.labelFontWeight }),
+              ...(element.props?.labelTextColor && { color: element.props.labelTextColor })
+            }}
+          >
+            <SelectValue placeholder={element.content || "Select option"} />
+          </SelectTrigger>
+          <SelectContent>
+            {(element.props?.options || []).map((option: string, index: number) => (
+              <SelectItem 
+                key={index} 
+                value={option}
+                style={{
+                  ...(element.props?.optionFontFamily && element.props.optionFontFamily !== 'inherit' && element.props.optionFontFamily !== 'default' && { fontFamily: element.props.optionFontFamily }),
+                  ...(element.props?.optionFontSize && { fontSize: element.props.optionFontSize + 'px' }),
+                  ...(element.props?.optionFontWeight && { fontWeight: element.props.optionFontWeight }),
+                  ...(element.props?.optionTextColor && { color: element.props.optionTextColor })
+                }}
+              >
+                {option}
+              </SelectItem>
+            ))}
+            {(element.props?.options || []).length === 0 && (
+              <SelectItem value="no-options" disabled>
+                No options available
+              </SelectItem>
+            )}
+          </SelectContent>
+        </Select>
       </div>
     )}
     {element.type === "tabs" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-        <div className="flex border-b border-border mb-3">
-          <div className="px-3 py-2 text-sm font-medium border-b-2 border-primary">Tab 1</div>
-          <div className="px-3 py-2 text-sm text-muted-foreground">Tab 2</div>
-        </div>
-        <p className="text-sm">{element.content}</p>
+      <div className="w-full h-full" style={elementStyles}>
+        <TabsComponent element={element} />
       </div>
+    )}
+    {element.type === "carousel" && (
+      <CarouselComponent element={element} />
     )}
     {element.type === "accordion" && (
       <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg" style={elementStyles}>
@@ -2733,18 +3327,6 @@ export function Canvas({
         </div>
         <div className="p-4">
           <p className="text-sm text-muted-foreground">{element.content}</p>
-        </div>
-      </div>
-    )}
-    {element.type === "carousel" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
-        <div className="text-center">
-          <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <p className="text-sm">{element.content}</p>
         </div>
       </div>
     )}
@@ -4556,6 +5138,68 @@ function PartitionsOverlay({
       >
         {(hoverFooterTop || focusedBoundary === "f-top") && boundaryBtn({ left: '50%', bottom: 0 }, { type: 'footer-top' })}
       </div>
+    </div>
+  )
+}
+
+// Tabs Component with interactive functionality
+function TabsComponent({ element }: { element: BuilderElement }) {
+  const [activeTabIndex, setActiveTabIndex] = useState(0)
+  
+  const tabs = element.props?.tabs || []
+  const activeTab = tabs[activeTabIndex]
+
+  return (
+    <div className="text-card-foreground bg-card border border-border rounded-lg p-4 flex flex-col w-full h-full">
+      {tabs.length > 0 ? (
+        <>
+          <div className="flex border-b border-border mb-3 flex-shrink-0">
+            {tabs.map((tab: {id: string, title: string, content: string}, index: number) => (
+              <div 
+                key={tab.id}
+                onClick={() => setActiveTabIndex(index)}
+                className={`px-3 py-2 text-sm cursor-pointer transition-colors ${
+                  index === activeTabIndex
+                    ? 'font-medium border-b-2 border-primary text-primary' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                style={{
+                  ...(element.props?.tabTitleFontFamily && element.props.tabTitleFontFamily !== 'default' && element.props.tabTitleFontFamily !== 'inherit' && { fontFamily: element.props.tabTitleFontFamily }),
+                  ...(element.props?.tabTitleFontSize && { fontSize: element.props.tabTitleFontSize + 'px' }),
+                  ...(element.props?.tabTitleFontWeight && { fontWeight: element.props.tabTitleFontWeight }),
+                  ...(element.props?.tabTitleTextColor && { color: element.props.tabTitleTextColor })
+                }}
+              >
+                {tab.title || `Tab ${index + 1}`}
+              </div>
+            ))}
+          </div>
+          <div className="text-sm flex-1 overflow-auto">
+            <div
+              style={{
+                ...(element.props?.tabContentFontFamily && element.props.tabContentFontFamily !== 'default' && element.props.tabContentFontFamily !== 'inherit' && { fontFamily: element.props.tabContentFontFamily }),
+                ...(element.props?.tabContentFontSize && { fontSize: element.props.tabContentFontSize + 'px' }),
+                ...(element.props?.tabContentFontWeight && { fontWeight: element.props.tabContentFontWeight }),
+                ...(element.props?.tabContentTextColor && { color: element.props.tabContentTextColor })
+              }}
+            >
+              {activeTab?.content || 'Tab content goes here'}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="flex items-center justify-center flex-1 text-muted-foreground">
+          <div className="text-center">
+            <div className="w-12 h-12 bg-muted/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+              <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+            </div>
+            <p className="text-sm">No tabs added yet</p>
+            <p className="text-xs mt-1">Add tabs in the properties panel</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
