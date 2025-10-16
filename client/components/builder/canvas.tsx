@@ -16,6 +16,93 @@ const NO_PADDING_COMPONENTS: ReadonlySet<BuilderElement["type"]> = new Set([
   "image",
 ])
 
+// Counter Component with Animation
+function CounterComponent({ element, currentBreakpoint }: { element: BuilderElement, currentBreakpoint: Breakpoint }) {
+  const [currentValue, setCurrentValue] = useState(0)
+  const [isAnimating, setIsAnimating] = useState(false)
+  
+  const targetValue = element.props?.targetValue || 1000
+  const duration = element.props?.duration || 2000
+  const suffix = element.props?.suffix || ""
+  const prefix = element.props?.prefix || ""
+  const showLabel = element.props?.showLabel !== false
+  const animated = element.props?.animated !== false
+  
+  // Calculate element styles
+  const elementStyles = {
+    ...element.styles,
+    ...(currentBreakpoint === 'tablet' ? element.responsiveStyles?.tablet : {}),
+    ...(currentBreakpoint === 'mobile' ? element.responsiveStyles?.mobile : {}),
+  }
+  
+  // Animation effect
+  useEffect(() => {
+    if (animated && targetValue > 0) {
+      setIsAnimating(true)
+      const startTime = Date.now()
+      const startValue = 0
+      
+      const animate = () => {
+        const elapsed = Date.now() - startTime
+        const progress = Math.min(elapsed / duration, 1)
+        
+        // Easing function for smooth animation
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+        const current = Math.floor(startValue + (targetValue - startValue) * easeOutQuart)
+        
+        setCurrentValue(current)
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate)
+        } else {
+          setCurrentValue(targetValue)
+          setIsAnimating(false)
+        }
+      }
+      
+      requestAnimationFrame(animate)
+    } else {
+      setCurrentValue(targetValue)
+    }
+  }, [targetValue, duration, animated])
+  
+  // Format number with commas
+  const formatNumber = (num: number) => {
+    return num.toLocaleString()
+  }
+  
+  return (
+    <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-6 flex flex-col items-center justify-center" style={elementStyles}>
+      <div className="text-center">
+        <div 
+          className={`text-4xl font-bold mb-2 transition-all duration-300 ${isAnimating ? 'scale-110' : 'scale-100'}`}
+          style={{
+            fontFamily: element.props?.valueFontFamily || undefined,
+            fontSize: element.props?.valueFontSize ? `${element.props.valueFontSize}px` : undefined,
+            fontWeight: element.props?.valueFontWeight || undefined,
+            color: element.props?.valueTextColor || undefined,
+          }}
+        >
+          {prefix}{formatNumber(currentValue)}{suffix}
+        </div>
+        {showLabel && element.content && (
+          <div 
+            className="text-sm text-muted-foreground"
+            style={{
+              fontFamily: element.props?.labelFontFamily || undefined,
+              fontSize: element.props?.labelFontSize ? `${element.props.labelFontSize}px` : undefined,
+              fontWeight: element.props?.labelFontWeight || undefined,
+              color: element.props?.labelTextColor || undefined,
+            }}
+          >
+            {element.content}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // Carousel Component - Clean Version
 function CarouselComponent({ element }: { element: BuilderElement }) {
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -3220,7 +3307,7 @@ export function Canvas({
                 <span>
                   {element.props?.triggerText || 'Hover me'}
                 </span>
-              </div>
+      </div>
             </TooltipTrigger>
             <TooltipContent 
               side={element.props?.position || 'top'}
@@ -3335,66 +3422,384 @@ export function Canvas({
         <table className="w-full text-sm">
           <thead className="bg-muted">
             <tr>
-              <th className="p-2 text-left">Header 1</th>
-              <th className="p-2 text-left">Header 2</th>
+              {Array.from({ length: element.props?.columns || 3 }, (_, i) => (
+                <th 
+                  key={i} 
+                  className="p-2 text-left"
+                  style={{
+                    fontFamily: element.props?.headerFontFamily === "default" || element.props?.headerFontFamily === "inherit" ? undefined : element.props?.headerFontFamily,
+                    fontSize: element.props?.headerFontSize ? `${element.props.headerFontSize}px` : undefined,
+                    fontWeight: element.props?.headerFontWeight === "default" || element.props?.headerFontWeight === "inherit" ? undefined : element.props?.headerFontWeight,
+                    color: element.props?.headerTextColor || undefined
+                  }}
+                >
+                  {element.props?.tableData?.headers?.[i] || `Header ${i + 1}`}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            <tr className="border-t border-border">
-              <td className="p-2">Row 1, Col 1</td>
-              <td className="p-2">Row 1, Col 2</td>
+            {Array.from({ length: element.props?.rows || 4 }, (_, rowIndex) => (
+              <tr key={rowIndex} className="border-t border-border">
+                {Array.from({ length: element.props?.columns || 3 }, (_, colIndex) => (
+                  <td 
+                    key={`${rowIndex}-${colIndex}`} 
+                    className="p-2"
+                    style={{
+                      fontFamily: element.props?.contentFontFamily === "default" || element.props?.contentFontFamily === "inherit" ? undefined : element.props?.contentFontFamily,
+                      fontSize: element.props?.contentFontSize ? `${element.props.contentFontSize}px` : undefined,
+                      fontWeight: element.props?.contentFontWeight === "default" || element.props?.contentFontWeight === "inherit" ? undefined : element.props?.contentFontWeight,
+                      color: element.props?.contentTextColor || undefined
+                    }}
+                  >
+                    {element.props?.tableData?.rows?.[rowIndex]?.[colIndex] || `Row ${rowIndex + 1}, Col ${colIndex + 1}`}
+                  </td>
+                ))}
             </tr>
-            <tr className="border-t border-border">
-              <td className="p-2">Row 2, Col 1</td>
-              <td className="p-2">Row 2, Col 2</td>
-            </tr>
+            ))}
           </tbody>
         </table>
       </div>
     )}
     {element.type === "chart" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex flex-col p-4" style={elementStyles}>
+        <div className="text-center mb-4">
+          <h3 className="text-sm font-medium">{element.content || "Chart"}</h3>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          {element.props?.chartType === "bar" && (
+            <div className="w-full h-full flex items-end justify-center gap-2 p-4">
+              {(element.props?.chartData || Array.from({ length: element.props?.dataPoints || 5 }, (_, i) => ({ label: `Item ${i + 1}`, value: Math.random() * 100 }))).map((data: any, index: number) => {
+                const maxValue = Math.max(...(element.props?.chartData || []).map((d: any) => d.value || 0))
+                const height = maxValue > 0 ? `${(data.value / maxValue) * 80}%` : "20%"
+                return (
+                  <div key={index} className="flex flex-col items-center gap-1">
+                    <div 
+                      className="bg-primary rounded-t w-8 transition-all duration-300 hover:bg-primary/80"
+                      style={{ height }}
+                    />
+                    <span className="text-xs text-muted-foreground">{data.label}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+          {element.props?.chartType === "line" && (
+            <div className="w-full h-full relative p-4">
+              <svg className="w-full h-full" viewBox="0 0 300 200">
+                {element.props?.showGrid && (
+                  <defs>
+                    <pattern id="grid" width="30" height="20" patternUnits="userSpaceOnUse">
+                      <path d="M 30 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.2"/>
+                    </pattern>
+                  </defs>
+                )}
+                {element.props?.showGrid && <rect width="100%" height="100%" fill="url(#grid)" />}
+                {(element.props?.chartData || Array.from({ length: element.props?.dataPoints || 5 }, (_, i) => ({ label: `Point ${i + 1}`, value: Math.random() * 100 }))).length > 1 && (
+                  <>
+                    <polyline
+                      fill="none"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth="2"
+                      points={(element.props?.chartData || []).map((data: any, index: number) => {
+                        const x = (index / Math.max(1, (element.props?.chartData || []).length - 1)) * 280 + 10
+                        const y = 190 - ((data.value || 0) / Math.max(1, Math.max(...(element.props?.chartData || []).map((d: any) => d.value || 0)))) * 160
+                        return `${x},${y}`
+                      }).join(' ')}
+                    />
+                    {(element.props?.chartData || []).map((data: any, index: number) => {
+                      const x = (index / Math.max(1, (element.props?.chartData || []).length - 1)) * 280 + 10
+                      const y = 190 - ((data.value || 0) / Math.max(1, Math.max(...(element.props?.chartData || []).map((d: any) => d.value || 0)))) * 160
+                      return (
+                        <circle
+                          key={index}
+                          cx={x}
+                          cy={y}
+                          r="3"
+                          fill="hsl(var(--primary))"
+                          className="hover:r-4 transition-all duration-200"
+                        />
+                      )
+                    })}
+                  </>
+                )}
+              </svg>
+            </div>
+          )}
+          {element.props?.chartType === "pie" && (
+            <div className="w-full h-full flex items-center justify-center p-4">
+              <svg className="w-32 h-32" viewBox="0 0 100 100">
+                {(element.props?.chartData || Array.from({ length: element.props?.dataPoints || 5 }, (_, i) => ({ label: `Slice ${i + 1}`, value: Math.random() * 100 }))).map((data: any, index: number) => {
+                  const total = (element.props?.chartData || []).reduce((sum: number, d: any) => sum + (d.value || 0), 0)
+                  const percentage = total > 0 ? (data.value || 0) / total : 0
+                  const angle = percentage * 360
+                  const colors = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"]
+                  const color = colors[index % colors.length]
+                  
+                  let startAngle = 0
+                  for (let i = 0; i < index; i++) {
+                    const prevData = (element.props?.chartData || [])[i]
+                    const prevPercentage = total > 0 ? (prevData?.value || 0) / total : 0
+                    startAngle += prevPercentage * 360
+                  }
+                  
+                  const x1 = 50 + 40 * Math.cos((startAngle - 90) * Math.PI / 180)
+                  const y1 = 50 + 40 * Math.sin((startAngle - 90) * Math.PI / 180)
+                  const x2 = 50 + 40 * Math.cos((startAngle + angle - 90) * Math.PI / 180)
+                  const y2 = 50 + 40 * Math.sin((startAngle + angle - 90) * Math.PI / 180)
+                  const largeArcFlag = angle > 180 ? 1 : 0
+                  
+                  return (
+                    <path
+                      key={index}
+                      d={`M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArcFlag} 1 ${x2} ${y2} Z`}
+                      fill={color}
+                      className="hover:opacity-80 transition-opacity duration-200"
+                    />
+                  )
+                })}
+              </svg>
+            </div>
+          )}
+          {element.props?.chartType === "doughnut" && (
+            <div className="w-full h-full flex items-center justify-center p-4">
+              <svg className="w-32 h-32" viewBox="0 0 100 100">
+                {(element.props?.chartData || Array.from({ length: element.props?.dataPoints || 5 }, (_, i) => ({ label: `Segment ${i + 1}`, value: Math.random() * 100 }))).map((data: any, index: number) => {
+                  const total = (element.props?.chartData || []).reduce((sum: number, d: any) => sum + (d.value || 0), 0)
+                  const percentage = total > 0 ? (data.value || 0) / total : 0
+                  const angle = percentage * 360
+                  const colors = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"]
+                  const color = colors[index % colors.length]
+                  
+                  let startAngle = 0
+                  for (let i = 0; i < index; i++) {
+                    const prevData = (element.props?.chartData || [])[i]
+                    const prevPercentage = total > 0 ? (prevData?.value || 0) / total : 0
+                    startAngle += prevPercentage * 360
+                  }
+                  
+                  const radius = 30
+                  const innerRadius = 15
+                  const x1 = 50 + radius * Math.cos((startAngle - 90) * Math.PI / 180)
+                  const y1 = 50 + radius * Math.sin((startAngle - 90) * Math.PI / 180)
+                  const x2 = 50 + radius * Math.cos((startAngle + angle - 90) * Math.PI / 180)
+                  const y2 = 50 + radius * Math.sin((startAngle + angle - 90) * Math.PI / 180)
+                  const x3 = 50 + innerRadius * Math.cos((startAngle + angle - 90) * Math.PI / 180)
+                  const y3 = 50 + innerRadius * Math.sin((startAngle + angle - 90) * Math.PI / 180)
+                  const x4 = 50 + innerRadius * Math.cos((startAngle - 90) * Math.PI / 180)
+                  const y4 = 50 + innerRadius * Math.sin((startAngle - 90) * Math.PI / 180)
+                  const largeArcFlag = angle > 180 ? 1 : 0
+                  
+                  return (
+                    <path
+                      key={index}
+                      d={`M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x4} ${y4} Z`}
+                      fill={color}
+                      className="hover:opacity-80 transition-opacity duration-200"
+                    />
+                  )
+                })}
+              </svg>
+            </div>
+          )}
+          {!element.props?.chartType && (
         <div className="text-center">
           <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
             <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
-          <p className="text-sm">{element.content}</p>
+              <p className="text-sm text-muted-foreground">Select a chart type</p>
         </div>
+          )}
+        </div>
+        {element.props?.showLegend && (element.props?.chartType === "pie" || element.props?.chartType === "doughnut") && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {(element.props?.chartData || []).map((data: any, index: number) => {
+              const colors = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"]
+              const color = colors[index % colors.length]
+              return (
+                <div key={index} className="flex items-center gap-1 text-xs">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                  <span>{data.label}</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     )}
     {element.type === "progress" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4 flex flex-col justify-center" style={elementStyles}>
         <div className="mb-2">
-          <span className="text-sm font-medium">{element.content}</span>
+          <span 
+            className="text-sm font-medium"
+            style={{
+              fontFamily: element.props?.titleFontFamily || undefined,
+              fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : undefined,
+              fontWeight: element.props?.titleFontWeight || undefined,
+              color: element.props?.titleTextColor || undefined,
+            }}
+          >
+            {element.content || "Progress"}
+          </span>
+          {element.props?.showPercentage && (
+            <span 
+              className="text-sm text-muted-foreground ml-2"
+              style={{
+                fontFamily: element.props?.titleFontFamily || undefined,
+                fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : undefined,
+                fontWeight: element.props?.titleFontWeight || undefined,
+                color: element.props?.titleTextColor || undefined,
+              }}
+            >
+              {element.props?.value || 50}%
+            </span>
+          )}
         </div>
-        <div className="w-full bg-muted rounded-full h-2">
-          <div className="bg-primary h-2 rounded-full" style={{ width: '60%' }}></div>
+        <div 
+          className="w-full rounded-full overflow-hidden"
+          style={{ 
+            backgroundColor: element.props?.backgroundColor || "#e5e7eb",
+            height: `${element.props?.height || 8}px`
+          }}
+        >
+          <div 
+            className={`h-full rounded-full transition-all duration-500 ${
+              element.props?.animated ? "animate-pulse" : ""
+            }`}
+            style={{ 
+              width: `${element.props?.value || 50}%`,
+              backgroundColor: element.props?.progressColor || "#3b82f6",
+              transition: element.props?.animated ? "width 0.5s ease-in-out" : "none"
+            }}
+          />
         </div>
       </div>
     )}
     {element.type === "timeline" && (
       <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-        <div className="flex items-start gap-3">
-          <div className="w-3 h-3 bg-primary rounded-full mt-1"></div>
-          <div>
-            <h4 className="text-sm font-medium">Timeline Event</h4>
-            <p className="text-xs text-muted-foreground mt-1">{element.content}</p>
+        <div className="space-y-4">
+          <h3 
+            className="text-lg font-semibold mb-4"
+            style={{
+              fontFamily: element.props?.titleFontFamily || undefined,
+              fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : undefined,
+              fontWeight: element.props?.titleFontWeight || undefined,
+              color: element.props?.titleTextColor || undefined,
+            }}
+          >
+            {element.content || "Timeline"}
+          </h3>
+          <div className="relative">
+            {/* Timeline line */}
+            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border"></div>
+            
+            {/* Timeline events */}
+            {Array.from({ length: element.props?.eventCount || 4 }, (_, index) => (
+              <div key={index} className="relative flex items-start gap-4 pb-6">
+                {/* Event dot */}
+                <div 
+                  className="w-3 h-3 bg-primary rounded-full mt-1 flex-shrink-0 z-10"
+                  style={{
+                    backgroundColor: element.props?.timelineEvents?.[index]?.dotColor || undefined,
+                  }}
+                ></div>
+                
+                {/* Event content */}
+                <div className="flex-1 min-w-0">
+                  <h4 
+                    className="text-sm font-medium"
+                    style={{
+                      fontFamily: element.props?.eventTitleFontFamily || undefined,
+                      fontSize: element.props?.eventTitleFontSize ? `${element.props.eventTitleFontSize}px` : undefined,
+                      fontWeight: element.props?.eventTitleFontWeight || undefined,
+                      color: element.props?.eventTitleTextColor || undefined,
+                    }}
+                  >
+                    {element.props?.timelineEvents?.[index]?.title || `Event ${index + 1}`}
+                  </h4>
+                  <p 
+                    className="text-xs text-muted-foreground mt-1"
+                    style={{
+                      fontFamily: element.props?.descriptionFontFamily || undefined,
+                      fontSize: element.props?.descriptionFontSize ? `${element.props.descriptionFontSize}px` : undefined,
+                      fontWeight: element.props?.descriptionFontWeight || undefined,
+                      color: element.props?.descriptionTextColor || undefined,
+                    }}
+                  >
+                    {element.props?.timelineEvents?.[index]?.description || `Description for event ${index + 1}`}
+                  </p>
+                  {element.props?.timelineEvents?.[index]?.date && (
+                    <p 
+                      className="text-xs text-muted-foreground mt-1"
+                      style={{
+                        fontFamily: element.props?.dateFontFamily || undefined,
+                        fontSize: element.props?.dateFontSize ? `${element.props.dateFontSize}px` : undefined,
+                        fontWeight: element.props?.dateFontWeight || undefined,
+                        color: element.props?.dateTextColor || undefined,
+                      }}
+                    >
+                      {element.props.timelineEvents[index].date}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
     )}
     {element.type === "stats" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg flex flex-col items-center justify-center" style={elementStyles}>
-        <div className="text-2xl font-bold text-primary mb-1">1,234</div>
-        <div className="text-sm text-muted-foreground">{element.content}</div>
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: element.props?.statCount || 3 }, (_, index) => {
+            const stat = element.props?.stats?.[index] || {}
+            return (
+              <div key={index} className="bg-sidebar-accent border border-sidebar-border rounded-lg p-4 text-center">
+                <div 
+                  className="text-2xl font-bold text-primary mb-2"
+                  style={{
+                    fontFamily: element.props?.valueFontFamily || undefined,
+                    fontSize: element.props?.valueFontSize ? `${element.props.valueFontSize}px` : undefined,
+                    fontWeight: element.props?.valueFontWeight || undefined,
+                    color: element.props?.valueTextColor || undefined,
+                  }}
+                >
+                  {stat.value || `${(index + 1) * 1000}`}
+                </div>
+                <div 
+                  className="text-sm text-muted-foreground"
+                  style={{
+                    fontFamily: element.props?.labelFontFamily || undefined,
+                    fontSize: element.props?.labelFontSize ? `${element.props.labelFontSize}px` : undefined,
+                    fontWeight: element.props?.labelFontWeight || undefined,
+                    color: element.props?.labelTextColor || undefined,
+                  }}
+                >
+                  {stat.label || `Stat ${index + 1}`}
+                </div>
+                {stat.description && (
+                  <div 
+                    className="text-xs text-muted-foreground mt-1"
+                    style={{
+                      fontFamily: element.props?.descriptionFontFamily || undefined,
+                      fontSize: element.props?.descriptionFontSize ? `${element.props.descriptionFontSize}px` : undefined,
+                      fontWeight: element.props?.descriptionFontWeight || undefined,
+                      color: element.props?.descriptionTextColor || undefined,
+                    }}
+                  >
+                    {stat.description}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
     )}
     {element.type === "counter" && (
-      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-        <span className="text-3xl font-bold">{element.content}</span>
-      </div>
+      <CounterComponent element={element} currentBreakpoint={currentBreakpoint} />
     )}
     {element.type === "product-card" && (
       <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg overflow-hidden" style={elementStyles}>
