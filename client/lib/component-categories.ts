@@ -55,7 +55,6 @@ export const componentCategories = [
       { name: "Tooltip", icon: Info, description: "Hover tooltips", type: "tooltip" },
       { name: "Dropdown", icon: ChevronDown, description: "Dropdown menus", type: "dropdown" },
       { name: "Tabs", icon: Layout, description: "Tabbed content", type: "tabs" },
-      { name: "Accordion", icon: ChevronDown, description: "Collapsible content", type: "accordion" },
       { name: "Carousel", icon: ChevronLeft, description: "Image carousels", type: "carousel" },
     ],
   },

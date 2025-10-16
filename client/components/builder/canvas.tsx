@@ -592,7 +592,7 @@ export function Canvas({
           tablet: { padding: "0.65rem", fontSize: "0.95rem" },
           mobile: { padding: "0.6rem", fontSize: "0.9rem" },
         },
-        position: { x: 100, y: 100, width: 200, height: 40 },
+        position: { x: 100, y: 100, width: 300, height: 60 },
         animations: { type: "fadeIn", duration: 500, delay: 100 },
       },
       checkbox: {
@@ -822,23 +822,6 @@ export function Canvas({
         },
         position: { x: 100, y: 100, width: 300, height: 150 },
         animations: { type: "fadeIn", duration: 500, delay: 100 },
-      },
-      accordion: {
-        content: "Accordion Content",
-        styles: {
-          padding: "1rem",
-          backgroundColor: "var(--color-card)",
-          borderRadius: "0.5rem",
-          border: "1px solid var(--color-border)",
-          color: "var(--color-foreground)",
-        },
-        responsiveStyles: {
-          desktop: { padding: "1rem" },
-          tablet: { padding: "0.875rem" },
-          mobile: { padding: "0.75rem" },
-        },
-        position: { x: 100, y: 100, width: 300, height: 100 },
-        animations: { type: "slideIn", duration: 500, delay: 100, direction: "up" },
       },
       carousel: {
         content: "Image Carousel",
@@ -1998,7 +1981,6 @@ export function Canvas({
     "tooltip",
     "dropdown",
     "tabs",
-    "accordion",
     "carousel",
     // Data Display
     "table",
@@ -2103,7 +2085,6 @@ export function Canvas({
     const element = elements.find((el) => el.id === elementId)
     if (!element?.position) return
     setIsResizing(elementId)
-
     const startPos = { ...element.position }
     if (!canvasEl) return
     const rect = canvasEl.getBoundingClientRect()
@@ -2317,7 +2298,7 @@ export function Canvas({
       >
         {/* Element content */}
         <div 
-          className="w-full h-full overflow-hidden"
+          className={`w-full h-full ${element.type === 'select' && element.props?.previewMode ? 'overflow-visible' : 'overflow-hidden'}`}
           style={{
             padding: NO_PADDING_COMPONENTS.has(element.type) ? 0 : '0.5rem'
           }}
@@ -2508,42 +2489,197 @@ export function Canvas({
         type="text"
         placeholder={element.content}
         className="w-full h-full bg-background text-foreground border border-border rounded-md px-3 py-2"
-        style={elementStyles}
+        style={{
+          ...elementStyles,
+          fontFamily: element.props?.inputFontFamily === "default" || element.props?.inputFontFamily === "inherit" ? undefined : element.props?.inputFontFamily,
+          fontSize: element.props?.inputFontSize ? `${element.props.inputFontSize}px` : undefined,
+          fontWeight: element.props?.inputFontWeight || undefined,
+          color: element.props?.inputTextColor || undefined,
+        }}
       />
     )}
     {element.type === "textarea" && (
       <textarea
         placeholder={element.content}
+        rows={element.props?.rows || 4}
         className="w-full h-full bg-background text-foreground border border-border rounded-md px-3 py-2 resize-none"
-        style={elementStyles}
+        style={{
+          ...elementStyles,
+          fontFamily: element.props?.textareaFontFamily === "default" || element.props?.textareaFontFamily === "inherit" ? undefined : element.props?.textareaFontFamily,
+          fontSize: element.props?.textareaFontSize ? `${element.props.textareaFontSize}px` : undefined,
+          fontWeight: element.props?.textareaFontWeight || undefined,
+          color: element.props?.textareaTextColor || undefined,
+        }}
       />
     )}
     {element.type === "select" && (
-      <select className="w-full h-full bg-background text-foreground border border-border rounded-md px-3 py-2" style={elementStyles}>
-        <option>{element.content}</option>
-        <option>Option 1</option>
-        <option>Option 2</option>
-        <option>Option 3</option>
-      </select>
+      <>
+        {/* Normal Mode: Interactive Select */}
+        {!element.props?.previewMode && (
+          <div className="w-full h-full flex items-center relative z-50" style={elementStyles}>
+            <Select 
+              value={element.props?.selectedValue || element.props?.defaultValue || undefined}
+              onValueChange={(value) => {
+                // Update the selected value in element props
+                onUpdateElement(element.id, { 
+                  props: { 
+                    ...element.props, 
+                    selectedValue: value 
+                  } 
+                })
+              }}
+              required={element.props?.required || false}
+              disabled={element.props?.disabled || false}
+            >
+              <SelectTrigger 
+                className="w-full bg-background border-border hover:bg-accent"
+                onClick={(e) => {
+                  e.stopPropagation()
+                }}
+                style={{
+                  fontFamily: element.props?.placeholderFontFamily || undefined,
+                  fontSize: element.props?.placeholderFontSize ? `${element.props.placeholderFontSize}px` : undefined,
+                  fontWeight: element.props?.placeholderFontWeight || undefined,
+                  color: element.props?.placeholderTextColor || undefined,
+                }}
+              >
+                <SelectValue placeholder={element.props?.placeholder || "Select..."} />
+              </SelectTrigger>
+              <SelectContent 
+                className="bg-background border-border z-[9999]"
+                style={{
+                  fontFamily: element.props?.optionsFontFamily || undefined,
+                  fontSize: element.props?.optionsFontSize ? `${element.props.optionsFontSize}px` : undefined,
+                  fontWeight: element.props?.optionsFontWeight || undefined,
+                  color: element.props?.optionsTextColor || undefined,
+                }}
+              >
+                {(element.props?.options || ["Option 1", "Option 2", "Option 3"]).map((option: string, index: number) => (
+                  <SelectItem key={index} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Preview Mode: Always Visible Dropdown */}
+        {element.props?.previewMode && (
+          <div className="w-full h-full flex items-center relative" style={elementStyles}>
+            <div className="w-full pointer-events-none">
+              <div 
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm flex items-center justify-between"
+                style={{
+                  fontFamily: element.props?.placeholderFontFamily || undefined,
+                  fontSize: element.props?.placeholderFontSize ? `${element.props.placeholderFontSize}px` : undefined,
+                  fontWeight: element.props?.placeholderFontWeight || undefined,
+                  color: element.props?.placeholderTextColor || undefined,
+                }}
+              >
+                <span>{element.props?.defaultValue || element.props?.placeholder || "Select..."}</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              
+              {/* Always visible dropdown */}
+              <div 
+                className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-[200px] overflow-auto"
+                style={{
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  fontFamily: element.props?.optionsFontFamily || undefined,
+                  fontSize: element.props?.optionsFontSize ? `${element.props.optionsFontSize}px` : undefined,
+                  fontWeight: element.props?.optionsFontWeight || undefined,
+                  color: element.props?.optionsTextColor || undefined,
+                }}
+              >
+                {(element.props?.options || ["Option 1", "Option 2", "Option 3"]).map((option: string, index: number) => (
+                  <div 
+                    key={index} 
+                    className="px-3 py-2 hover:bg-accent cursor-pointer text-sm"
+                    style={{
+                      fontFamily: element.props?.optionsFontFamily || undefined,
+                      fontSize: element.props?.optionsFontSize ? `${element.props.optionsFontSize}px` : undefined,
+                      fontWeight: element.props?.optionsFontWeight || undefined,
+                      color: element.props?.optionsTextColor || undefined,
+                    }}
+                  >
+                    {option}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     )}
     {element.type === "checkbox" && (
       <div className="text-card-foreground w-full h-full flex items-center gap-2" style={elementStyles}>
         <input type="checkbox" className="w-4 h-4" />
-        <span className="text-sm">{element.content}</span>
+        <span 
+          className="text-sm"
+          style={{
+            fontFamily: element.props?.checkboxFontFamily || undefined,
+            fontSize: element.props?.checkboxFontSize ? `${element.props.checkboxFontSize}px` : undefined,
+            fontWeight: element.props?.checkboxFontWeight || undefined,
+            color: element.props?.checkboxTextColor || undefined,
+          }}
+        >
+          {element.content}
+        </span>
       </div>
     )}
     {element.type === "radio" && (
       <div className="text-card-foreground w-full h-full flex items-center gap-2" style={elementStyles}>
-        <input type="radio" name="radio-group" className="w-4 h-4" />
-        <span className="text-sm">{element.content}</span>
+        <input 
+          type="radio" 
+          name={element.props?.groupName || "radio-group"} 
+          className="w-4 h-4" 
+          checked={element.props?.checked || false}
+          readOnly
+        />
+        <span 
+          className="text-sm"
+          style={{
+            fontFamily: element.props?.radioFontFamily || undefined,
+            fontSize: element.props?.radioFontSize ? `${element.props.radioFontSize}px` : undefined,
+            fontWeight: element.props?.radioFontWeight || undefined,
+            color: element.props?.radioTextColor || undefined,
+          }}
+        >
+          {element.content}
+        </span>
       </div>
     )}
     {element.type === "switch" && (
       <div className="text-card-foreground w-full h-full flex items-center gap-2" style={elementStyles}>
-        <div className="w-10 h-6 bg-muted rounded-full relative">
-          <div className="w-4 h-4 bg-primary rounded-full absolute top-1 left-1 transition-transform"></div>
+        <div 
+          className={`w-10 h-6 rounded-full relative transition-colors ${element.props?.checked ? 'bg-primary' : 'bg-muted'}`}
+          style={{
+            backgroundColor: element.props?.checked ? (element.props?.switchColor || '#3b82f6') : undefined,
+          }}
+        >
+          <div 
+            className="w-4 h-4 bg-white rounded-full absolute top-1 transition-transform"
+            style={{
+              transform: element.props?.checked ? 'translateX(20px)' : 'translateX(2px)',
+            }}
+          />
         </div>
-        <span className="text-sm">{element.content}</span>
+        <span 
+          className="text-sm"
+          style={{
+            fontFamily: element.props?.switchFontFamily || undefined,
+            fontSize: element.props?.switchFontSize ? `${element.props.switchFontSize}px` : undefined,
+            fontWeight: element.props?.switchFontWeight || undefined,
+            color: element.props?.switchTextColor || undefined,
+          }}
+        >
+          {element.content}
+        </span>
       </div>
     )}
     {element.type === "video" && (
@@ -3402,21 +3538,6 @@ export function Canvas({
     {element.type === "carousel" && (
       <CarouselComponent element={element} />
     )}
-    {element.type === "accordion" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg" style={elementStyles}>
-        <div className="p-4 border-b border-border">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Accordion Item</span>
-            <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </div>
-        <div className="p-4">
-          <p className="text-sm text-muted-foreground">{element.content}</p>
-        </div>
-      </div>
-    )}
     {element.type === "table" && (
       <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg overflow-hidden" style={elementStyles}>
         <table className="w-full text-sm">
@@ -4075,13 +4196,17 @@ export function Canvas({
       </div>
     )}
     {element.type === "form" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={{...elementStyles, minHeight: '420px'}}>
         <div className="space-y-3 h-full flex flex-col">
           <h3 
             className="font-semibold flex-shrink-0" 
             style={{
-              fontSize: element.props?.titleFontSize || '14px',
-              textAlign: element.props?.titleAlign || 'left',
+              fontFamily: element.props?.titleFontFamily || 'inherit',
+              fontSize: element.props?.titleFontSize || '24px',
+              fontWeight: element.props?.titleFontWeight || '600',
+              fontStyle: element.props?.titleFontStyle || 'normal',
+              textDecoration: element.props?.titleTextDecoration || 'none',
+              textAlign: (element.props?.titleTextAlign as React.CSSProperties['textAlign']) || 'left',
               color: element.props?.titleColor || '#ffffff'
             }}
           >
@@ -4090,17 +4215,21 @@ export function Canvas({
           <div className="space-y-2 flex-1 flex flex-col">
             <input 
               type="text" 
-              placeholder="Name" 
+              placeholder={element.props?.nameLabel !== undefined ? element.props.nameLabel : "Name"} 
               className="w-full border flex-shrink-0" 
               style={element.props?.enableScaling ? {
+                fontFamily: element.props?.inputFontFamily || 'inherit',
                 padding: `${Math.max(4, (element.position?.height || 200) * 0.02)}px ${Math.max(8, (element.position?.width || 300) * 0.03)}px`,
                 fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
+                color: element.props?.inputTextColor || '#ffffff',
                 borderRadius: element.props?.inputBorderRadius || '4px',
                 borderColor: element.props?.inputBorderColor || '#374151',
                 backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
               } : {
+                fontFamily: element.props?.inputFontFamily || 'inherit',
                 padding: element.props?.inputPadding || '8px 12px',
                 fontSize: element.props?.inputFontSize || '12px',
+                color: element.props?.inputTextColor || '#ffffff',
                 borderRadius: element.props?.inputBorderRadius || '4px',
                 borderColor: element.props?.inputBorderColor || '#374151',
                 backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
@@ -4108,44 +4237,53 @@ export function Canvas({
             />
             <input 
               type="email" 
-              placeholder="Email" 
+              placeholder={element.props?.emailLabel !== undefined ? element.props.emailLabel : "Email"} 
               className="w-full border flex-shrink-0" 
               style={element.props?.enableScaling ? {
+                fontFamily: element.props?.inputFontFamily || 'inherit',
                 padding: `${Math.max(4, (element.position?.height || 200) * 0.02)}px ${Math.max(8, (element.position?.width || 300) * 0.03)}px`,
                 fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
+                color: element.props?.inputTextColor || '#ffffff',
                 borderRadius: element.props?.inputBorderRadius || '4px',
                 borderColor: element.props?.inputBorderColor || '#374151',
                 backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
               } : {
+                fontFamily: element.props?.inputFontFamily || 'inherit',
                 padding: element.props?.inputPadding || '8px 12px',
                 fontSize: element.props?.inputFontSize || '12px',
+                color: element.props?.inputTextColor || '#ffffff',
                 borderRadius: element.props?.inputBorderRadius || '4px',
                 borderColor: element.props?.inputBorderColor || '#374151',
                 backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
               }}
             />
             <textarea 
-              placeholder="Message" 
+              placeholder={element.props?.messageLabel !== undefined ? element.props.messageLabel : "Message"} 
               className="w-full border resize-none flex-1" 
               style={element.props?.enableScaling ? {
+                fontFamily: element.props?.inputFontFamily || 'inherit',
                 padding: `${Math.max(4, (element.position?.height || 200) * 0.02)}px ${Math.max(8, (element.position?.width || 300) * 0.03)}px`,
                 fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
+                color: element.props?.inputTextColor || '#ffffff',
                 minHeight: `${Math.max(40, (element.position?.height || 200) * 0.2)}px`,
                 borderRadius: element.props?.inputBorderRadius || '4px',
                 borderColor: element.props?.inputBorderColor || '#374151',
                 backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
               } : {
+                fontFamily: element.props?.inputFontFamily || 'inherit',
                 padding: element.props?.inputPadding || '8px 12px',
                 fontSize: element.props?.inputFontSize || '12px',
+                color: element.props?.inputTextColor || '#ffffff',
                 minHeight: element.props?.textareaMinHeight || '64px',
                 borderRadius: element.props?.inputBorderRadius || '4px',
                 borderColor: element.props?.inputBorderColor || '#374151',
                 backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
               }}
             />
-            <button 
-              className="w-full rounded flex-shrink-0" 
-              style={element.props?.enableScaling ? {
+          </div>
+          <button 
+            className="w-full rounded flex-shrink-0 mt-2" 
+            style={element.props?.enableScaling ? {
                 padding: `${Math.max(6, (element.position?.height || 200) * 0.03)}px ${Math.max(12, (element.position?.width || 300) * 0.04)}px`,
                 fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
                 borderRadius: element.props?.buttonBorderRadius || '4px',
@@ -4163,9 +4301,8 @@ export function Canvas({
                 cursor: 'pointer'
               }}
             >
-              {element.props?.buttonText || "Submit"}
+              {element.props?.buttonText !== undefined ? element.props.buttonText : "Submit"}
             </button>
-          </div>
         </div>
       </div>
     )}

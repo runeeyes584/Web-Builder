@@ -66,23 +66,14 @@ export function useBuilderState() {
   }, [historyIndex])
 
   const updateElement = useCallback((id: string, updates: Partial<BuilderElement>) => {
-    console.log('🔄 updateElement called:', { id, updates, updateKeys: Object.keys(updates) });
     setElements((prev) => {
       const newElements = prev.map((el) => {
         if (el.id === id) {
           const updated = { ...el, ...updates };
-          console.log('📝 Element updated:', { 
-            id, 
-            oldProps: el.props, 
-            newProps: updates.props,
-            finalProps: updated.props 
-          });
           return updated;
         }
         return el;
       });
-      
-      console.log('✅ Elements state updated, count:', newElements.length);
       
       // Save to history
       setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])
