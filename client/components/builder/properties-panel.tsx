@@ -4427,13 +4427,66 @@ export function PropertiesPanel({
                       />
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Social Platforms (one per line)</Label>
-                      <Textarea
-                        placeholder="Facebook&#10;Twitter&#10;Instagram&#10;LinkedIn"
-                        value={selectedElement.props?.platforms?.join('\n') || ""}
-                        onChange={(e) => updateElementProps({ platforms: e.target.value.split('\n').filter(p => p.trim()) })}
-                        className="bg-sidebar-accent border-sidebar-border min-h-[80px]"
-                      />
+                      <Label className="text-xs text-muted-foreground mb-2 block">Social Links</Label>
+                      <div className="space-y-2">
+                        {(selectedElement.props?.socialLinks || []).map((link: any, index: number) => (
+                          <div key={index} className="flex items-center gap-2 p-2 bg-sidebar-accent/50 rounded border border-sidebar-border">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-medium truncate">{link.platform}</div>
+                              <div className="text-xs text-muted-foreground truncate">{link.url}</div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const links = [...(selectedElement.props?.socialLinks || [])]
+                                const platform = prompt('Platform name:', links[index].platform)
+                                const url = prompt('URL:', links[index].url)
+                                if (platform !== null && url !== null) {
+                                  links[index] = { platform: platform.trim(), url: url.trim() }
+                                  updateElementProps({ socialLinks: links })
+                                }
+                              }}
+                              className="h-8 w-8 p-0"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const links = [...(selectedElement.props?.socialLinks || [])]
+                                links.splice(index, 1)
+                                updateElementProps({ socialLinks: links })
+                              }}
+                              className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const platform = prompt('Platform name (e.g., Facebook, Twitter):')
+                            const url = prompt('URL (e.g., https://facebook.com/username):')
+                            if (platform && url) {
+                              const links = [...(selectedElement.props?.socialLinks || [])]
+                              links.push({ platform: platform.trim(), url: url.trim() })
+                              updateElementProps({ socialLinks: links })
+                            }
+                          }}
+                          className="w-full"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Social Link
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ) : selectedElement.type === "contact-info" ? (
@@ -4475,6 +4528,45 @@ export function PropertiesPanel({
                       />
                     </div>
                   </div>
+                ) : selectedElement.type === "newsletter" ? (
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Title</Label>
+                      <Input
+                        placeholder="Subscribe to Newsletter"
+                        value={selectedElement.content}
+                        onChange={(e) => updateElementContent(e.target.value)}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Subtitle</Label>
+                      <Input
+                        placeholder="Get updates delivered to your inbox"
+                        value={selectedElement.props?.subtitle || ""}
+                        onChange={(e) => updateElementProps({ subtitle: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Input Placeholder</Label>
+                      <Input
+                        placeholder="Enter email"
+                        value={selectedElement.props?.inputPlaceholder || ""}
+                        onChange={(e) => updateElementProps({ inputPlaceholder: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Button Text</Label>
+                      <Input
+                        placeholder="Subscribe"
+                        value={selectedElement.props?.buttonText || ""}
+                        onChange={(e) => updateElementProps({ buttonText: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                  </div>
                 ) : selectedElement.type === "map" ? (
                   <div className="space-y-3">
                     <div>
@@ -4496,35 +4588,88 @@ export function PropertiesPanel({
                       />
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Map Height</Label>
-                      <Input
-                        placeholder="300px"
-                        value={selectedElement.props?.height || ""}
-                        onChange={(e) => updateElementProps({ height: e.target.value })}
-                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      <Label className="text-xs text-muted-foreground">Google Maps Embed URL</Label>
+                      <Textarea
+                        placeholder="Paste Google Maps embed URL here..."
+                        value={selectedElement.props?.mapUrl || ""}
+                        onChange={(e) => updateElementProps({ mapUrl: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border min-h-[80px] text-xs"
                       />
+                      <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded text-xs text-blue-400">
+                        <p className="font-semibold mb-1">How to get Google Maps URL:</p>
+                        <ol className="list-decimal list-inside space-y-1 text-blue-300">
+                          <li>Go to <span className="font-mono">maps.google.com</span></li>
+                          <li>Search for your location</li>
+                          <li>Click "Share" → "Embed a map"</li>
+                          <li>Copy the URL from the iframe src</li>
+                        </ol>
+                      </div>
                     </div>
                   </div>
                 ) : selectedElement.type === "team" ? (
                   <div className="space-y-3">
                     <div>
-                      <Label className="text-xs text-muted-foreground">Team Title</Label>
+                      <Label className="text-xs text-muted-foreground">Member Name</Label>
                       <Input
-                        placeholder="Our Team"
+                        placeholder="John Doe"
                         value={selectedElement.content}
                         onChange={(e) => updateElementContent(e.target.value)}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Number of Members</Label>
+                      <Label className="text-xs text-muted-foreground">Role / Position</Label>
                       <Input
-                        type="number"
-                        placeholder="4"
-                        value={selectedElement.props?.memberCount || 4}
-                        onChange={(e) => updateElementProps({ memberCount: parseInt(e.target.value) || 4 })}
+                        placeholder="Team Member"
+                        value={selectedElement.props?.role || ""}
+                        onChange={(e) => updateElementProps({ role: e.target.value })}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Member Image</Label>
+                      <div className="space-y-2 mt-1">
+                        {selectedElement.props?.memberImage && (
+                          <div className="relative">
+                            <img 
+                              src={selectedElement.props.memberImage} 
+                              alt="Member preview" 
+                              className="w-full h-32 object-cover rounded border border-sidebar-border"
+                            />
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => updateElementProps({ memberImage: "" })}
+                              className="absolute top-1 right-1"
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const input = document.createElement('input')
+                            input.type = 'file'
+                            input.accept = 'image/*'
+                            input.onchange = (e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0]
+                              if (file) {
+                                const reader = new FileReader()
+                                reader.onload = (e) => {
+                                  updateElementProps({ memberImage: e.target?.result as string })
+                                }
+                                reader.readAsDataURL(file)
+                              }
+                            }
+                            input.click()
+                          }}
+                          className="w-full bg-sidebar-accent border-sidebar-border"
+                        >
+                          {selectedElement.props?.memberImage ? 'Change Image' : 'Upload Image'}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ) : selectedElement.type === "testimonial" ? (
@@ -5484,6 +5629,1201 @@ export function PropertiesPanel({
                             onChange={(e) => updateElementProps({ checkoutBackgroundColor: e.target.value })}
                             placeholder="#3b82f6"
                             className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+                </>
+              )}
+
+              {/* Typography for Contact Info */}
+              {selectedElement.type === "contact-info" && (
+                <>
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Phone Typography
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.phoneFontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ phoneFontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Default</SelectItem>
+                            <SelectItem value="'Inter', sans-serif">Inter</SelectItem>
+                            <SelectItem value="'Roboto', sans-serif">Roboto</SelectItem>
+                            <SelectItem value="'Open Sans', sans-serif">Open Sans</SelectItem>
+                            <SelectItem value="'Lato', sans-serif">Lato</SelectItem>
+                            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+                            <SelectItem value="'Poppins', sans-serif">Poppins</SelectItem>
+                            <SelectItem value="'Arial', sans-serif">Arial</SelectItem>
+                            <SelectItem value="'Helvetica', sans-serif">Helvetica</SelectItem>
+                            <SelectItem value="'Verdana', sans-serif">Verdana</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                        <Slider
+                          value={[selectedElement.props?.phoneFontSize || 14]}
+                          onValueChange={([value]) => updateElementProps({ phoneFontSize: value })}
+                          max={24}
+                          min={10}
+                          step={1}
+                          className="mt-2"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedElement.props?.phoneFontSize || 14}px
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.phoneFontWeight || "400"}
+                          onValueChange={(value) => updateElementProps({ phoneFontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="300">Light (300)</SelectItem>
+                            <SelectItem value="400">Normal (400)</SelectItem>
+                            <SelectItem value="500">Medium (500)</SelectItem>
+                            <SelectItem value="600">Semibold (600)</SelectItem>
+                            <SelectItem value="700">Bold (700)</SelectItem>
+                            <SelectItem value="800">Extra Bold (800)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.phoneTextColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ phoneTextColor: e.target.value })}
+                            onInput={(e) => updateElementProps({ phoneTextColor: (e.target as HTMLInputElement).value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.phoneTextColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ phoneTextColor: e.target.value })}
+                            placeholder="#ffffff"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Email Typography
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.emailFontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ emailFontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Default</SelectItem>
+                            <SelectItem value="'Inter', sans-serif">Inter</SelectItem>
+                            <SelectItem value="'Roboto', sans-serif">Roboto</SelectItem>
+                            <SelectItem value="'Open Sans', sans-serif">Open Sans</SelectItem>
+                            <SelectItem value="'Lato', sans-serif">Lato</SelectItem>
+                            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+                            <SelectItem value="'Poppins', sans-serif">Poppins</SelectItem>
+                            <SelectItem value="'Arial', sans-serif">Arial</SelectItem>
+                            <SelectItem value="'Helvetica', sans-serif">Helvetica</SelectItem>
+                            <SelectItem value="'Verdana', sans-serif">Verdana</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                        <Slider
+                          value={[selectedElement.props?.emailFontSize || 14]}
+                          onValueChange={([value]) => updateElementProps({ emailFontSize: value })}
+                          max={24}
+                          min={10}
+                          step={1}
+                          className="mt-2"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedElement.props?.emailFontSize || 14}px
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.emailFontWeight || "400"}
+                          onValueChange={(value) => updateElementProps({ emailFontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="300">Light (300)</SelectItem>
+                            <SelectItem value="400">Normal (400)</SelectItem>
+                            <SelectItem value="500">Medium (500)</SelectItem>
+                            <SelectItem value="600">Semibold (600)</SelectItem>
+                            <SelectItem value="700">Bold (700)</SelectItem>
+                            <SelectItem value="800">Extra Bold (800)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.emailTextColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ emailTextColor: e.target.value })}
+                            onInput={(e) => updateElementProps({ emailTextColor: (e.target as HTMLInputElement).value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.emailTextColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ emailTextColor: e.target.value })}
+                            placeholder="#ffffff"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Address Typography
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.addressFontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ addressFontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Default</SelectItem>
+                            <SelectItem value="'Inter', sans-serif">Inter</SelectItem>
+                            <SelectItem value="'Roboto', sans-serif">Roboto</SelectItem>
+                            <SelectItem value="'Open Sans', sans-serif">Open Sans</SelectItem>
+                            <SelectItem value="'Lato', sans-serif">Lato</SelectItem>
+                            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+                            <SelectItem value="'Poppins', sans-serif">Poppins</SelectItem>
+                            <SelectItem value="'Arial', sans-serif">Arial</SelectItem>
+                            <SelectItem value="'Helvetica', sans-serif">Helvetica</SelectItem>
+                            <SelectItem value="'Verdana', sans-serif">Verdana</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                        <Slider
+                          value={[selectedElement.props?.addressFontSize || 14]}
+                          onValueChange={([value]) => updateElementProps({ addressFontSize: value })}
+                          max={24}
+                          min={10}
+                          step={1}
+                          className="mt-2"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedElement.props?.addressFontSize || 14}px
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.addressFontWeight || "400"}
+                          onValueChange={(value) => updateElementProps({ addressFontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="300">Light (300)</SelectItem>
+                            <SelectItem value="400">Normal (400)</SelectItem>
+                            <SelectItem value="500">Medium (500)</SelectItem>
+                            <SelectItem value="600">Semibold (600)</SelectItem>
+                            <SelectItem value="700">Bold (700)</SelectItem>
+                            <SelectItem value="800">Extra Bold (800)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.addressTextColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ addressTextColor: e.target.value })}
+                            onInput={(e) => updateElementProps({ addressTextColor: (e.target as HTMLInputElement).value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.addressTextColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ addressTextColor: e.target.value })}
+                            placeholder="#ffffff"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+                </>
+              )}
+
+              {/* Typography for Newsletter */}
+              {selectedElement.type === "newsletter" && (
+                <>
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Title Typography
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.titleFontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ titleFontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Default</SelectItem>
+                            <SelectItem value="'Inter', sans-serif">Inter</SelectItem>
+                            <SelectItem value="'Roboto', sans-serif">Roboto</SelectItem>
+                            <SelectItem value="'Open Sans', sans-serif">Open Sans</SelectItem>
+                            <SelectItem value="'Lato', sans-serif">Lato</SelectItem>
+                            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+                            <SelectItem value="'Poppins', sans-serif">Poppins</SelectItem>
+                            <SelectItem value="'Arial', sans-serif">Arial</SelectItem>
+                            <SelectItem value="'Helvetica', sans-serif">Helvetica</SelectItem>
+                            <SelectItem value="'Verdana', sans-serif">Verdana</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                        <Slider
+                          value={[selectedElement.props?.titleFontSize || 14]}
+                          onValueChange={([value]) => updateElementProps({ titleFontSize: value })}
+                          max={32}
+                          min={10}
+                          step={1}
+                          className="mt-2"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedElement.props?.titleFontSize || 14}px
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.titleFontWeight || "600"}
+                          onValueChange={(value) => updateElementProps({ titleFontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="300">Light (300)</SelectItem>
+                            <SelectItem value="400">Normal (400)</SelectItem>
+                            <SelectItem value="500">Medium (500)</SelectItem>
+                            <SelectItem value="600">Semibold (600)</SelectItem>
+                            <SelectItem value="700">Bold (700)</SelectItem>
+                            <SelectItem value="800">Extra Bold (800)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.titleTextColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ titleTextColor: e.target.value })}
+                            onInput={(e) => updateElementProps({ titleTextColor: (e.target as HTMLInputElement).value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.titleTextColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ titleTextColor: e.target.value })}
+                            placeholder="#ffffff"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Subtitle Typography
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.subtitleFontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ subtitleFontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Default</SelectItem>
+                            <SelectItem value="'Inter', sans-serif">Inter</SelectItem>
+                            <SelectItem value="'Roboto', sans-serif">Roboto</SelectItem>
+                            <SelectItem value="'Open Sans', sans-serif">Open Sans</SelectItem>
+                            <SelectItem value="'Lato', sans-serif">Lato</SelectItem>
+                            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+                            <SelectItem value="'Poppins', sans-serif">Poppins</SelectItem>
+                            <SelectItem value="'Arial', sans-serif">Arial</SelectItem>
+                            <SelectItem value="'Helvetica', sans-serif">Helvetica</SelectItem>
+                            <SelectItem value="'Verdana', sans-serif">Verdana</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                        <Slider
+                          value={[selectedElement.props?.subtitleFontSize || 12]}
+                          onValueChange={([value]) => updateElementProps({ subtitleFontSize: value })}
+                          max={24}
+                          min={8}
+                          step={1}
+                          className="mt-2"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedElement.props?.subtitleFontSize || 12}px
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.subtitleFontWeight || "400"}
+                          onValueChange={(value) => updateElementProps({ subtitleFontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="300">Light (300)</SelectItem>
+                            <SelectItem value="400">Normal (400)</SelectItem>
+                            <SelectItem value="500">Medium (500)</SelectItem>
+                            <SelectItem value="600">Semibold (600)</SelectItem>
+                            <SelectItem value="700">Bold (700)</SelectItem>
+                            <SelectItem value="800">Extra Bold (800)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.subtitleTextColor || "#888888"}
+                            onChange={(e) => updateElementProps({ subtitleTextColor: e.target.value })}
+                            onInput={(e) => updateElementProps({ subtitleTextColor: (e.target as HTMLInputElement).value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.subtitleTextColor || "#888888"}
+                            onChange={(e) => updateElementProps({ subtitleTextColor: e.target.value })}
+                            placeholder="#888888"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Button Typography
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.buttonFontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ buttonFontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Default</SelectItem>
+                            <SelectItem value="'Inter', sans-serif">Inter</SelectItem>
+                            <SelectItem value="'Roboto', sans-serif">Roboto</SelectItem>
+                            <SelectItem value="'Open Sans', sans-serif">Open Sans</SelectItem>
+                            <SelectItem value="'Lato', sans-serif">Lato</SelectItem>
+                            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+                            <SelectItem value="'Poppins', sans-serif">Poppins</SelectItem>
+                            <SelectItem value="'Arial', sans-serif">Arial</SelectItem>
+                            <SelectItem value="'Helvetica', sans-serif">Helvetica</SelectItem>
+                            <SelectItem value="'Verdana', sans-serif">Verdana</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                        <Slider
+                          value={[selectedElement.props?.buttonFontSize || 12]}
+                          onValueChange={([value]) => updateElementProps({ buttonFontSize: value })}
+                          max={24}
+                          min={8}
+                          step={1}
+                          className="mt-2"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedElement.props?.buttonFontSize || 12}px
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.buttonFontWeight || "500"}
+                          onValueChange={(value) => updateElementProps({ buttonFontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="300">Light (300)</SelectItem>
+                            <SelectItem value="400">Normal (400)</SelectItem>
+                            <SelectItem value="500">Medium (500)</SelectItem>
+                            <SelectItem value="600">Semibold (600)</SelectItem>
+                            <SelectItem value="700">Bold (700)</SelectItem>
+                            <SelectItem value="800">Extra Bold (800)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.buttonTextColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ buttonTextColor: e.target.value })}
+                            onInput={(e) => updateElementProps({ buttonTextColor: (e.target as HTMLInputElement).value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.buttonTextColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ buttonTextColor: e.target.value })}
+                            placeholder="#ffffff"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Background Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.buttonBackgroundColor || "#3b82f6"}
+                            onChange={(e) => updateElementProps({ buttonBackgroundColor: e.target.value })}
+                            onInput={(e) => updateElementProps({ buttonBackgroundColor: (e.target as HTMLInputElement).value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.buttonBackgroundColor || "#3b82f6"}
+                            onChange={(e) => updateElementProps({ buttonBackgroundColor: e.target.value })}
+                            placeholder="#3b82f6"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+                </>
+              )}
+
+              {/* Typography for Team */}
+              {selectedElement.type === "team" && (
+                <>
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <ImageIcon className="w-4 h-4" />
+                      Image Settings
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Image Height (%)</Label>
+                        <Slider
+                          value={[selectedElement.props?.imageHeight || 40]}
+                          onValueChange={([value]) => updateElementProps({ imageHeight: value })}
+                          max={80}
+                          min={20}
+                          step={5}
+                          className="mt-2"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedElement.props?.imageHeight || 40}%
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Border Radius (px)</Label>
+                        <Slider
+                          value={[selectedElement.props?.imageBorderRadius || 0]}
+                          onValueChange={([value]) => updateElementProps({ imageBorderRadius: value })}
+                          max={100}
+                          min={0}
+                          step={5}
+                          className="mt-2"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedElement.props?.imageBorderRadius || 0}px
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Name Typography
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.nameFontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ nameFontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Default</SelectItem>
+                            <SelectItem value="'Inter', sans-serif">Inter</SelectItem>
+                            <SelectItem value="'Roboto', sans-serif">Roboto</SelectItem>
+                            <SelectItem value="'Open Sans', sans-serif">Open Sans</SelectItem>
+                            <SelectItem value="'Lato', sans-serif">Lato</SelectItem>
+                            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+                            <SelectItem value="'Poppins', sans-serif">Poppins</SelectItem>
+                            <SelectItem value="'Arial', sans-serif">Arial</SelectItem>
+                            <SelectItem value="'Helvetica', sans-serif">Helvetica</SelectItem>
+                            <SelectItem value="'Verdana', sans-serif">Verdana</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                        <Slider
+                          value={[selectedElement.props?.nameFontSize || 14]}
+                          onValueChange={([value]) => updateElementProps({ nameFontSize: value })}
+                          max={32}
+                          min={10}
+                          step={1}
+                          className="mt-2"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedElement.props?.nameFontSize || 14}px
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.nameFontWeight || "600"}
+                          onValueChange={(value) => updateElementProps({ nameFontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="300">Light (300)</SelectItem>
+                            <SelectItem value="400">Normal (400)</SelectItem>
+                            <SelectItem value="500">Medium (500)</SelectItem>
+                            <SelectItem value="600">Semibold (600)</SelectItem>
+                            <SelectItem value="700">Bold (700)</SelectItem>
+                            <SelectItem value="800">Extra Bold (800)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.nameTextColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ nameTextColor: e.target.value })}
+                            onInput={(e) => updateElementProps({ nameTextColor: (e.target as HTMLInputElement).value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.nameTextColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ nameTextColor: e.target.value })}
+                            placeholder="#ffffff"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Role Typography
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.roleFontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ roleFontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Default</SelectItem>
+                            <SelectItem value="'Inter', sans-serif">Inter</SelectItem>
+                            <SelectItem value="'Roboto', sans-serif">Roboto</SelectItem>
+                            <SelectItem value="'Open Sans', sans-serif">Open Sans</SelectItem>
+                            <SelectItem value="'Lato', sans-serif">Lato</SelectItem>
+                            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+                            <SelectItem value="'Poppins', sans-serif">Poppins</SelectItem>
+                            <SelectItem value="'Arial', sans-serif">Arial</SelectItem>
+                            <SelectItem value="'Helvetica', sans-serif">Helvetica</SelectItem>
+                            <SelectItem value="'Verdana', sans-serif">Verdana</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                        <Slider
+                          value={[selectedElement.props?.roleFontSize || 12]}
+                          onValueChange={([value]) => updateElementProps({ roleFontSize: value })}
+                          max={24}
+                          min={8}
+                          step={1}
+                          className="mt-2"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedElement.props?.roleFontSize || 12}px
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.roleFontWeight || "400"}
+                          onValueChange={(value) => updateElementProps({ roleFontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="300">Light (300)</SelectItem>
+                            <SelectItem value="400">Normal (400)</SelectItem>
+                            <SelectItem value="500">Medium (500)</SelectItem>
+                            <SelectItem value="600">Semibold (600)</SelectItem>
+                            <SelectItem value="700">Bold (700)</SelectItem>
+                            <SelectItem value="800">Extra Bold (800)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.roleTextColor || "#888888"}
+                            onChange={(e) => updateElementProps({ roleTextColor: e.target.value })}
+                            onInput={(e) => updateElementProps({ roleTextColor: (e.target as HTMLInputElement).value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.roleTextColor || "#888888"}
+                            onChange={(e) => updateElementProps({ roleTextColor: e.target.value })}
+                            placeholder="#888888"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+                </>
+              )}
+
+              {/* Typography for Testimonial */}
+              {selectedElement.type === "testimonial" && (
+                <>
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Review Typography
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.reviewFontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ reviewFontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Default</SelectItem>
+                            <SelectItem value="'Inter', sans-serif">Inter</SelectItem>
+                            <SelectItem value="'Roboto', sans-serif">Roboto</SelectItem>
+                            <SelectItem value="'Open Sans', sans-serif">Open Sans</SelectItem>
+                            <SelectItem value="'Lato', sans-serif">Lato</SelectItem>
+                            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+                            <SelectItem value="'Poppins', sans-serif">Poppins</SelectItem>
+                            <SelectItem value="'Arial', sans-serif">Arial</SelectItem>
+                            <SelectItem value="'Helvetica', sans-serif">Helvetica</SelectItem>
+                            <SelectItem value="'Verdana', sans-serif">Verdana</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                        <Slider
+                          value={[selectedElement.props?.reviewFontSize || 14]}
+                          onValueChange={([value]) => updateElementProps({ reviewFontSize: value })}
+                          max={32}
+                          min={10}
+                          step={1}
+                          className="mt-2"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedElement.props?.reviewFontSize || 14}px
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.reviewFontWeight || "400"}
+                          onValueChange={(value) => updateElementProps({ reviewFontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="300">Light (300)</SelectItem>
+                            <SelectItem value="400">Normal (400)</SelectItem>
+                            <SelectItem value="500">Medium (500)</SelectItem>
+                            <SelectItem value="600">Semibold (600)</SelectItem>
+                            <SelectItem value="700">Bold (700)</SelectItem>
+                            <SelectItem value="800">Extra Bold (800)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.reviewTextColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ reviewTextColor: e.target.value })}
+                            onInput={(e) => updateElementProps({ reviewTextColor: (e.target as HTMLInputElement).value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.reviewTextColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ reviewTextColor: e.target.value })}
+                            placeholder="#ffffff"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Customer Name Typography
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.nameFontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ nameFontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Default</SelectItem>
+                            <SelectItem value="'Inter', sans-serif">Inter</SelectItem>
+                            <SelectItem value="'Roboto', sans-serif">Roboto</SelectItem>
+                            <SelectItem value="'Open Sans', sans-serif">Open Sans</SelectItem>
+                            <SelectItem value="'Lato', sans-serif">Lato</SelectItem>
+                            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+                            <SelectItem value="'Poppins', sans-serif">Poppins</SelectItem>
+                            <SelectItem value="'Arial', sans-serif">Arial</SelectItem>
+                            <SelectItem value="'Helvetica', sans-serif">Helvetica</SelectItem>
+                            <SelectItem value="'Verdana', sans-serif">Verdana</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                        <Slider
+                          value={[selectedElement.props?.nameFontSize || 12]}
+                          onValueChange={([value]) => updateElementProps({ nameFontSize: value })}
+                          max={24}
+                          min={8}
+                          step={1}
+                          className="mt-2"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedElement.props?.nameFontSize || 12}px
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.nameFontWeight || "600"}
+                          onValueChange={(value) => updateElementProps({ nameFontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="300">Light (300)</SelectItem>
+                            <SelectItem value="400">Normal (400)</SelectItem>
+                            <SelectItem value="500">Medium (500)</SelectItem>
+                            <SelectItem value="600">Semibold (600)</SelectItem>
+                            <SelectItem value="700">Bold (700)</SelectItem>
+                            <SelectItem value="800">Extra Bold (800)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.nameTextColor || "#888888"}
+                            onChange={(e) => updateElementProps({ nameTextColor: e.target.value })}
+                            onInput={(e) => updateElementProps({ nameTextColor: (e.target as HTMLInputElement).value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.nameTextColor || "#888888"}
+                            onChange={(e) => updateElementProps({ nameTextColor: e.target.value })}
+                            placeholder="#888888"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Customer Title Typography
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.titleFontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ titleFontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Default</SelectItem>
+                            <SelectItem value="'Inter', sans-serif">Inter</SelectItem>
+                            <SelectItem value="'Roboto', sans-serif">Roboto</SelectItem>
+                            <SelectItem value="'Open Sans', sans-serif">Open Sans</SelectItem>
+                            <SelectItem value="'Lato', sans-serif">Lato</SelectItem>
+                            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+                            <SelectItem value="'Poppins', sans-serif">Poppins</SelectItem>
+                            <SelectItem value="'Arial', sans-serif">Arial</SelectItem>
+                            <SelectItem value="'Helvetica', sans-serif">Helvetica</SelectItem>
+                            <SelectItem value="'Verdana', sans-serif">Verdana</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                        <Slider
+                          value={[selectedElement.props?.titleFontSize || 10]}
+                          onValueChange={([value]) => updateElementProps({ titleFontSize: value })}
+                          max={20}
+                          min={8}
+                          step={1}
+                          className="mt-2"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedElement.props?.titleFontSize || 10}px
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.titleFontWeight || "400"}
+                          onValueChange={(value) => updateElementProps({ titleFontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="300">Light (300)</SelectItem>
+                            <SelectItem value="400">Normal (400)</SelectItem>
+                            <SelectItem value="500">Medium (500)</SelectItem>
+                            <SelectItem value="600">Semibold (600)</SelectItem>
+                            <SelectItem value="700">Bold (700)</SelectItem>
+                            <SelectItem value="800">Extra Bold (800)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.titleTextColor || "#888888"}
+                            onChange={(e) => updateElementProps({ titleTextColor: e.target.value })}
+                            onInput={(e) => updateElementProps({ titleTextColor: (e.target as HTMLInputElement).value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.titleTextColor || "#888888"}
+                            onChange={(e) => updateElementProps({ titleTextColor: e.target.value })}
+                            placeholder="#888888"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+                </>
+              )}
+
+              {/* Typography for Map */}
+              {selectedElement.type === "map" && (
+                <>
+                  {/* Title Typography */}
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Title Typography
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.titleFontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ titleFontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Default</SelectItem>
+                            <SelectItem value="'Inter', sans-serif">Inter</SelectItem>
+                            <SelectItem value="'Roboto', sans-serif">Roboto</SelectItem>
+                            <SelectItem value="'Open Sans', sans-serif">Open Sans</SelectItem>
+                            <SelectItem value="'Lato', sans-serif">Lato</SelectItem>
+                            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+                            <SelectItem value="'Poppins', sans-serif">Poppins</SelectItem>
+                            <SelectItem value="Arial, sans-serif">Arial</SelectItem>
+                            <SelectItem value="Helvetica, sans-serif">Helvetica</SelectItem>
+                            <SelectItem value="Verdana, sans-serif">Verdana</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
+                          <span>Font Size</span>
+                          <span className="text-xs font-mono">{selectedElement.props?.titleFontSize || 16}px</span>
+                        </Label>
+                        <Slider
+                          min={10}
+                          max={32}
+                          step={1}
+                          value={[selectedElement.props?.titleFontSize || 16]}
+                          onValueChange={([value]) => updateElementProps({ titleFontSize: value })}
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={String(selectedElement.props?.titleFontWeight || "600")}
+                          onValueChange={(value) => updateElementProps({ titleFontWeight: Number(value) })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="300">Light (300)</SelectItem>
+                            <SelectItem value="400">Normal (400)</SelectItem>
+                            <SelectItem value="500">Medium (500)</SelectItem>
+                            <SelectItem value="600">Semi Bold (600)</SelectItem>
+                            <SelectItem value="700">Bold (700)</SelectItem>
+                            <SelectItem value="800">Extra Bold (800)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-2">Text Color</Label>
+                        <div className="flex gap-2 items-center mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.titleTextColor || "#000000"}
+                            onChange={(e) => updateElementProps({ titleTextColor: e.target.value })}
+                            className="w-12 h-10 p-1 bg-sidebar-accent border-sidebar-border cursor-pointer"
+                          />
+                          <Input
+                            type="text"
+                            value={selectedElement.props?.titleTextColor || "#000000"}
+                            onChange={(e) => updateElementProps({ titleTextColor: e.target.value })}
+                            className="flex-1 bg-sidebar-accent border-sidebar-border font-mono text-xs"
+                            placeholder="#000000"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+
+                  {/* Address Typography */}
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Address Typography
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.addressFontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ addressFontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Default</SelectItem>
+                            <SelectItem value="'Inter', sans-serif">Inter</SelectItem>
+                            <SelectItem value="'Roboto', sans-serif">Roboto</SelectItem>
+                            <SelectItem value="'Open Sans', sans-serif">Open Sans</SelectItem>
+                            <SelectItem value="'Lato', sans-serif">Lato</SelectItem>
+                            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+                            <SelectItem value="'Poppins', sans-serif">Poppins</SelectItem>
+                            <SelectItem value="Arial, sans-serif">Arial</SelectItem>
+                            <SelectItem value="Helvetica, sans-serif">Helvetica</SelectItem>
+                            <SelectItem value="Verdana, sans-serif">Verdana</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
+                          <span>Font Size</span>
+                          <span className="text-xs font-mono">{selectedElement.props?.addressFontSize || 12}px</span>
+                        </Label>
+                        <Slider
+                          min={8}
+                          max={24}
+                          step={1}
+                          value={[selectedElement.props?.addressFontSize || 12]}
+                          onValueChange={([value]) => updateElementProps({ addressFontSize: value })}
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={String(selectedElement.props?.addressFontWeight || "400")}
+                          onValueChange={(value) => updateElementProps({ addressFontWeight: Number(value) })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="300">Light (300)</SelectItem>
+                            <SelectItem value="400">Normal (400)</SelectItem>
+                            <SelectItem value="500">Medium (500)</SelectItem>
+                            <SelectItem value="600">Semi Bold (600)</SelectItem>
+                            <SelectItem value="700">Bold (700)</SelectItem>
+                            <SelectItem value="800">Extra Bold (800)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-2">Text Color</Label>
+                        <div className="flex gap-2 items-center mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.addressTextColor || "#666666"}
+                            onChange={(e) => updateElementProps({ addressTextColor: e.target.value })}
+                            className="w-12 h-10 p-1 bg-sidebar-accent border-sidebar-border cursor-pointer"
+                          />
+                          <Input
+                            type="text"
+                            value={selectedElement.props?.addressTextColor || "#666666"}
+                            onChange={(e) => updateElementProps({ addressTextColor: e.target.value })}
+                            className="flex-1 bg-sidebar-accent border-sidebar-border font-mono text-xs"
+                            placeholder="#666666"
                           />
                         </div>
                       </div>
@@ -10490,8 +11830,8 @@ export function PropertiesPanel({
                       Colors
                     </Label>
                     <div className="space-y-3">
-                      {/* Hide Text Color for tooltip, dropdown, tabs, table, progress, timeline, stats, counter, input, textarea, checkbox, radio, switch, select, form, contact-form, product-card, price, and rating */}
-                      {selectedElement.type !== "tooltip" && selectedElement.type !== "dropdown" && selectedElement.type !== "tabs" && selectedElement.type !== "table" && selectedElement.type !== "progress" && selectedElement.type !== "timeline" && selectedElement.type !== "stats" && selectedElement.type !== "counter" && selectedElement.type !== "input" && selectedElement.type !== "textarea" && selectedElement.type !== "checkbox" && selectedElement.type !== "radio" && selectedElement.type !== "switch" && selectedElement.type !== "select" && selectedElement.type !== "form" && selectedElement.type !== "contact-form" && selectedElement.type !== "product-card" && selectedElement.type !== "price" && selectedElement.type !== "rating" && (
+                      {/* Hide Text Color for tooltip, dropdown, tabs, table, progress, timeline, stats, counter, input, textarea, checkbox, radio, switch, select, form, contact-form, product-card, price, rating, contact-info, newsletter, team, testimonial, and map */}
+                      {selectedElement.type !== "tooltip" && selectedElement.type !== "dropdown" && selectedElement.type !== "tabs" && selectedElement.type !== "table" && selectedElement.type !== "progress" && selectedElement.type !== "timeline" && selectedElement.type !== "stats" && selectedElement.type !== "counter" && selectedElement.type !== "input" && selectedElement.type !== "textarea" && selectedElement.type !== "checkbox" && selectedElement.type !== "radio" && selectedElement.type !== "switch" && selectedElement.type !== "select" && selectedElement.type !== "form" && selectedElement.type !== "contact-form" && selectedElement.type !== "product-card" && selectedElement.type !== "price" && selectedElement.type !== "rating" && selectedElement.type !== "contact-info" && selectedElement.type !== "newsletter" && selectedElement.type !== "team" && selectedElement.type !== "testimonial" && selectedElement.type !== "map" && (
                         <div>
                           <Label className="text-xs text-muted-foreground">Text Color</Label>
                           <div className="flex gap-2 mt-1">

@@ -1066,6 +1066,13 @@ export function Canvas({
         },
         position: { x: 100, y: 100, width: 200, height: 80 },
         animations: { type: "fadeIn", duration: 600, delay: 200 },
+        props: {
+          socialLinks: [
+            { platform: "Facebook", url: "https://facebook.com" },
+            { platform: "Twitter", url: "https://twitter.com" },
+            { platform: "Instagram", url: "https://instagram.com" }
+          ]
+        }
       },
       "contact-info": {
         content: "Contact Information",
@@ -4235,76 +4242,285 @@ export function Canvas({
       </button>
     )}
     {element.type === "social-links" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
-        <div className="flex gap-2">
-          <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-            <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
-            </svg>
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center p-4" style={elementStyles}>
+        {element.props?.socialLinks && element.props.socialLinks.length > 0 ? (
+          <div className="flex flex-wrap gap-2 justify-center">
+            {element.props.socialLinks.map((link: any, index: number) => (
+              <a
+                key={index}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center hover:bg-primary/30 transition-colors"
+                title={link.platform}
+              >
+                <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                  {link.platform.toLowerCase().includes('facebook') ? (
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  ) : link.platform.toLowerCase().includes('twitter') || link.platform.toLowerCase().includes('x') ? (
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  ) : link.platform.toLowerCase().includes('instagram') ? (
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  ) : link.platform.toLowerCase().includes('linkedin') ? (
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  ) : (
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  )}
+                </svg>
+              </a>
+            ))}
           </div>
-          <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-            <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
-            </svg>
+        ) : (
+          <div className="flex gap-2">
+            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+              <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+              </svg>
+            </div>
+            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+              <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
+              </svg>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     )}
     {element.type === "contact-info" && (
       <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-            </svg>
-            <span className="text-sm">+1 (555) 123-4567</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            <span className="text-sm">info@example.com</span>
-          </div>
+          {element.props?.phone && (
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              <span 
+                className="text-sm" 
+                style={{
+                  fontFamily: element.props?.phoneFontFamily || 'inherit',
+                  fontSize: element.props?.phoneFontSize ? `${element.props.phoneFontSize}px` : '14px',
+                  fontWeight: element.props?.phoneFontWeight || '400',
+                  color: element.props?.phoneTextColor || 'inherit'
+                }}
+              >
+                {element.props.phone}
+              </span>
+            </div>
+          )}
+          {element.props?.email && (
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              <span 
+                className="text-sm"
+                style={{
+                  fontFamily: element.props?.emailFontFamily || 'inherit',
+                  fontSize: element.props?.emailFontSize ? `${element.props.emailFontSize}px` : '14px',
+                  fontWeight: element.props?.emailFontWeight || '400',
+                  color: element.props?.emailTextColor || 'inherit'
+                }}
+              >
+                {element.props.email}
+              </span>
+            </div>
+          )}
+          {element.props?.address && (
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span 
+                className="text-sm"
+                style={{
+                  fontFamily: element.props?.addressFontFamily || 'inherit',
+                  fontSize: element.props?.addressFontSize ? `${element.props.addressFontSize}px` : '14px',
+                  fontWeight: element.props?.addressFontWeight || '400',
+                  color: element.props?.addressTextColor || 'inherit'
+                }}
+              >
+                {element.props.address}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     )}
     {element.type === "map" && (
-      <div className="text-card-foreground w-full h-full bg-muted border border-border rounded-lg flex items-center justify-center" style={elementStyles}>
-        <div className="text-center">
-          <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg overflow-hidden" style={elementStyles}>
+        {element.content && (
+          <div 
+            className="p-3 bg-muted border-b border-border text-center"
+            style={{
+              fontFamily: element.props?.titleFontFamily || 'inherit',
+              fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : '16px',
+              fontWeight: element.props?.titleFontWeight || '600',
+              color: element.props?.titleTextColor || 'inherit'
+            }}
+          >
+            {element.content}
           </div>
-          <p className="text-sm">{element.content}</p>
+        )}
+        <div className="w-full h-full flex flex-col">
+          {element.props?.address && (
+            <div 
+              className="p-2 bg-muted/50 text-sm border-b border-border"
+              style={{
+                fontFamily: element.props?.addressFontFamily || 'inherit',
+                fontSize: element.props?.addressFontSize ? `${element.props.addressFontSize}px` : '12px',
+                fontWeight: element.props?.addressFontWeight || '400',
+                color: element.props?.addressTextColor || 'inherit'
+              }}
+            >
+              <div className="flex items-start gap-2">
+                <svg className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="flex-1">{element.props.address}</span>
+              </div>
+            </div>
+          )}
+          <div className="flex-1 bg-muted flex items-center justify-center">
+            {element.props?.mapUrl ? (
+              <iframe
+                src={element.props.mapUrl}
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title={element.content || "Map Location"}
+              />
+            ) : (
+              <div className="text-center p-4">
+                <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                  <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <p className="text-xs text-muted-foreground">Add Map URL to display map</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     )}
-    {element.type === "newsletter" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-        <div className="text-center">
-          <h3 className="font-semibold text-sm mb-2">Subscribe to Newsletter</h3>
-          <p className="text-xs text-muted-foreground mb-3">Get updates delivered to your inbox</p>
-          <div className="flex gap-2">
-            <input type="email" placeholder="Enter email" className="flex-1 px-2 py-1 text-xs border border-border rounded bg-background" />
-            <button className="px-3 py-1 text-xs bg-primary text-primary-foreground rounded">Subscribe</button>
+    {element.type === "newsletter" && (() => {
+      // Calculate scale factor for auto-scaling
+      const originalPosition = element.position || { x: 0, y: 0, width: 200, height: 50 }
+      const currentPosition = {
+        width: transientRef.current.get(element.id)?.width ?? originalPosition.width,
+        height: transientRef.current.get(element.id)?.height ?? originalPosition.height,
+      }
+      const scaleX = (currentPosition.width || 200) / (originalPosition.width || 200)
+      const scaleY = (currentPosition.height || 50) / (originalPosition.height || 50)
+      const scaleFactor = element.props?.autoScale !== false ? Math.min(scaleX, scaleY) : 1
+
+      return (
+        <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+          <div className="text-center">
+            <h3 
+              className="font-semibold text-sm mb-2"
+              style={{
+                fontFamily: element.props?.titleFontFamily || 'inherit',
+                fontSize: `${(element.props?.titleFontSize || 14) * scaleFactor}px`,
+                fontWeight: element.props?.titleFontWeight || '600',
+                color: element.props?.titleTextColor || 'inherit'
+              }}
+            >
+              {element.content || 'Subscribe to Newsletter'}
+            </h3>
+            <p 
+              className="text-xs text-muted-foreground mb-3"
+              style={{
+                fontFamily: element.props?.subtitleFontFamily || 'inherit',
+                fontSize: `${(element.props?.subtitleFontSize || 12) * scaleFactor}px`,
+                fontWeight: element.props?.subtitleFontWeight || '400',
+                color: element.props?.subtitleTextColor || 'inherit'
+              }}
+            >
+              {element.props?.subtitle || 'Get updates delivered to your inbox'}
+            </p>
+            <div className="flex gap-2">
+              <input 
+                type="email" 
+                placeholder={element.props?.inputPlaceholder || 'Enter email'} 
+                className="flex-1 px-2 py-1 text-xs border border-border rounded bg-background"
+                style={{
+                  fontSize: `${12 * scaleFactor}px`,
+                  padding: `${4 * scaleFactor}px ${8 * scaleFactor}px`
+                }}
+              />
+              <button 
+                className="px-3 py-1 text-xs rounded"
+                style={{
+                  fontFamily: element.props?.buttonFontFamily || 'inherit',
+                  fontSize: `${(element.props?.buttonFontSize || 12) * scaleFactor}px`,
+                  fontWeight: element.props?.buttonFontWeight || '500',
+                  color: element.props?.buttonTextColor || '#ffffff',
+                  backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
+                  padding: `${4 * scaleFactor}px ${12 * scaleFactor}px`
+                }}
+              >
+                {element.props?.buttonText || 'Subscribe'}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )
+    })()}
     {element.type === "team" && (
       <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg overflow-hidden" style={elementStyles}>
-        <div className="h-20 bg-muted flex items-center justify-center">
-          <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
+        <div 
+          className="bg-muted flex items-center justify-center overflow-hidden"
+          style={{
+            height: `${element.props?.imageHeight || 40}%`
+          }}
+        >
+          {element.props?.memberImage ? (
+            <img 
+              src={element.props.memberImage} 
+              alt={element.content || "Team Member"} 
+              className="w-full h-full object-cover"
+              style={{
+                borderRadius: element.props?.imageBorderRadius ? `${element.props.imageBorderRadius}px` : '0px'
+              }}
+            />
+          ) : (
+            <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+          )}
         </div>
         <div className="p-3 text-center">
-          <h3 className="font-semibold text-sm mb-1">{element.content}</h3>
-          <p className="text-xs text-muted-foreground">Team Member</p>
+          <h3 
+            className="font-semibold text-sm mb-1"
+            style={{
+              fontFamily: element.props?.nameFontFamily || 'inherit',
+              fontSize: element.props?.nameFontSize ? `${element.props.nameFontSize}px` : '14px',
+              fontWeight: element.props?.nameFontWeight || '600',
+              color: element.props?.nameTextColor || 'inherit'
+            }}
+          >
+            {element.content || 'Team Member'}
+          </h3>
+          <p 
+            className="text-xs text-muted-foreground"
+            style={{
+              fontFamily: element.props?.roleFontFamily || 'inherit',
+              fontSize: element.props?.roleFontSize ? `${element.props.roleFontSize}px` : '12px',
+              fontWeight: element.props?.roleFontWeight || '400',
+              color: element.props?.roleTextColor || 'inherit'
+            }}
+          >
+            {element.props?.role || 'Team Member'}
+          </p>
         </div>
       </div>
     )}
@@ -4316,8 +4532,41 @@ export function Canvas({
               <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h4v10h-10z"/>
             </svg>
           </div>
-          <p className="text-sm italic mb-2">"{element.content}"</p>
-          <div className="text-xs text-muted-foreground">- Customer Name</div>
+          <p 
+            className="text-sm italic mb-2"
+            style={{
+              fontFamily: element.props?.reviewFontFamily || 'inherit',
+              fontSize: element.props?.reviewFontSize ? `${element.props.reviewFontSize}px` : '14px',
+              fontWeight: element.props?.reviewFontWeight || '400',
+              color: element.props?.reviewTextColor || 'inherit'
+            }}
+          >
+            "{element.content || 'Customer Review'}"
+          </p>
+          <div 
+            className="text-xs text-muted-foreground"
+            style={{
+              fontFamily: element.props?.nameFontFamily || 'inherit',
+              fontSize: element.props?.nameFontSize ? `${element.props.nameFontSize}px` : '12px',
+              fontWeight: element.props?.nameFontWeight || '600',
+              color: element.props?.nameTextColor || 'inherit'
+            }}
+          >
+            {element.props?.customerName || 'Customer Name'}
+          </div>
+          {element.props?.customerTitle && (
+            <div 
+              className="text-xs text-muted-foreground/80 mt-1"
+              style={{
+                fontFamily: element.props?.titleFontFamily || 'inherit',
+                fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : '10px',
+                fontWeight: element.props?.titleFontWeight || '400',
+                color: element.props?.titleTextColor || 'inherit'
+              }}
+            >
+              {element.props.customerTitle}
+            </div>
+          )}
         </div>
       </div>
     )}
