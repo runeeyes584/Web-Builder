@@ -1555,6 +1555,323 @@ export function PropertiesPanel({
                       />
                     </div>
                   </div>
+                ) : selectedElement.type === "file-upload" ? (
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Upload Text</Label>
+                      <Input
+                        placeholder="Choose File"
+                        value={selectedElement.content}
+                        onChange={(e) => updateElementContent(e.target.value)}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                  </div>
+                ) : selectedElement.type === "file-download" ? (
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Download Text</Label>
+                      <Input
+                        placeholder="Download File"
+                        value={selectedElement.content}
+                        onChange={(e) => updateElementContent(e.target.value)}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                  </div>
+                ) : selectedElement.type === "pdf-viewer" ? (
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">PDF URL</Label>
+                      <Input
+                        placeholder="https://example.com/document.pdf"
+                        value={selectedElement.props?.pdfUrl || ""}
+                        onChange={(e) => updateElementProps({ pdfUrl: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Or Upload PDF File</Label>
+                      <Input
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file && file.type === 'application/pdf') {
+                            updateElementProps({ 
+                              uploadedFile: file,
+                              fileName: file.name.replace('.pdf', ''),
+                              pdfUrl: "" // Clear URL when uploading file
+                            });
+                          }
+                        }}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                      {selectedElement.props?.uploadedFile && (
+                        <div className="mt-2 p-2 bg-green-100 dark:bg-green-900 rounded text-xs">
+                          <span className="text-green-800 dark:text-green-200">
+                            File uploaded: {selectedElement.props.uploadedFile.name}
+                          </span>
+                          <button
+                            onClick={() => updateElementProps({ uploadedFile: null })}
+                            className="ml-2 text-red-600 hover:text-red-800"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">File Name</Label>
+                      <Input
+                        placeholder="PDF Document"
+                        value={selectedElement.props?.fileName || "PDF Document"}
+                        onChange={(e) => updateElementProps({ fileName: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={selectedElement.props?.showFileName !== false}
+                        onCheckedChange={(checked) => updateElementProps({ showFileName: checked })}
+                      />
+                      <Label className="text-xs text-muted-foreground">Show File Name</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={selectedElement.props?.showUploadButton !== false}
+                        onCheckedChange={(checked) => updateElementProps({ showUploadButton: checked })}
+                      />
+                      <Label className="text-xs text-muted-foreground">Show Upload Hint</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={selectedElement.props?.allowFileUpload !== false}
+                        onCheckedChange={(checked) => updateElementProps({ allowFileUpload: checked })}
+                      />
+                      <Label className="text-xs text-muted-foreground">Allow File Upload</Label>
+                    </div>
+                  </div>
+                ) : selectedElement.type === "document" ? (
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Document URL</Label>
+                      <Input
+                        placeholder="https://example.com/document.pdf"
+                        value={selectedElement.props?.documentUrl || ""}
+                        onChange={(e) => updateElementProps({ documentUrl: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Or Upload Document File</Label>
+                      <Input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.txt"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file && (file.type === 'application/pdf' || 
+                                     file.type === 'application/msword' || 
+                                     file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+                                     file.type === 'text/plain')) {
+                            updateElementProps({ 
+                              uploadedFile: file,
+                              fileName: file.name.replace(/\.[^/.]+$/, ""),
+                              documentUrl: "", // Clear URL when uploading file
+                              documentType: file.type === 'application/pdf' ? 'pdf' : 
+                                          file.type.includes('word') ? 'doc' : 'txt'
+                            });
+                          }
+                        }}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                      {selectedElement.props?.uploadedFile && (
+                        <div className="mt-2 p-2 bg-green-100 dark:bg-green-900 rounded text-xs">
+                          <span className="text-green-800 dark:text-green-200">
+                            File uploaded: {selectedElement.props.uploadedFile.name}
+                          </span>
+                          <button
+                            onClick={() => updateElementProps({ uploadedFile: null })}
+                            className="ml-2 text-red-600 hover:text-red-800"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">File Name</Label>
+                      <Input
+                        placeholder="Document Viewer"
+                        value={selectedElement.props?.fileName || "Document Viewer"}
+                        onChange={(e) => updateElementProps({ fileName: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Document Type</Label>
+                      <Select
+                        value={selectedElement.props?.documentType || "pdf"}
+                        onValueChange={(value) => updateElementProps({ documentType: value })}
+                      >
+                        <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pdf">PDF Document</SelectItem>
+                          <SelectItem value="doc">Word Document</SelectItem>
+                          <SelectItem value="txt">Text File</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={selectedElement.props?.showFileName !== false}
+                        onCheckedChange={(checked) => updateElementProps({ showFileName: checked })}
+                      />
+                      <Label className="text-xs text-muted-foreground">Show File Name</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={selectedElement.props?.showUploadButton !== false}
+                        onCheckedChange={(checked) => updateElementProps({ showUploadButton: checked })}
+                      />
+                      <Label className="text-xs text-muted-foreground">Show Upload Hint</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={selectedElement.props?.allowFileUpload !== false}
+                        onCheckedChange={(checked) => updateElementProps({ allowFileUpload: checked })}
+                      />
+                      <Label className="text-xs text-muted-foreground">Allow File Upload</Label>
+                    </div>
+                  </div>
+                ) : selectedElement.type === "folder" ? (
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Folder Name</Label>
+                      <Input
+                        placeholder="Folder Name"
+                        value={selectedElement.props?.folderName || "Folder Name"}
+                        onChange={(e) => updateElementProps({ folderName: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Folder Items</Label>
+                      <div className="space-y-2 mt-2">
+                        {selectedElement.props?.items?.map((item: any, index: number) => (
+                          <div key={item.id} className="flex items-center gap-2 p-2 bg-sidebar-accent rounded">
+                            <Input
+                              value={item.name}
+                              onChange={(e) => {
+                                const updatedItems = [...(selectedElement.props?.items || [])];
+                                updatedItems[index] = { ...item, name: e.target.value };
+                                updateElementProps({ items: updatedItems });
+                              }}
+                              className="flex-1 bg-background border-sidebar-border text-xs"
+                            />
+                            <Select
+                              value={item.type}
+                              onValueChange={(value) => {
+                                const updatedItems = [...(selectedElement.props?.items || [])];
+                                updatedItems[index] = { ...item, type: value, icon: value === 'folder' ? 'folder' : 'file' };
+                                updateElementProps({ items: updatedItems });
+                              }}
+                            >
+                              <SelectTrigger className="w-20 bg-background border-sidebar-border text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="file">File</SelectItem>
+                                <SelectItem value="folder">Folder</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Select
+                              value={item.icon}
+                              onValueChange={(value) => {
+                                const updatedItems = [...(selectedElement.props?.items || [])];
+                                updatedItems[index] = { ...item, icon: value };
+                                updateElementProps({ items: updatedItems });
+                              }}
+                            >
+                              <SelectTrigger className="w-20 bg-background border-sidebar-border text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="file">File</SelectItem>
+                                <SelectItem value="pdf">PDF</SelectItem>
+                                <SelectItem value="image">Image</SelectItem>
+                                <SelectItem value="folder">Folder</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => {
+                                const updatedItems = selectedElement.props?.items?.filter((i: any) => i.id !== item.id) || [];
+                                updateElementProps({ items: updatedItems });
+                              }}
+                              className="h-6 w-6 p-0"
+                            >
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                              </svg>
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const newItem = {
+                              id: Date.now(),
+                              name: `New Item ${(selectedElement.props?.items?.length || 0) + 1}`,
+                              type: 'file',
+                              icon: 'file'
+                            };
+                            const updatedItems = [...(selectedElement.props?.items || []), newItem];
+                            updateElementProps({ items: updatedItems });
+                          }}
+                          className="w-full"
+                        >
+                          + Add Item
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={selectedElement.props?.showItemCount !== false}
+                        onCheckedChange={(checked) => updateElementProps({ showItemCount: checked })}
+                      />
+                      <Label className="text-xs text-muted-foreground">Show Item Count</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={selectedElement.props?.allowAddItems !== false}
+                        onCheckedChange={(checked) => updateElementProps({ allowAddItems: checked })}
+                      />
+                      <Label className="text-xs text-muted-foreground">Allow Add Items</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={selectedElement.props?.allowDeleteItems !== false}
+                        onCheckedChange={(checked) => updateElementProps({ allowDeleteItems: checked })}
+                      />
+                      <Label className="text-xs text-muted-foreground">Allow Delete Items</Label>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Max Items</Label>
+                      <Input
+                        type="number"
+                        value={selectedElement.props?.maxItems || 10}
+                        onChange={(e) => updateElementProps({ maxItems: parseInt(e.target.value) })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                        min="1"
+                        max="50"
+                      />
+                    </div>
+                  </div>
                 ) : selectedElement.type === "code-block" ? (
                   <div className="space-y-3">
                     <div>
@@ -13421,6 +13738,936 @@ export function PropertiesPanel({
                 </>
               )}
 
+              {/* File Upload Styling */}
+              {selectedElement.type === "file-upload" && (
+                <>
+                  <Separator className="bg-sidebar-border" />
+                  
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      File Upload Style
+                    </Label>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.fontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ fontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Inherit</SelectItem>
+                            <SelectItem value="Inter">Inter</SelectItem>
+                            <SelectItem value="Arial">Arial</SelectItem>
+                            <SelectItem value="Helvetica">Helvetica</SelectItem>
+                            <SelectItem value="Georgia">Georgia</SelectItem>
+                            <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                            <SelectItem value="Courier New">Courier New</SelectItem>
+                            <SelectItem value="Verdana">Verdana</SelectItem>
+                            <SelectItem value="system-ui">System UI</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Slider
+                            value={[parseInt(selectedElement.props?.fontSize || "14")]}
+                            onValueChange={([value]) => updateElementProps({ fontSize: value })}
+                            min={8}
+                            max={32}
+                            step={1}
+                            className="flex-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.fontSize || "14"}
+                            onChange={(e) => updateElementProps({ fontSize: e.target.value })}
+                            className="w-16 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.fontWeight || "normal"}
+                          onValueChange={(value) => updateElementProps({ fontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="normal">Normal</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="bold">Bold</SelectItem>
+                            <SelectItem value="lighter">Lighter</SelectItem>
+                            <SelectItem value="bolder">Bolder</SelectItem>
+                            <SelectItem value="100">100</SelectItem>
+                            <SelectItem value="200">200</SelectItem>
+                            <SelectItem value="300">300</SelectItem>
+                            <SelectItem value="400">400</SelectItem>
+                            <SelectItem value="500">500</SelectItem>
+                            <SelectItem value="600">600</SelectItem>
+                            <SelectItem value="700">700</SelectItem>
+                            <SelectItem value="800">800</SelectItem>
+                            <SelectItem value="900">900</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.textColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ textColor: e.target.value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.textColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ textColor: e.target.value })}
+                            placeholder="#ffffff"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Background Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.backgroundColor || "#000000"}
+                            onChange={(e) => updateElementProps({ backgroundColor: e.target.value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.backgroundColor || "#000000"}
+                            onChange={(e) => updateElementProps({ backgroundColor: e.target.value })}
+                            placeholder="#000000"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Border Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.borderColor || "#374151"}
+                            onChange={(e) => updateElementProps({ borderColor: e.target.value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.borderColor || "#374151"}
+                            onChange={(e) => updateElementProps({ borderColor: e.target.value })}
+                            placeholder="#374151"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                        <Select
+                          value={selectedElement.props?.borderRadius || "0.5rem"}
+                          onValueChange={(value) => updateElementProps({ borderRadius: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">None (0px)</SelectItem>
+                            <SelectItem value="0.125rem">Extra Small (2px)</SelectItem>
+                            <SelectItem value="0.25rem">Small (4px)</SelectItem>
+                            <SelectItem value="0.5rem">Medium (8px)</SelectItem>
+                            <SelectItem value="0.75rem">Large (12px)</SelectItem>
+                            <SelectItem value="1rem">Extra Large (16px)</SelectItem>
+                            <SelectItem value="9999px">Pill (Fully Rounded)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Border Style</Label>
+                        <Select
+                          value={selectedElement.props?.borderStyle || "dashed"}
+                          onValueChange={(value) => updateElementProps({ borderStyle: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="solid">Solid</SelectItem>
+                            <SelectItem value="dashed">Dashed</SelectItem>
+                            <SelectItem value="dotted">Dotted</SelectItem>
+                            <SelectItem value="double">Double</SelectItem>
+                            <SelectItem value="none">None</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Border Width</Label>
+                        <Select
+                          value={selectedElement.props?.borderWidth || "2px"}
+                          onValueChange={(value) => updateElementProps({ borderWidth: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1px">Thin (1px)</SelectItem>
+                            <SelectItem value="2px">Medium (2px)</SelectItem>
+                            <SelectItem value="3px">Thick (3px)</SelectItem>
+                            <SelectItem value="4px">Extra Thick (4px)</SelectItem>
+                            <SelectItem value="5px">Very Thick (5px)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Padding</Label>
+                        <Select
+                          value={selectedElement.props?.padding || "0.75rem"}
+                          onValueChange={(value) => updateElementProps({ padding: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0.5rem">Small (8px)</SelectItem>
+                            <SelectItem value="0.75rem">Medium (12px)</SelectItem>
+                            <SelectItem value="1rem">Large (16px)</SelectItem>
+                            <SelectItem value="1.25rem">Extra Large (20px)</SelectItem>
+                            <SelectItem value="1.5rem">XXL (24px)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* File Download Styling */}
+              {selectedElement.type === "file-download" && (
+                <>
+                  <Separator className="bg-sidebar-border" />
+                  
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      File Download Style
+                    </Label>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.fontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ fontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Inherit</SelectItem>
+                            <SelectItem value="Inter">Inter</SelectItem>
+                            <SelectItem value="Arial">Arial</SelectItem>
+                            <SelectItem value="Helvetica">Helvetica</SelectItem>
+                            <SelectItem value="Georgia">Georgia</SelectItem>
+                            <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                            <SelectItem value="Courier New">Courier New</SelectItem>
+                            <SelectItem value="Verdana">Verdana</SelectItem>
+                            <SelectItem value="system-ui">System UI</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Slider
+                            value={[parseInt(selectedElement.props?.fontSize || "14")]}
+                            onValueChange={([value]) => updateElementProps({ fontSize: value })}
+                            min={8}
+                            max={32}
+                            step={1}
+                            className="flex-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.fontSize || "14"}
+                            onChange={(e) => updateElementProps({ fontSize: e.target.value })}
+                            className="w-16 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.fontWeight || "normal"}
+                          onValueChange={(value) => updateElementProps({ fontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="normal">Normal</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="bold">Bold</SelectItem>
+                            <SelectItem value="lighter">Lighter</SelectItem>
+                            <SelectItem value="bolder">Bolder</SelectItem>
+                            <SelectItem value="100">100</SelectItem>
+                            <SelectItem value="200">200</SelectItem>
+                            <SelectItem value="300">300</SelectItem>
+                            <SelectItem value="400">400</SelectItem>
+                            <SelectItem value="500">500</SelectItem>
+                            <SelectItem value="600">600</SelectItem>
+                            <SelectItem value="700">700</SelectItem>
+                            <SelectItem value="800">800</SelectItem>
+                            <SelectItem value="900">900</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.textColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ textColor: e.target.value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.textColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ textColor: e.target.value })}
+                            placeholder="#ffffff"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Background Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.backgroundColor || "#3b82f6"}
+                            onChange={(e) => updateElementProps({ backgroundColor: e.target.value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.backgroundColor || "#3b82f6"}
+                            onChange={(e) => updateElementProps({ backgroundColor: e.target.value })}
+                            placeholder="#3b82f6"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Icon Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.iconColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ iconColor: e.target.value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.iconColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ iconColor: e.target.value })}
+                            placeholder="#ffffff"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Slider
+                            value={[parseInt(selectedElement.props?.borderRadius?.replace('px', '') || "8")]}
+                            onValueChange={([value]) => updateElementProps({ borderRadius: `${value}px` })}
+                            min={0}
+                            max={50}
+                            step={1}
+                            className="flex-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.borderRadius?.replace('px', '') || "8"}
+                            onChange={(e) => updateElementProps({ borderRadius: `${e.target.value}px` })}
+                            className="w-16 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Icon Size</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Slider
+                            value={[parseInt(selectedElement.props?.iconSize || "16")]}
+                            onValueChange={([value]) => updateElementProps({ iconSize: value })}
+                            min={8}
+                            max={48}
+                            step={1}
+                            className="flex-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.iconSize || "16"}
+                            onChange={(e) => updateElementProps({ iconSize: e.target.value })}
+                            className="w-16 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* PDF Viewer Styling */}
+              {selectedElement.type === "pdf-viewer" && (
+                <>
+                  <Separator className="bg-sidebar-border" />
+                  
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      PDF Viewer Style
+                    </Label>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.fontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ fontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Inherit</SelectItem>
+                            <SelectItem value="Inter">Inter</SelectItem>
+                            <SelectItem value="Arial">Arial</SelectItem>
+                            <SelectItem value="Helvetica">Helvetica</SelectItem>
+                            <SelectItem value="Georgia">Georgia</SelectItem>
+                            <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                            <SelectItem value="Courier New">Courier New</SelectItem>
+                            <SelectItem value="Verdana">Verdana</SelectItem>
+                            <SelectItem value="system-ui">System UI</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Slider
+                            value={[parseInt(selectedElement.props?.fontSize || "14")]}
+                            onValueChange={([value]) => updateElementProps({ fontSize: value })}
+                            min={8}
+                            max={32}
+                            step={1}
+                            className="flex-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.fontSize || "14"}
+                            onChange={(e) => updateElementProps({ fontSize: e.target.value })}
+                            className="w-16 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.fontWeight || "normal"}
+                          onValueChange={(value) => updateElementProps({ fontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="normal">Normal</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="bold">Bold</SelectItem>
+                            <SelectItem value="lighter">Lighter</SelectItem>
+                            <SelectItem value="bolder">Bolder</SelectItem>
+                            <SelectItem value="100">100</SelectItem>
+                            <SelectItem value="200">200</SelectItem>
+                            <SelectItem value="300">300</SelectItem>
+                            <SelectItem value="400">400</SelectItem>
+                            <SelectItem value="500">500</SelectItem>
+                            <SelectItem value="600">600</SelectItem>
+                            <SelectItem value="700">700</SelectItem>
+                            <SelectItem value="800">800</SelectItem>
+                            <SelectItem value="900">900</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.textColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ textColor: e.target.value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.textColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ textColor: e.target.value })}
+                            placeholder="#ffffff"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Background Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.backgroundColor || "#000000"}
+                            onChange={(e) => updateElementProps({ backgroundColor: e.target.value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.backgroundColor || "#000000"}
+                            onChange={(e) => updateElementProps({ backgroundColor: e.target.value })}
+                            placeholder="#000000"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Border Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.borderColor || "#374151"}
+                            onChange={(e) => updateElementProps({ borderColor: e.target.value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.borderColor || "#374151"}
+                            onChange={(e) => updateElementProps({ borderColor: e.target.value })}
+                            placeholder="#374151"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Slider
+                            value={[parseInt(selectedElement.props?.borderRadius?.replace('px', '') || "8")]}
+                            onValueChange={([value]) => updateElementProps({ borderRadius: `${value}px` })}
+                            min={0}
+                            max={50}
+                            step={1}
+                            className="flex-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.borderRadius?.replace('px', '') || "8"}
+                            onChange={(e) => updateElementProps({ borderRadius: `${e.target.value}px` })}
+                            className="w-16 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Padding</Label>
+                        <Select
+                          value={selectedElement.props?.padding || "1rem"}
+                          onValueChange={(value) => updateElementProps({ padding: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0.5rem">Small (8px)</SelectItem>
+                            <SelectItem value="0.75rem">Medium (12px)</SelectItem>
+                            <SelectItem value="1rem">Large (16px)</SelectItem>
+                            <SelectItem value="1.25rem">Extra Large (20px)</SelectItem>
+                            <SelectItem value="1.5rem">XXL (24px)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Document Styling */}
+              {selectedElement.type === "document" && (
+                <>
+                  <Separator className="bg-sidebar-border" />
+                  
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Document Style
+                    </Label>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.fontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ fontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Inherit</SelectItem>
+                            <SelectItem value="Inter">Inter</SelectItem>
+                            <SelectItem value="Arial">Arial</SelectItem>
+                            <SelectItem value="Helvetica">Helvetica</SelectItem>
+                            <SelectItem value="Georgia">Georgia</SelectItem>
+                            <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                            <SelectItem value="Courier New">Courier New</SelectItem>
+                            <SelectItem value="Verdana">Verdana</SelectItem>
+                            <SelectItem value="system-ui">System UI</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Slider
+                            value={[parseInt(selectedElement.props?.fontSize || "14")]}
+                            onValueChange={([value]) => updateElementProps({ fontSize: value })}
+                            min={8}
+                            max={32}
+                            step={1}
+                            className="flex-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.fontSize || "14"}
+                            onChange={(e) => updateElementProps({ fontSize: e.target.value })}
+                            className="w-16 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.fontWeight || "normal"}
+                          onValueChange={(value) => updateElementProps({ fontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="normal">Normal</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="bold">Bold</SelectItem>
+                            <SelectItem value="lighter">Lighter</SelectItem>
+                            <SelectItem value="bolder">Bolder</SelectItem>
+                            <SelectItem value="100">100</SelectItem>
+                            <SelectItem value="200">200</SelectItem>
+                            <SelectItem value="300">300</SelectItem>
+                            <SelectItem value="400">400</SelectItem>
+                            <SelectItem value="500">500</SelectItem>
+                            <SelectItem value="600">600</SelectItem>
+                            <SelectItem value="700">700</SelectItem>
+                            <SelectItem value="800">800</SelectItem>
+                            <SelectItem value="900">900</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.textColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ textColor: e.target.value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.textColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ textColor: e.target.value })}
+                            placeholder="#ffffff"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Background Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.backgroundColor || "#000000"}
+                            onChange={(e) => updateElementProps({ backgroundColor: e.target.value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.backgroundColor || "#000000"}
+                            onChange={(e) => updateElementProps({ backgroundColor: e.target.value })}
+                            placeholder="#000000"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Border Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.borderColor || "#374151"}
+                            onChange={(e) => updateElementProps({ borderColor: e.target.value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.borderColor || "#374151"}
+                            onChange={(e) => updateElementProps({ borderColor: e.target.value })}
+                            placeholder="#374151"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Slider
+                            value={[parseInt(selectedElement.props?.borderRadius?.replace('px', '') || "8")]}
+                            onValueChange={([value]) => updateElementProps({ borderRadius: `${value}px` })}
+                            min={0}
+                            max={50}
+                            step={1}
+                            className="flex-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.borderRadius?.replace('px', '') || "8"}
+                            onChange={(e) => updateElementProps({ borderRadius: `${e.target.value}px` })}
+                            className="w-16 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Padding</Label>
+                        <Select
+                          value={selectedElement.props?.padding || "1rem"}
+                          onValueChange={(value) => updateElementProps({ padding: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0.5rem">Small (8px)</SelectItem>
+                            <SelectItem value="0.75rem">Medium (12px)</SelectItem>
+                            <SelectItem value="1rem">Large (16px)</SelectItem>
+                            <SelectItem value="1.25rem">Extra Large (20px)</SelectItem>
+                            <SelectItem value="1.5rem">XXL (24px)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Folder Styling */}
+              {selectedElement.type === "folder" && (
+                <>
+                  <Separator className="bg-sidebar-border" />
+                  
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Folder Style
+                    </Label>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.fontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ fontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Inherit</SelectItem>
+                            <SelectItem value="Inter">Inter</SelectItem>
+                            <SelectItem value="Arial">Arial</SelectItem>
+                            <SelectItem value="Helvetica">Helvetica</SelectItem>
+                            <SelectItem value="Georgia">Georgia</SelectItem>
+                            <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                            <SelectItem value="Courier New">Courier New</SelectItem>
+                            <SelectItem value="Verdana">Verdana</SelectItem>
+                            <SelectItem value="system-ui">System UI</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Slider
+                            value={[parseInt(selectedElement.props?.fontSize || "14")]}
+                            onValueChange={([value]) => updateElementProps({ fontSize: value })}
+                            min={8}
+                            max={32}
+                            step={1}
+                            className="flex-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.fontSize || "14"}
+                            onChange={(e) => updateElementProps({ fontSize: e.target.value })}
+                            className="w-16 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.fontWeight || "normal"}
+                          onValueChange={(value) => updateElementProps({ fontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="normal">Normal</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="bold">Bold</SelectItem>
+                            <SelectItem value="lighter">Lighter</SelectItem>
+                            <SelectItem value="bolder">Bolder</SelectItem>
+                            <SelectItem value="100">100</SelectItem>
+                            <SelectItem value="200">200</SelectItem>
+                            <SelectItem value="300">300</SelectItem>
+                            <SelectItem value="400">400</SelectItem>
+                            <SelectItem value="500">500</SelectItem>
+                            <SelectItem value="600">600</SelectItem>
+                            <SelectItem value="700">700</SelectItem>
+                            <SelectItem value="800">800</SelectItem>
+                            <SelectItem value="900">900</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.textColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ textColor: e.target.value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.textColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ textColor: e.target.value })}
+                            placeholder="#ffffff"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Background Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.backgroundColor || "#000000"}
+                            onChange={(e) => updateElementProps({ backgroundColor: e.target.value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.backgroundColor || "#000000"}
+                            onChange={(e) => updateElementProps({ backgroundColor: e.target.value })}
+                            placeholder="#000000"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Border Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.borderColor || "#374151"}
+                            onChange={(e) => updateElementProps({ borderColor: e.target.value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.borderColor || "#374151"}
+                            onChange={(e) => updateElementProps({ borderColor: e.target.value })}
+                            placeholder="#374151"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Border Radius</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Slider
+                            value={[parseInt(selectedElement.props?.borderRadius?.replace('px', '') || "8")]}
+                            onValueChange={([value]) => updateElementProps({ borderRadius: `${value}px` })}
+                            min={0}
+                            max={50}
+                            step={1}
+                            className="flex-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.borderRadius?.replace('px', '') || "8"}
+                            onChange={(e) => updateElementProps({ borderRadius: `${e.target.value}px` })}
+                            className="w-16 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Padding</Label>
+                        <Select
+                          value={selectedElement.props?.padding || "1rem"}
+                          onValueChange={(value) => updateElementProps({ padding: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0.5rem">Small (8px)</SelectItem>
+                            <SelectItem value="0.75rem">Medium (12px)</SelectItem>
+                            <SelectItem value="1rem">Large (16px)</SelectItem>
+                            <SelectItem value="1.25rem">Extra Large (20px)</SelectItem>
+                            <SelectItem value="1.5rem">XXL (24px)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
               {/* Toast Styling */}
               {selectedElement.type === "toast" && (
                 <>
@@ -14275,8 +15522,8 @@ export function PropertiesPanel({
                       Colors
                     </Label>
                     <div className="space-y-3">
-                      {/* Hide Text Color for tooltip, dropdown, tabs, table, progress, timeline, stats, counter, input, textarea, checkbox, radio, switch, select, form, contact-form, product-card, price, rating, contact-info, newsletter, team, testimonial, map, calendar, search-bar, filter, breadcrumb, pagination, alert, toast, code-block, markdown, rich-text, typography, link, tag, and label */}
-                      {selectedElement.type !== "tooltip" && selectedElement.type !== "dropdown" && selectedElement.type !== "tabs" && selectedElement.type !== "table" && selectedElement.type !== "progress" && selectedElement.type !== "timeline" && selectedElement.type !== "stats" && selectedElement.type !== "counter" && selectedElement.type !== "input" && selectedElement.type !== "textarea" && selectedElement.type !== "checkbox" && selectedElement.type !== "radio" && selectedElement.type !== "switch" && selectedElement.type !== "select" && selectedElement.type !== "form" && selectedElement.type !== "contact-form" && selectedElement.type !== "product-card" && selectedElement.type !== "price" && selectedElement.type !== "rating" && selectedElement.type !== "contact-info" && selectedElement.type !== "newsletter" && selectedElement.type !== "team" && selectedElement.type !== "testimonial" && selectedElement.type !== "map" && selectedElement.type !== "calendar" && selectedElement.type !== "search-bar" && selectedElement.type !== "filter" && selectedElement.type !== "breadcrumb" && selectedElement.type !== "pagination" && selectedElement.type !== "alert" && selectedElement.type !== "toast" && selectedElement.type !== "code-block" && selectedElement.type !== "markdown" && selectedElement.type !== "rich-text" && selectedElement.type !== "typography" && selectedElement.type !== "link" && selectedElement.type !== "tag" && selectedElement.type !== "label" && (
+                      {/* Hide Text Color for tooltip, dropdown, tabs, table, progress, timeline, stats, counter, input, textarea, checkbox, radio, switch, select, form, contact-form, product-card, price, rating, contact-info, newsletter, team, testimonial, map, calendar, search-bar, filter, breadcrumb, pagination, alert, toast, code-block, markdown, rich-text, typography, link, tag, label, file-upload, and file-download */}
+                      {selectedElement.type !== "tooltip" && selectedElement.type !== "dropdown" && selectedElement.type !== "tabs" && selectedElement.type !== "table" && selectedElement.type !== "progress" && selectedElement.type !== "timeline" && selectedElement.type !== "stats" && selectedElement.type !== "counter" && selectedElement.type !== "input" && selectedElement.type !== "textarea" && selectedElement.type !== "checkbox" && selectedElement.type !== "radio" && selectedElement.type !== "switch" && selectedElement.type !== "select" && selectedElement.type !== "form" && selectedElement.type !== "contact-form" && selectedElement.type !== "product-card" && selectedElement.type !== "price" && selectedElement.type !== "rating" && selectedElement.type !== "contact-info" && selectedElement.type !== "newsletter" && selectedElement.type !== "team" && selectedElement.type !== "testimonial" && selectedElement.type !== "map" && selectedElement.type !== "calendar" && selectedElement.type !== "search-bar" && selectedElement.type !== "filter" && selectedElement.type !== "breadcrumb" && selectedElement.type !== "pagination" && selectedElement.type !== "alert" && selectedElement.type !== "toast" && selectedElement.type !== "code-block" && selectedElement.type !== "markdown" && selectedElement.type !== "rich-text" && selectedElement.type !== "typography" && selectedElement.type !== "link" && selectedElement.type !== "tag" && selectedElement.type !== "label" && selectedElement.type !== "file-upload" && selectedElement.type !== "file-download" && selectedElement.type !== "pdf-viewer" && selectedElement.type !== "document" && selectedElement.type !== "folder" && (
                         <div>
                           <Label className="text-xs text-muted-foreground">Text Color</Label>
                           <div className="flex gap-2 mt-1">

@@ -1,4 +1,4 @@
-import { Activity, AlertCircle, AlignLeft, Award, BarChart, Bell, Brush, Calendar, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Code, CreditCard, DollarSign, Download, File, FileText, Filter, Flag, Folder, FormInput, Grid3X3, Hash, Home, ImageIcon, Info, Layout, Link, List, Lock, Mail, MapPin, Maximize, Menu, MessageSquare, Music, Navigation, Phone, Play, Quote, RotateCcw, Search, Share, ShoppingCart, Smartphone, Square, Star, Tag, Target, ToggleLeft, TrendingUp, Type, Upload, User, Users, Video, X } from "lucide-react"
+import { Activity, AlertCircle, AlignLeft, Award, BarChart, Bell, Brush, Calendar, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Code, CreditCard, DollarSign, Download, File, FileText, Filter, Flag, Folder, FormInput, Grid3X3, Hash, Home, ImageIcon, Info, Layout, Link, List, Lock, Mail, MapPin, Maximize, Menu, MessageSquare, Music, Navigation, Phone, Quote, RotateCcw, Search, Share, ShoppingCart, Smartphone, Square, Star, Tag, Target, ToggleLeft, TrendingUp, Type, Upload, User, Users, Video, X } from "lucide-react"
 
 export const componentCategories = [
   {
@@ -122,7 +122,6 @@ export const componentCategories = [
       { name: "PDF Viewer", icon: File, description: "PDF display", type: "pdf-viewer" },
       { name: "Document", icon: FileText, description: "Document viewer", type: "document" },
       { name: "Folder", icon: Folder, description: "Folder structure", type: "folder" },
-      { name: "Media Player", icon: Play, description: "Media controls", type: "media-player" },
     ],
   },
   {
