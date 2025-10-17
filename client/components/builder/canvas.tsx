@@ -10,6 +10,47 @@ import { Copy, Trash2 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useDrop } from "react-dnd"
 
+// Simple Markdown parser
+const parseMarkdown = (text: string) => {
+  if (!text) return ""
+  
+  return text
+    // Headers
+    .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mb-2 mt-4">$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mb-3 mt-4">$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mb-4 mt-4">$1</h1>')
+    
+    // Bold and Italic
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold">$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+    
+    // Code
+    .replace(/`(.*?)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-sm font-mono">$1</code>')
+    
+    // Links
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary hover:underline">$1</a>')
+    
+    // Lists
+    .replace(/^\* (.*$)/gim, '<li class="ml-4">$1</li>')
+    .replace(/^- (.*$)/gim, '<li class="ml-4">$1</li>')
+    .replace(/^(\d+)\. (.*$)/gim, '<li class="ml-4">$2</li>')
+    
+    // Blockquotes
+    .replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-primary pl-4 italic text-muted-foreground my-2">$1</blockquote>')
+    
+    // Line breaks
+    .replace(/\n\n/g, '</p><p class="mb-2">')
+    .replace(/\n/g, '<br>')
+    
+    // Wrap in paragraphs
+    .replace(/^(?!<[h|b|l|c])/gm, '<p class="mb-2">')
+    .replace(/(?<!>)$/gm, '</p>')
+    
+    // Clean up empty paragraphs
+    .replace(/<p class="mb-2"><\/p>/g, '')
+    .replace(/<p class="mb-2"><br><\/p>/g, '')
+}
+
 // Components that should fill the entire box without padding
 const NO_PADDING_COMPONENTS: ReadonlySet<BuilderElement["type"]> = new Set([
   "video",
@@ -1426,49 +1467,116 @@ export function Canvas({
       // Content & Text Components
       "code-block": {
         content: "console.log('Hello World');",
+        props: {
+          language: "javascript",
+          fontFamily: "inherit",
+          fontSize: 14,
+          fontWeight: "normal",
+          textColor: "var(--color-foreground)"
+        },
         styles: { padding: "1rem", backgroundColor: "var(--color-muted)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", fontFamily: "monospace", fontSize: "0.875rem" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 300, height: 100 },
         animations: { type: "fadeIn", duration: 500, delay: 100 },
       },
       markdown: {
-        content: "# Markdown Content\n\nThis is **bold** text and *italic* text.",
+        content: "# Markdown Content\n\nThis is **bold** text and *italic* text.\n\n## Features\n- Easy to write\n- **Bold** and *italic*\n- `code snippets`\n\n> This is a blockquote",
+        props: {
+          fontFamily: "inherit",
+          fontSize: 14,
+          fontWeight: "normal",
+          textColor: "var(--color-foreground)",
+          headingColor: "var(--color-foreground)",
+          linkColor: "var(--color-primary)",
+          codeColor: "var(--color-muted-foreground)",
+          codeBgColor: "var(--color-muted)"
+        },
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", fontSize: "0.875rem", lineHeight: "1.6" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
-        position: { x: 100, y: 100, width: 300, height: 120 },
+        position: { x: 100, y: 100, width: 300, height: 200 },
         animations: { type: "fadeIn", duration: 600, delay: 200 },
       },
       "rich-text": {
         content: "Rich Text Editor",
+        props: {
+          fontFamily: "inherit",
+          fontSize: 14,
+          fontWeight: "normal",
+          textColor: "var(--color-foreground)",
+          backgroundColor: "var(--color-card)",
+          bold: false,
+          italic: false,
+          underline: false
+        },
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", fontSize: "0.875rem" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
-        position: { x: 100, y: 100, width: 300, height: 150 },
+        position: { x: 100, y: 100, width: 300, height: 200 },
         animations: { type: "fadeIn", duration: 600, delay: 200 },
       },
       typography: {
-        content: "Typography Styles",
+        content: "Typography\nFont styles and sizes",
+        props: {
+          heading: "Typography",
+          subtitle: "Font styles and sizes",
+          headingFontFamily: "inherit",
+          headingFontSize: 24,
+          headingFontWeight: "bold",
+          headingColor: "var(--color-foreground)",
+          subtitleFontFamily: "inherit",
+          subtitleFontSize: 14,
+          subtitleFontWeight: "normal",
+          subtitleColor: "var(--color-muted-foreground)",
+          backgroundColor: "var(--color-card)"
+        },
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", fontSize: "1.125rem", fontWeight: "600" },
         responsiveStyles: { desktop: { fontSize: "1.125rem" }, tablet: { fontSize: "1rem" }, mobile: { fontSize: "0.95rem" } },
-        position: { x: 100, y: 100, width: 200, height: 80 },
+        position: { x: 100, y: 100, width: 250, height: 100 },
         animations: { type: "fadeIn", duration: 500, delay: 100 },
       },
       link: {
         content: "External Link",
-        styles: { padding: "0.5rem", backgroundColor: "transparent", color: "var(--color-primary)", fontSize: "0.875rem", textDecoration: "underline", cursor: "pointer" },
+        props: {
+          url: "#",
+          fontFamily: "inherit",
+          fontSize: 14,
+          fontWeight: "normal",
+          textColor: "var(--color-primary)",
+          backgroundColor: "transparent",
+          underline: true
+        },
+        styles: { padding: "0.5rem", backgroundColor: "transparent", color: "var(--color-primary)", fontSize: "0.875rem", cursor: "pointer" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 120, height: 30 },
         animations: { type: "fadeIn", duration: 400, delay: 0 },
       },
       tag: {
         content: "Tag",
-        styles: { padding: "0.25rem 0.75rem", backgroundColor: "var(--color-primary)", color: "var(--color-primary-foreground)", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: "500" },
+        props: {
+          fontFamily: "inherit",
+          fontSize: 12,
+          fontWeight: "500",
+          textColor: "var(--color-primary-foreground)",
+          backgroundColor: "var(--color-primary)",
+          borderRadius: "9999px",
+          padding: "0.25rem 0.75rem"
+        },
+        styles: {},
         responsiveStyles: { desktop: { fontSize: "0.75rem" }, tablet: { fontSize: "0.7rem" }, mobile: { fontSize: "0.65rem" } },
         position: { x: 100, y: 100, width: 60, height: 25 },
         animations: { type: "bounce", duration: 600, delay: 300 },
       },
       label: {
         content: "Label Text",
-        styles: { padding: "0.25rem 0.5rem", backgroundColor: "var(--color-muted)", color: "var(--color-foreground)", borderRadius: "0.25rem", fontSize: "0.75rem", fontWeight: "500" },
+        props: {
+          fontFamily: "inherit",
+          fontSize: 12,
+          fontWeight: "500",
+          textColor: "var(--color-foreground)",
+          backgroundColor: "var(--color-muted)",
+          borderRadius: "0.25rem",
+          padding: "0.25rem 0.5rem"
+        },
+        styles: {},
         responsiveStyles: { desktop: { fontSize: "0.75rem" }, tablet: { fontSize: "0.7rem" }, mobile: { fontSize: "0.65rem" } },
         position: { x: 100, y: 100, width: 80, height: 25 },
         animations: { type: "fadeIn", duration: 400, delay: 0 },
@@ -5161,30 +5269,108 @@ export function Canvas({
     )}
     {/* Content & Text Components */}
     {element.type === "code-block" && (
-      <div className="w-full h-full" style={elementStyles}>
+      <div className="w-full h-full relative" style={elementStyles}>
         <pre className="w-full h-full p-4 bg-muted rounded-lg border border-border overflow-auto">
-          <code className="text-sm font-mono text-foreground">{element.content}</code>
+          <code 
+            className={`text-sm font-mono language-${element.props?.language || 'javascript'}`}
+            data-language={element.props?.language || 'javascript'}
+            style={{
+              fontFamily: element.props?.fontFamily || 'inherit',
+              fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+              fontWeight: element.props?.fontWeight || 'normal',
+              color: element.props?.textColor || 'var(--color-foreground)'
+            }}
+          >
+            {element.content}
+          </code>
         </pre>
+        {/* Language indicator */}
+        <div className="absolute top-2 right-2 px-2 py-1 bg-primary/10 text-primary text-xs rounded-md font-medium">
+          {element.props?.language || 'javascript'}
+        </div>
       </div>
     )}
     {element.type === "markdown" && (
-      <div className="w-full h-full" style={elementStyles}>
-        <div className="prose prose-sm max-w-none">
-          <h1 className="text-lg font-bold mb-2">Markdown Content</h1>
-          <p className="text-sm mb-2">This is <strong>bold</strong> text and <em>italic</em> text.</p>
-          <p className="text-sm text-muted-foreground">Markdown rendering...</p>
+      <div className="w-full h-full overflow-auto" style={elementStyles}>
+        <div 
+          className="prose prose-sm max-w-none"
+          style={{
+            fontFamily: element.props?.fontFamily || 'inherit',
+            fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+            fontWeight: element.props?.fontWeight || 'normal',
+            color: element.props?.textColor || 'var(--color-foreground)'
+          }}
+        >
+          <div 
+            dangerouslySetInnerHTML={{ 
+              __html: parseMarkdown(element.content) 
+            }}
+            style={{
+              '--heading-color': element.props?.headingColor || 'var(--color-foreground)',
+              '--link-color': element.props?.linkColor || 'var(--color-primary)',
+              '--code-color': element.props?.codeColor || 'var(--color-muted-foreground)',
+              '--code-bg-color': element.props?.codeBgColor || 'var(--color-muted)'
+            } as React.CSSProperties}
+          />
         </div>
       </div>
     )}
     {element.type === "rich-text" && (
       <div className="w-full h-full" style={elementStyles}>
-        <div className="space-y-2">
-          <div className="flex gap-1 p-2 bg-muted rounded border border-border">
-            <button className="px-2 py-1 text-xs bg-background rounded hover:bg-muted">B</button>
-            <button className="px-2 py-1 text-xs bg-background rounded hover:bg-muted">I</button>
-            <button className="px-2 py-1 text-xs bg-background rounded hover:bg-muted">U</button>
+        <div className="space-y-2 h-full flex flex-col">
+          {/* Toolbar */}
+          <div className="flex gap-1 p-2 bg-muted rounded border border-border flex-shrink-0">
+            <button 
+              className={`px-2 py-1 text-xs rounded hover:bg-muted transition-colors ${
+                element.props?.bold ? 'bg-primary text-primary-foreground' : 'bg-background'
+              }`}
+              onClick={() => onUpdateElement(element.id, {
+                props: { ...element.props, bold: !element.props?.bold }
+              })}
+            >
+              B
+            </button>
+            <button 
+              className={`px-2 py-1 text-xs rounded hover:bg-muted transition-colors ${
+                element.props?.italic ? 'bg-primary text-primary-foreground' : 'bg-background'
+              }`}
+              onClick={() => onUpdateElement(element.id, {
+                props: { ...element.props, italic: !element.props?.italic }
+              })}
+            >
+              I
+            </button>
+            <button 
+              className={`px-2 py-1 text-xs rounded hover:bg-muted transition-colors ${
+                element.props?.underline ? 'bg-primary text-primary-foreground' : 'bg-background'
+              }`}
+              onClick={() => onUpdateElement(element.id, {
+                props: { ...element.props, underline: !element.props?.underline }
+              })}
+            >
+              U
+            </button>
           </div>
-          <div className="p-2 border border-border rounded bg-background min-h-[100px] text-sm">
+          
+          {/* Editable Content Area */}
+          <div 
+            className="p-2 border border-border rounded bg-background flex-1 text-sm overflow-auto"
+            contentEditable
+            suppressContentEditableWarning={true}
+            onInput={(e) => {
+              const newContent = e.currentTarget.textContent || "";
+              onUpdateElement(element.id, { content: newContent });
+            }}
+            style={{
+              fontFamily: element.props?.fontFamily || 'inherit',
+              fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+              fontWeight: element.props?.bold ? 'bold' : (element.props?.fontWeight || 'normal'),
+              color: element.props?.textColor || 'var(--color-foreground)',
+              backgroundColor: element.props?.backgroundColor || 'var(--color-background)',
+              fontStyle: element.props?.italic ? 'italic' : 'normal',
+              textDecoration: element.props?.underline ? 'underline' : 'none'
+            }}
+          >
             {element.content}
           </div>
         </div>
@@ -5193,28 +5379,82 @@ export function Canvas({
     {element.type === "typography" && (
       <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Typography</h1>
-          <p className="text-sm text-muted-foreground">Font styles and sizes</p>
+          <h1 
+            className="mb-2"
+            style={{
+              fontFamily: element.props?.headingFontFamily || 'inherit',
+              fontSize: element.props?.headingFontSize ? `${element.props.headingFontSize}px` : '24px',
+              fontWeight: element.props?.headingFontWeight || 'bold',
+              color: element.props?.headingColor || 'var(--color-foreground)'
+            }}
+          >
+            {element.props?.heading || "Typography"}
+          </h1>
+          <p 
+            className="text-sm"
+            style={{
+              fontFamily: element.props?.subtitleFontFamily || 'inherit',
+              fontSize: element.props?.subtitleFontSize ? `${element.props.subtitleFontSize}px` : '14px',
+              fontWeight: element.props?.subtitleFontWeight || 'normal',
+              color: element.props?.subtitleColor || 'var(--color-muted-foreground)'
+            }}
+          >
+            {element.props?.subtitle || "Font styles and sizes"}
+          </p>
         </div>
       </div>
     )}
     {element.type === "link" && (
       <div className="w-full h-full flex items-center" style={elementStyles}>
-        <a href="#" className="text-primary hover:text-primary/80 underline text-sm">
+        <a 
+          href={element.props?.url || "#"}
+          className={`hover:opacity-80 transition-opacity ${element.props?.underline === false ? 'no-underline' : ''}`}
+          style={{
+            fontFamily: element.props?.fontFamily || 'inherit',
+            fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+            fontWeight: element.props?.fontWeight || 'normal',
+            color: element.props?.textColor || 'var(--color-primary)',
+            backgroundColor: element.props?.backgroundColor || 'transparent',
+            textDecoration: element.props?.underline !== false ? 'underline' : 'none',
+            cursor: 'pointer'
+          }}
+        >
           {element.content}
         </a>
       </div>
     )}
     {element.type === "tag" && (
       <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">
+        <span 
+          className="inline-flex items-center font-medium"
+          style={{
+            fontFamily: element.props?.fontFamily || 'inherit',
+            fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '12px',
+            fontWeight: element.props?.fontWeight || '500',
+            color: element.props?.textColor || 'var(--color-primary-foreground)',
+            backgroundColor: element.props?.backgroundColor || 'var(--color-primary)',
+            borderRadius: element.props?.borderRadius || '9999px',
+            padding: element.props?.padding || '0.25rem 0.75rem'
+          }}
+        >
           {element.content}
         </span>
       </div>
     )}
     {element.type === "label" && (
       <div className="w-full h-full flex items-center" style={elementStyles}>
-        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-muted text-foreground">
+        <span 
+          className="inline-flex items-center font-medium"
+          style={{
+            fontFamily: element.props?.fontFamily || 'inherit',
+            fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '12px',
+            fontWeight: element.props?.fontWeight || '500',
+            color: element.props?.textColor || 'var(--color-foreground)',
+            backgroundColor: element.props?.backgroundColor || 'var(--color-muted)',
+            borderRadius: element.props?.borderRadius || '0.25rem',
+            padding: element.props?.padding || '0.25rem 0.5rem'
+          }}
+        >
           {element.content}
         </span>
       </div>

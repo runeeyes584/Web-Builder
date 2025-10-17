@@ -423,3 +423,39 @@
     linear-gradient(90deg, hsl(var(--border) / 0.1) 1px, transparent 1px);
   background-size: 50px 50px;
 }
+
+/* Code Block Syntax Highlighting */
+.language-javascript .keyword { color: #c678dd; font-weight: bold; }
+.language-javascript .string { color: #98c379; }
+.language-javascript .number { color: #d19a66; }
+.language-javascript .function { color: #61afef; }
+.language-javascript .comment { color: #5c6370; font-style: italic; }
+
+.language-typescript .keyword { color: #c678dd; font-weight: bold; }
+.language-typescript .string { color: #98c379; }
+.language-typescript .number { color: #d19a66; }
+.language-typescript .function { color: #61afef; }
+.language-typescript .comment { color: #5c6370; font-style: italic; }
+.language-typescript .type { color: #e06c75; }
+
+.language-python .keyword { color: #c678dd; font-weight: bold; }
+.language-python .string { color: #98c379; }
+.language-python .number { color: #d19a66; }
+.language-python .function { color: #61afef; }
+.language-python .comment { color: #5c6370; font-style: italic; }
+
+.language-html .tag { color: #e06c75; }
+.language-html .attribute { color: #d19a66; }
+.language-html .string { color: #98c379; }
+.language-html .comment { color: #5c6370; font-style: italic; }
+
+.language-css .property { color: #61afef; }
+.language-css .value { color: #98c379; }
+.language-css .selector { color: #e06c75; }
+.language-css .comment { color: #5c6370; font-style: italic; }
+
+.language-json .key { color: #61afef; }
+.language-json .string { color: #98c379; }
+.language-json .number { color: #d19a66; }
+.language-json .boolean { color: #c678dd; }
+.language-json .null { color: #5c6370; }
