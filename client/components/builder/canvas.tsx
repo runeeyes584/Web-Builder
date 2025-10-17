@@ -1285,6 +1285,13 @@ export function Canvas({
       // Advanced UI Components
       calendar: {
         content: "Calendar",
+        props: {
+          title: "Calendar",
+          titleFontFamily: "inherit",
+          titleFontSize: 14,
+          titleFontWeight: "600",
+          titleTextColor: "inherit"
+        },
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 300, height: 200 },
@@ -1292,13 +1299,35 @@ export function Canvas({
       },
       "search-bar": {
         content: "Search...",
-        styles: { padding: "0.75rem", border: "1px solid var(--color-border)", borderRadius: "0.5rem", backgroundColor: "var(--color-background)", color: "var(--color-foreground)", fontSize: "1rem", width: "100%" },
-        responsiveStyles: { desktop: { padding: "0.75rem", fontSize: "1rem" }, tablet: { padding: "0.65rem", fontSize: "0.95rem" }, mobile: { padding: "0.6rem", fontSize: "0.9rem" } },
-        position: { x: 100, y: 100, width: 250, height: 40 },
+        props: {
+          fontFamily: "inherit",
+          fontSize: 16,
+          fontWeight: "normal",
+          textColor: "var(--color-foreground)"
+        },
+        styles: { padding: "0", border: "none", borderRadius: "0", backgroundColor: "transparent", width: "100%" },
+        responsiveStyles: { desktop: { padding: "0" }, tablet: { padding: "0" }, mobile: { padding: "0" } },
+        position: { x: 100, y: 100, width: 300, height: 48 },
         animations: { type: "fadeIn", duration: 500, delay: 100 },
       },
       filter: {
         content: "Filter Options",
+        props: {
+          title: "Filter Options",
+          options: [
+            { id: "option1", label: "Option 1", checked: false },
+            { id: "option2", label: "Option 2", checked: false },
+            { id: "option3", label: "Option 3", checked: false }
+          ],
+          titleFontFamily: "inherit",
+          titleFontSize: 14,
+          titleFontWeight: "600",
+          titleTextColor: "var(--color-foreground)",
+          optionFontFamily: "inherit",
+          optionFontSize: 12,
+          optionFontWeight: "normal",
+          optionTextColor: "var(--color-foreground)"
+        },
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 120 },
@@ -1306,6 +1335,20 @@ export function Canvas({
       },
       breadcrumb: {
         content: "Home > About > Contact",
+        props: {
+          items: [
+            { id: "home", label: "Home", href: "/", isLast: false },
+            { id: "about", label: "About", href: "/about", isLast: false },
+            { id: "contact", label: "Contact", href: "/contact", isLast: true }
+          ],
+          separator: "/",
+          fontFamily: "inherit",
+          fontSize: 14,
+          fontWeight: "normal",
+          textColor: "var(--color-primary)",
+          separatorColor: "var(--color-muted-foreground)",
+          lastItemColor: "var(--color-muted-foreground)"
+        },
         styles: { padding: "0.5rem", backgroundColor: "var(--color-muted)", borderRadius: "0.375rem", color: "var(--color-foreground)", fontSize: "0.875rem" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 35 },
@@ -1313,6 +1356,25 @@ export function Canvas({
       },
       pagination: {
         content: "1 2 3 ... 10",
+        props: {
+          items: [
+            { id: "prev", label: "←", type: "prev", isActive: false },
+            { id: "1", label: "1", type: "page", isActive: true },
+            { id: "2", label: "2", type: "page", isActive: false },
+            { id: "3", label: "3", type: "page", isActive: false },
+            { id: "ellipsis", label: "...", type: "ellipsis", isActive: false },
+            { id: "10", label: "10", type: "page", isActive: false },
+            { id: "next", label: "→", type: "next", isActive: false }
+          ],
+          fontFamily: "inherit",
+          fontSize: 12,
+          fontWeight: "normal",
+          textColor: "var(--color-foreground)",
+          activeTextColor: "var(--color-primary-foreground)",
+          activeBgColor: "var(--color-primary)",
+          borderColor: "var(--color-border)",
+          hoverBgColor: "var(--color-muted)"
+        },
         styles: { padding: "0.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.375rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center", fontSize: "0.875rem" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 40 },
@@ -1334,6 +1396,13 @@ export function Canvas({
       },
       alert: {
         content: "Alert message",
+        props: {
+          fontFamily: "inherit",
+          fontSize: 14,
+          fontWeight: "medium",
+          textColor: "var(--color-destructive-foreground)",
+          backgroundColor: "var(--color-destructive)"
+        },
         styles: { padding: "0.75rem", backgroundColor: "var(--color-destructive)", color: "var(--color-destructive-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", textAlign: "center" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 50 },
@@ -1341,17 +1410,18 @@ export function Canvas({
       },
       toast: {
         content: "Toast notification",
+        props: {
+          fontFamily: "inherit",
+          fontSize: 14,
+          fontWeight: "normal",
+          textColor: "var(--color-foreground)",
+          backgroundColor: "var(--color-card)",
+          iconColor: "currentColor"
+        },
         styles: { padding: "0.75rem", backgroundColor: "var(--color-card)", color: "var(--color-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", textAlign: "center", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 50 },
         animations: { type: "slideIn", duration: 300, delay: 0, direction: "up" },
-      },
-      drawer: {
-        content: "Side drawer",
-        styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", width: "250px" },
-        responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
-        position: { x: 100, y: 100, width: 250, height: 300 },
-        animations: { type: "slideIn", duration: 500, delay: 100, direction: "left" },
       },
       // Content & Text Components
       "code-block": {
@@ -2028,7 +2098,6 @@ export function Canvas({
     "skeleton",
     "alert",
     "toast",
-    "drawer",
     // Content & Text
     "code-block",
     "markdown",
@@ -4834,7 +4903,17 @@ export function Canvas({
     {element.type === "calendar" && (
       <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
         <div className="text-center">
-          <h3 className="font-semibold text-sm mb-3">Calendar</h3>
+          <h3 
+            className="font-semibold text-sm mb-3"
+            style={{
+              fontFamily: element.props?.titleFontFamily || 'inherit',
+              fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : '14px',
+              fontWeight: element.props?.titleFontWeight || '600',
+              color: element.props?.titleTextColor || 'inherit'
+            }}
+          >
+            {element.props?.title || "Calendar"}
+          </h3>
           <div className="grid grid-cols-7 gap-1 text-xs">
             {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
               <div key={i} className="p-1 text-center font-medium text-muted-foreground">{day}</div>
@@ -4853,6 +4932,12 @@ export function Canvas({
             type="text" 
             placeholder={element.content}
             className="w-full px-3 py-2 pl-8 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            style={{
+              fontFamily: element.props?.fontFamily || 'inherit',
+              fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '16px',
+              fontWeight: element.props?.fontWeight || 'normal',
+              color: element.props?.textColor || 'var(--color-foreground)'
+            }}
           />
           <svg className="absolute left-2 top-2.5 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -4862,44 +4947,153 @@ export function Canvas({
     )}
     {element.type === "filter" && (
       <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-        <h3 className="font-semibold text-sm mb-3">{element.content}</h3>
+        <h3 
+          className="font-semibold text-sm mb-3"
+          style={{
+            fontFamily: element.props?.titleFontFamily || 'inherit',
+            fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : '14px',
+            fontWeight: element.props?.titleFontWeight || '600',
+            color: element.props?.titleTextColor || 'var(--color-foreground)'
+          }}
+        >
+          {element.props?.title || element.content}
+        </h3>
         <div className="space-y-2">
-          <label className="flex items-center gap-2 text-xs">
-            <input type="checkbox" className="rounded" />
-            <span>Option 1</span>
-          </label>
-          <label className="flex items-center gap-2 text-xs">
-            <input type="checkbox" className="rounded" />
-            <span>Option 2</span>
-          </label>
-          <label className="flex items-center gap-2 text-xs">
-            <input type="checkbox" className="rounded" />
-            <span>Option 3</span>
-          </label>
+          {(element.props?.options || [
+            { id: "option1", label: "Option 1", checked: false },
+            { id: "option2", label: "Option 2", checked: false },
+            { id: "option3", label: "Option 3", checked: false }
+          ]).map((option: any, index: number) => (
+            <label key={option.id || index} className="flex items-center gap-2 text-xs cursor-pointer">
+              <input 
+                type="checkbox" 
+                className="rounded border-border bg-background text-primary focus:ring-primary" 
+                checked={option.checked || false}
+                onChange={(e) => {
+                  const newOptions = [...(element.props?.options || [])];
+                  newOptions[index] = { ...option, checked: e.target.checked };
+                  onUpdateElement(element.id, {
+                    props: {
+                      ...element.props,
+                      options: newOptions
+                    }
+                  });
+                }}
+              />
+              <span 
+                style={{
+                  fontFamily: element.props?.optionFontFamily || 'inherit',
+                  fontSize: element.props?.optionFontSize ? `${element.props.optionFontSize}px` : '12px',
+                  fontWeight: element.props?.optionFontWeight || 'normal',
+                  color: element.props?.optionTextColor || 'var(--color-foreground)'
+                }}
+              >
+                {option.label}
+              </span>
+            </label>
+          ))}
         </div>
       </div>
     )}
     {element.type === "breadcrumb" && (
       <div className="w-full h-full flex items-center" style={elementStyles}>
         <nav className="flex items-center space-x-1 text-sm">
-          <span className="text-primary hover:underline cursor-pointer">Home</span>
-          <span className="text-muted-foreground">/</span>
-          <span className="text-primary hover:underline cursor-pointer">About</span>
-          <span className="text-muted-foreground">/</span>
-          <span className="text-muted-foreground">Contact</span>
+          {(element.props?.items || [
+            { id: "home", label: "Home", href: "/", isLast: false },
+            { id: "about", label: "About", href: "/about", isLast: false },
+            { id: "contact", label: "Contact", href: "/contact", isLast: true }
+          ]).map((item: any, index: number, array: any[]) => (
+            <div key={item.id || index} className="flex items-center">
+              <span 
+                className={item.isLast ? "" : "hover:underline cursor-pointer"}
+                style={{
+                  fontFamily: element.props?.fontFamily || 'inherit',
+                  fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                  fontWeight: element.props?.fontWeight || 'normal',
+                  color: item.isLast 
+                    ? (element.props?.lastItemColor || 'var(--color-muted-foreground)')
+                    : (element.props?.textColor || 'var(--color-primary)')
+                }}
+              >
+                {item.label}
+              </span>
+              {index < array.length - 1 && (
+                <span 
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                    fontWeight: element.props?.fontWeight || 'normal',
+                    color: element.props?.separatorColor || 'var(--color-muted-foreground)'
+                  }}
+                >
+                  {element.props?.separator || "/"}
+                </span>
+              )}
+            </div>
+          ))}
         </nav>
       </div>
     )}
     {element.type === "pagination" && (
       <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
         <nav className="flex items-center space-x-1">
-          <button className="px-2 py-1 text-xs border border-border rounded hover:bg-muted">←</button>
-          <button className="px-2 py-1 text-xs bg-primary text-primary-foreground rounded">1</button>
-          <button className="px-2 py-1 text-xs border border-border rounded hover:bg-muted">2</button>
-          <button className="px-2 py-1 text-xs border border-border rounded hover:bg-muted">3</button>
-          <span className="px-2 py-1 text-xs text-muted-foreground">...</span>
-          <button className="px-2 py-1 text-xs border border-border rounded hover:bg-muted">10</button>
-          <button className="px-2 py-1 text-xs border border-border rounded hover:bg-muted">→</button>
+          {(element.props?.items || [
+            { id: "prev", label: "←", type: "prev", isActive: false },
+            { id: "1", label: "1", type: "page", isActive: true },
+            { id: "2", label: "2", type: "page", isActive: false },
+            { id: "3", label: "3", type: "page", isActive: false },
+            { id: "ellipsis", label: "...", type: "ellipsis", isActive: false },
+            { id: "10", label: "10", type: "page", isActive: false },
+            { id: "next", label: "→", type: "next", isActive: false }
+          ]).map((item: any, index: number) => (
+            <div key={item.id || index}>
+              {item.type === "ellipsis" ? (
+                <span 
+                  className="px-2 py-1 text-xs text-muted-foreground"
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '12px',
+                    fontWeight: element.props?.fontWeight || 'normal',
+                    color: element.props?.textColor || 'var(--color-muted-foreground)'
+                  }}
+                >
+                  {item.label}
+                </span>
+              ) : (
+                <button 
+                  className={`px-2 py-1 text-xs border rounded hover:bg-muted ${
+                    item.isActive 
+                      ? "bg-primary text-primary-foreground" 
+                      : "border-border"
+                  }`}
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '12px',
+                    fontWeight: element.props?.fontWeight || 'normal',
+                    color: item.isActive 
+                      ? (element.props?.activeTextColor || 'var(--color-primary-foreground)')
+                      : (element.props?.textColor || 'var(--color-foreground)'),
+                    backgroundColor: item.isActive 
+                      ? (element.props?.activeBgColor || 'var(--color-primary)')
+                      : 'transparent',
+                    borderColor: element.props?.borderColor || 'var(--color-border)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!item.isActive) {
+                      e.currentTarget.style.backgroundColor = element.props?.hoverBgColor || 'var(--color-muted)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!item.isActive) {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }
+                  }}
+                >
+                  {item.label}
+                </button>
+              )}
+            </div>
+          ))}
         </nav>
       </div>
     )}
@@ -4924,29 +5118,44 @@ export function Canvas({
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
-          <span className="text-sm font-medium">{element.content}</span>
+          <span 
+            className="text-sm font-medium"
+            style={{
+              fontFamily: element.props?.fontFamily || 'inherit',
+              fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+              fontWeight: element.props?.fontWeight || 'medium',
+              color: element.props?.textColor || 'var(--color-destructive-foreground)'
+            }}
+          >
+            {element.content}
+          </span>
         </div>
       </div>
     )}
     {element.type === "toast" && (
       <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
         <div className="flex items-center gap-2">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <svg 
+            className="w-4 h-4" 
+            fill="currentColor" 
+            viewBox="0 0 20 20"
+            style={{
+              color: element.props?.iconColor || 'currentColor'
+            }}
+          >
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
-          <span className="text-sm">{element.content}</span>
-        </div>
-      </div>
-    )}
-    {element.type === "drawer" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-        <div className="space-y-3">
-          <h3 className="font-semibold text-sm">{element.content}</h3>
-          <div className="space-y-2">
-            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer">• Menu Item 1</div>
-            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer">• Menu Item 2</div>
-            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer">• Menu Item 3</div>
-          </div>
+          <span 
+            className="text-sm"
+            style={{
+              fontFamily: element.props?.fontFamily || 'inherit',
+              fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+              fontWeight: element.props?.fontWeight || 'normal',
+              color: element.props?.textColor || 'var(--color-foreground)'
+            }}
+          >
+            {element.content}
+          </span>
         </div>
       </div>
     )}

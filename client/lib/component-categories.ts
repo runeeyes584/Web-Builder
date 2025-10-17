@@ -1,4 +1,4 @@
-import { Activity, AlertCircle, AlignLeft, Award, BarChart, Bell, Brush, Calendar, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Code, CreditCard, DollarSign, Download, File, FileText, Filter, Flag, Folder, FormInput, Grid3X3, Hash, Home, ImageIcon, Info, Layout, Link, List, Lock, Mail, MapPin, Maximize, Menu, MessageSquare, Minimize, Music, Navigation, Phone, Play, Quote, RotateCcw, Search, Share, ShoppingCart, Smartphone, Square, Star, Tag, Target, ToggleLeft, TrendingUp, Type, Upload, User, Users, Video, X } from "lucide-react"
+import { Activity, AlertCircle, AlignLeft, Award, BarChart, Bell, Brush, Calendar, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Code, CreditCard, DollarSign, Download, File, FileText, Filter, Flag, Folder, FormInput, Grid3X3, Hash, Home, ImageIcon, Info, Layout, Link, List, Lock, Mail, MapPin, Maximize, Menu, MessageSquare, Music, Navigation, Phone, Play, Quote, RotateCcw, Search, Share, ShoppingCart, Smartphone, Square, Star, Tag, Target, ToggleLeft, TrendingUp, Type, Upload, User, Users, Video, X } from "lucide-react"
 
 export const componentCategories = [
   {
@@ -100,7 +100,6 @@ export const componentCategories = [
       { name: "Pagination", icon: ChevronLeft, description: "Page navigation", type: "pagination" },
       { name: "Alert", icon: AlertCircle, description: "Alert messages", type: "alert" },
       { name: "Toast", icon: Bell, description: "Toast notifications", type: "toast" },
-      { name: "Drawer", icon: Minimize, description: "Side drawer", type: "drawer" },
     ],
   },
   {
