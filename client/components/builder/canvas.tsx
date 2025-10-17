@@ -1759,24 +1759,38 @@ export function Canvas({
         animations: { type: "pulse", duration: 1000, delay: 0 },
       },
       "progress-ring": {
-        content: "75%",
+        content: "",
+        props: {
+          progress: 75,
+          showPercentage: true,
+          animate: true,
+          ringSize: "64px",
+          strokeWidth: "4",
+          progressColor: "var(--color-primary)",
+          backgroundColor: "var(--color-muted)",
+          textSize: "14px",
+          textColor: "var(--color-foreground)",
+          strokeLineCap: "round"
+        },
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "50%", border: "1px solid var(--color-border)", textAlign: "center", color: "var(--color-foreground)", width: "80px", height: "80px", display: "flex", alignItems: "center", justifyContent: "center" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 80, height: 80 },
         animations: { type: "pulse", duration: 2000, delay: 0 },
       },
-      "status-badge": {
-        content: "Active",
-        styles: { padding: "0.25rem 0.75rem", backgroundColor: "var(--color-primary)", color: "var(--color-primary-foreground)", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: "500" },
-        responsiveStyles: { desktop: { fontSize: "0.75rem" }, tablet: { fontSize: "0.7rem" }, mobile: { fontSize: "0.65rem" } },
-        position: { x: 100, y: 100, width: 60, height: 25 },
-        animations: { type: "bounce", duration: 600, delay: 300 },
-      },
       notification: {
-        content: "🔔 3",
-        styles: { padding: "0.25rem 0.5rem", backgroundColor: "var(--color-destructive)", color: "var(--color-destructive-foreground)", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: "500", textAlign: "center" },
-        responsiveStyles: { desktop: { fontSize: "0.75rem" }, tablet: { fontSize: "0.7rem" }, mobile: { fontSize: "0.65rem" } },
-        position: { x: 100, y: 100, width: 40, height: 25 },
+        content: "🔔",
+        props: {
+          badgeCount: "3",
+          badgeColor: "#dc2626",
+          badgeTextColor: "#ffffff",
+          iconColor: "var(--color-muted-foreground)",
+          iconSize: "24px",
+          badgeSize: "16px",
+          badgeTextWeight: "500"
+        },
+        styles: { padding: "0.5rem", backgroundColor: "transparent", borderRadius: "0.375rem", textAlign: "center" },
+        responsiveStyles: { desktop: { padding: "0.5rem" }, tablet: { padding: "0.375rem" }, mobile: { padding: "0.25rem" } },
+        position: { x: 100, y: 100, width: 48, height: 48 },
         animations: { type: "shake", duration: 500, delay: 0 },
       },
       "alert-banner": {
@@ -1787,23 +1801,50 @@ export function Canvas({
         animations: { type: "shake", duration: 500, delay: 0 },
       },
       "success-message": {
-        content: "✅ Success!",
-        styles: { padding: "0.75rem", backgroundColor: "var(--color-primary)", color: "var(--color-primary-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", textAlign: "center" },
-        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        content: "Success!",
+        props: {
+          fontSize: "14px",
+          fontFamily: "inherit",
+          fontWeight: "500",
+          textColor: "#ffffff",
+          backgroundColor: "#22c55e",
+          iconColor: "#ffffff",
+          iconSize: "16px"
+        },
+        styles: { padding: "0.75rem", backgroundColor: "var(--color-primary)", color: "var(--color-primary-foreground)", borderRadius: "0.375rem", textAlign: "center" },
+        responsiveStyles: { desktop: { padding: "0.75rem" }, tablet: { padding: "0.625rem" }, mobile: { padding: "0.5rem" } },
         position: { x: 100, y: 100, width: 150, height: 50 },
         animations: { type: "bounce", duration: 600, delay: 300 },
       },
       "error-message": {
-        content: "❌ Error!",
-        styles: { padding: "0.75rem", backgroundColor: "var(--color-destructive)", color: "var(--color-destructive-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", textAlign: "center" },
-        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        content: "Error!",
+        props: {
+          fontSize: "14px",
+          fontFamily: "inherit",
+          fontWeight: "500",
+          textColor: "#ffffff",
+          backgroundColor: "#dc2626",
+          iconColor: "#ffffff",
+          iconSize: "16px"
+        },
+        styles: { padding: "0.75rem", backgroundColor: "var(--color-destructive)", color: "var(--color-destructive-foreground)", borderRadius: "0.375rem", textAlign: "center" },
+        responsiveStyles: { desktop: { padding: "0.75rem" }, tablet: { padding: "0.625rem" }, mobile: { padding: "0.5rem" } },
         position: { x: 100, y: 100, width: 120, height: 50 },
         animations: { type: "shake", duration: 500, delay: 0 },
       },
       "warning-message": {
-        content: "⚠️ Warning!",
-        styles: { padding: "0.75rem", backgroundColor: "var(--color-secondary)", color: "var(--color-secondary-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", textAlign: "center" },
-        responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
+        content: "Warning!",
+        props: {
+          fontSize: "14px",
+          fontFamily: "inherit",
+          fontWeight: "500",
+          textColor: "#ffffff",
+          backgroundColor: "#f59e0b",
+          iconColor: "#ffffff",
+          iconSize: "16px"
+        },
+        styles: { padding: "0.75rem", backgroundColor: "var(--color-secondary)", color: "var(--color-secondary-foreground)", borderRadius: "0.375rem", textAlign: "center" },
+        responsiveStyles: { desktop: { padding: "0.75rem" }, tablet: { padding: "0.625rem" }, mobile: { padding: "0.5rem" } },
         position: { x: 100, y: 100, width: 130, height: 50 },
         animations: { type: "shake", duration: 500, delay: 0 },
       },
@@ -2301,7 +2342,6 @@ export function Canvas({
     // Feedback & Status
     "loading",
     "progress-ring",
-    "status-badge",
     "notification",
     "alert-banner",
     "success-message",
@@ -6044,106 +6084,216 @@ export function Canvas({
         </div>
       </div>
     )}
-    {/* Navigation & Menu Components */}
-    {element.type === "menu" && (
-      <div className="w-full h-full" style={elementStyles}>
-        <div className="relative">
-          <button className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background text-foreground hover:bg-muted flex items-center justify-between">
-            <span>{element.content}</span>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    )}
-    {element.type === "tab-nav" && (
-      <div className="w-full h-full" style={elementStyles}>
-        <div className="flex border-b border-border">
-          <button className="px-3 py-2 text-sm font-medium text-primary border-b-2 border-primary">Tab 1</button>
-          <button className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground">Tab 2</button>
-          <button className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground">Tab 3</button>
-        </div>
-      </div>
-    )}
-    {element.type === "side-menu" && (
-      <div className="w-full h-full" style={elementStyles}>
-        <div className="space-y-2">
-          <div className="text-sm font-medium text-foreground mb-3">{element.content}</div>
-          <div className="space-y-1">
-            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer py-1 px-2 rounded hover:bg-muted">• Dashboard</div>
-            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer py-1 px-2 rounded hover:bg-muted">• Settings</div>
-            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer py-1 px-2 rounded hover:bg-muted">• Profile</div>
-          </div>
-        </div>
-      </div>
-    )}
-    {element.type === "mobile-menu" && (
-      <div className="w-full h-full" style={elementStyles}>
-        <div className="space-y-2">
-          <div className="text-sm font-medium text-foreground mb-3">{element.content}</div>
-          <div className="space-y-1">
-            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer py-2 px-3 rounded hover:bg-muted">📱 Home</div>
-            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer py-2 px-3 rounded hover:bg-muted">📱 About</div>
-            <div className="text-xs text-muted-foreground hover:text-foreground cursor-pointer py-2 px-3 rounded hover:bg-muted">📱 Contact</div>
-          </div>
-        </div>
-      </div>
-    )}
-    {element.type === "back-button" && (
-      <div className="w-full h-full" style={elementStyles}>
-        <button className="w-full h-full flex items-center justify-center hover:bg-muted/50 rounded transition-colors">
-          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          <span className="text-sm">{element.content}</span>
-        </button>
-      </div>
-    )}
-    {element.type === "home-button" && (
-      <div className="w-full h-full" style={elementStyles}>
-        <button className="w-full h-full flex items-center justify-center hover:opacity-80 rounded transition-opacity">
-          <span className="text-sm font-medium">{element.content}</span>
-        </button>
-      </div>
-    )}
     {/* Feedback & Status Components */}
     {element.type === "loading" && (
       <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-        <div className="flex items-center gap-2">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-          <span className="text-sm">{element.content}</span>
-        </div>
+        {element.props?.loadingType === "spinner" ? (
+          <div className="flex flex-col items-center gap-3">
+            <div 
+              className="animate-spin rounded-full"
+              style={{
+                width: element.props?.spinnerSize || '24px',
+                height: element.props?.spinnerSize || '24px',
+                background: `conic-gradient(from 0deg, transparent, ${element.props?.spinnerColor || '#3b82f6'}, transparent)`,
+                animation: 'spin 1s linear infinite'
+              }}
+            ></div>
+            <span 
+              className="text-sm font-medium"
+              style={{
+                fontSize: element.props?.textSize || '14px',
+                color: element.props?.textColor || 'var(--color-foreground)'
+              }}
+            >
+              {element.content || "Loading..."}
+            </span>
+          </div>
+        ) : element.props?.loadingType === "dots" ? (
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex gap-1">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-full animate-pulse"
+                  style={{
+                    width: element.props?.dotSize || '8px',
+                    height: element.props?.dotSize || '8px',
+                    backgroundColor: element.props?.dotColor || 'var(--color-primary)',
+                    animationDelay: `${i * 0.2}s`,
+                    animationDuration: '1s'
+                  }}
+                ></div>
+              ))}
+            </div>
+            <span 
+              className="text-sm font-medium"
+              style={{
+                fontSize: element.props?.textSize || '14px',
+                color: element.props?.textColor || 'var(--color-foreground)'
+              }}
+            >
+              {element.content || "Loading..."}
+            </span>
+          </div>
+        ) : element.props?.loadingType === "pulse" ? (
+          <div className="flex flex-col items-center gap-3">
+            <div 
+              className="rounded-full animate-pulse"
+              style={{
+                width: element.props?.pulseSize || '40px',
+                height: element.props?.pulseSize || '40px',
+                backgroundColor: element.props?.pulseColor || 'var(--color-primary)',
+                opacity: 0.7
+              }}
+            ></div>
+            <span 
+              className="text-sm font-medium"
+              style={{
+                fontSize: element.props?.textSize || '14px',
+                color: element.props?.textColor || 'var(--color-foreground)'
+              }}
+            >
+              {element.content || "Loading..."}
+            </span>
+          </div>
+        ) : element.props?.loadingType === "bars" ? (
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex gap-1">
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="animate-pulse"
+                  style={{
+                    width: element.props?.barWidth || '4px',
+                    height: element.props?.barHeight || '20px',
+                    backgroundColor: element.props?.barColor || 'var(--color-primary)',
+                    animationDelay: `${i * 0.1}s`,
+                    animationDuration: '0.8s'
+                  }}
+                ></div>
+              ))}
+            </div>
+            <span 
+              className="text-sm font-medium"
+              style={{
+                fontSize: element.props?.textSize || '14px',
+                color: element.props?.textColor || 'var(--color-foreground)'
+              }}
+            >
+              {element.content || "Loading..."}
+            </span>
+          </div>
+        ) : (
+          // Default spinner
+          <div className="flex flex-col items-center gap-3">
+            <div 
+              className="animate-spin rounded-full"
+              style={{
+                width: element.props?.spinnerSize || '24px',
+                height: element.props?.spinnerSize || '24px',
+                background: `conic-gradient(from 0deg, transparent, ${element.props?.spinnerColor || '#3b82f6'}, transparent)`,
+                animation: 'spin 1s linear infinite'
+              }}
+            ></div>
+            <span 
+              className="text-sm font-medium"
+              style={{
+                fontSize: element.props?.textSize || '14px',
+                color: element.props?.textColor || 'var(--color-foreground)'
+              }}
+            >
+              {element.content || "Loading..."}
+            </span>
+          </div>
+        )}
       </div>
     )}
     {element.type === "progress-ring" && (
       <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+        <style jsx>{`
+          @keyframes progressRingPulse {
+            0%, 100% { 
+              stroke-width: ${element.props?.strokeWidth || '4'};
+              opacity: 1;
+            }
+            50% { 
+              stroke-width: ${(parseInt(element.props?.strokeWidth || '4') + 2)};
+              opacity: 0.8;
+            }
+          }
+        `}</style>
         <div className="relative">
-          <svg className="w-16 h-16 transform -rotate-90">
-            <circle cx="32" cy="32" r="28" stroke="var(--color-muted)" strokeWidth="4" fill="none" />
-            <circle cx="32" cy="32" r="28" stroke="var(--color-primary)" strokeWidth="4" fill="none" strokeDasharray="175" strokeDashoffset="44" />
+          <svg 
+            style={{ 
+              width: element.props?.ringSize || '64px',
+              height: element.props?.ringSize || '64px'
+            }}
+            className="transform -rotate-90"
+            viewBox="0 0 100 100"
+          >
+            <circle 
+              cx="50" 
+              cy="50" 
+              r="45" 
+              stroke={element.props?.backgroundColor || 'var(--color-muted)'} 
+              strokeWidth={element.props?.strokeWidth || '4'} 
+              fill="none" 
+            />
+            <circle 
+              cx="50" 
+              cy="50" 
+              r="45" 
+              stroke={element.props?.progressColor || 'var(--color-primary)'} 
+              strokeWidth={element.props?.strokeWidth || '4'} 
+              fill="none" 
+              strokeDasharray={`${2 * Math.PI * 45}`}
+              strokeDashoffset={`${2 * Math.PI * 45 * (1 - (element.props?.progress || 75) / 100)}`}
+              strokeLinecap={element.props?.strokeLineCap || 'round'}
+              style={{
+                transition: element.props?.animate ? 'stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+                animation: element.props?.animate ? 'progressRingPulse 2s ease-in-out infinite' : 'none'
+              }}
+            />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-sm font-medium">{element.content}</span>
+            <span 
+              className="font-medium"
+              style={{
+                fontSize: element.props?.textSize || '14px',
+                color: element.props?.textColor || 'var(--color-foreground)'
+              }}
+            >
+              {element.props?.showPercentage ? `${element.props?.progress || 75}%` : `${element.props?.progress || 75}`}
+            </span>
           </div>
         </div>
-      </div>
-    )}
-    {element.type === "status-badge" && (
-      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">
-          {element.content}
-        </span>
       </div>
     )}
     {element.type === "notification" && (
       <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
         <div className="relative">
-          <svg className="w-6 h-6 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
-          </svg>
-          <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center">
-            3
+          <span 
+            style={{ 
+              color: element.props?.iconColor || 'var(--color-muted-foreground)',
+              fontSize: element.props?.iconSize || '24px'
+            }}
+          >
+            {element.content || '🔔'}
+          </span>
+          <span 
+            className="absolute rounded-full flex items-center justify-center"
+            style={{
+              backgroundColor: element.props?.badgeColor || '#dc2626',
+              color: element.props?.badgeTextColor || '#ffffff',
+              fontSize: `${parseInt(element.props?.badgeSize?.replace('px', '') || '16') * 0.6}px`,
+              fontWeight: element.props?.badgeTextWeight || '500',
+              width: element.props?.badgeSize || '16px',
+              height: element.props?.badgeSize || '16px',
+              top: '-4px',
+              right: '-4px'
+            }}
+          >
+            {element.props?.badgeCount || '3'}
           </span>
         </div>
       </div>
@@ -6159,32 +6309,104 @@ export function Canvas({
       </div>
     )}
     {element.type === "success-message" && (
-      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+      <div 
+        className="w-full h-full flex items-center justify-center" 
+        style={{
+          ...elementStyles,
+          backgroundColor: element.props?.backgroundColor || '#22c55e'
+        }}
+      >
         <div className="flex items-center gap-2">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <svg 
+            style={{ 
+              color: element.props?.iconColor || '#ffffff',
+              width: element.props?.iconSize || '16px',
+              height: element.props?.iconSize || '16px'
+            }}
+            fill="currentColor" 
+            viewBox="0 0 20 20"
+          >
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
-          <span className="text-sm font-medium">{element.content}</span>
+          <span 
+            className="font-medium"
+            style={{
+              fontSize: element.props?.fontSize || '14px',
+              fontFamily: element.props?.fontFamily || 'inherit',
+              fontWeight: element.props?.fontWeight || '500',
+              color: element.props?.textColor || '#ffffff'
+            }}
+          >
+            {element.content}
+          </span>
         </div>
       </div>
     )}
     {element.type === "error-message" && (
-      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+      <div 
+        className="w-full h-full flex items-center justify-center" 
+        style={{
+          ...elementStyles,
+          backgroundColor: element.props?.backgroundColor || '#dc2626'
+        }}
+      >
         <div className="flex items-center gap-2">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <svg 
+            style={{ 
+              color: element.props?.iconColor || '#ffffff',
+              width: element.props?.iconSize || '16px',
+              height: element.props?.iconSize || '16px'
+            }}
+            fill="currentColor" 
+            viewBox="0 0 20 20"
+          >
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
           </svg>
-          <span className="text-sm font-medium">{element.content}</span>
+          <span 
+            className="font-medium"
+            style={{
+              fontSize: element.props?.fontSize || '14px',
+              fontFamily: element.props?.fontFamily || 'inherit',
+              fontWeight: element.props?.fontWeight || '500',
+              color: element.props?.textColor || '#ffffff'
+            }}
+          >
+            {element.content}
+          </span>
         </div>
       </div>
     )}
     {element.type === "warning-message" && (
-      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+      <div 
+        className="w-full h-full flex items-center justify-center" 
+        style={{
+          ...elementStyles,
+          backgroundColor: element.props?.backgroundColor || '#f59e0b'
+        }}
+      >
         <div className="flex items-center gap-2">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <svg 
+            style={{ 
+              color: element.props?.iconColor || '#ffffff',
+              width: element.props?.iconSize || '16px',
+              height: element.props?.iconSize || '16px'
+            }}
+            fill="currentColor" 
+            viewBox="0 0 20 20"
+          >
             <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
-          <span className="text-sm font-medium">{element.content}</span>
+          <span 
+            className="font-medium"
+            style={{
+              fontSize: element.props?.fontSize || '14px',
+              fontFamily: element.props?.fontFamily || 'inherit',
+              fontWeight: element.props?.fontWeight || '500',
+              color: element.props?.textColor || '#ffffff'
+            }}
+          >
+            {element.content}
+          </span>
         </div>
       </div>
     )}

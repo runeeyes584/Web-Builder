@@ -1,4 +1,4 @@
-import { Activity, AlertCircle, AlignLeft, Award, BarChart, Bell, Brush, Calendar, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Code, CreditCard, DollarSign, Download, File, FileText, Filter, Flag, Folder, FormInput, Grid3X3, Hash, Home, ImageIcon, Info, Layout, Link, List, Lock, Mail, MapPin, Maximize, Menu, MessageSquare, Music, Navigation, Phone, Quote, RotateCcw, Search, Share, ShoppingCart, Smartphone, Square, Star, Tag, Target, ToggleLeft, TrendingUp, Type, Upload, User, Users, Video, X } from "lucide-react"
+import { Activity, AlertCircle, AlignLeft, Award, BarChart, Bell, Brush, Calendar, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Clock, Code, CreditCard, DollarSign, Download, File, FileText, Filter, Flag, Folder, FormInput, Grid3X3, Hash, ImageIcon, Info, Layout, Link, List, Lock, Mail, MapPin, Maximize, MessageSquare, Music, Navigation, Phone, Quote, RotateCcw, Search, Share, ShoppingCart, Square, Star, Tag, Target, ToggleLeft, TrendingUp, Type, Upload, User, Users, Video, X } from "lucide-react"
 
 export const componentCategories = [
   {
@@ -125,22 +125,10 @@ export const componentCategories = [
     ],
   },
   {
-    name: "Navigation & Menu",
-    components: [
-      { name: "Menu", icon: Menu, description: "Dropdown menu", type: "menu" },
-      { name: "Tab Navigation", icon: Layout, description: "Tab menu", type: "tab-nav" },
-      { name: "Side Menu", icon: Layout, description: "Side navigation", type: "side-menu" },
-      { name: "Mobile Menu", icon: Smartphone, description: "Mobile nav", type: "mobile-menu" },
-      { name: "Back Button", icon: ChevronLeft, description: "Go back", type: "back-button" },
-      { name: "Home Button", icon: Home, description: "Home link", type: "home-button" },
-    ],
-  },
-  {
     name: "Feedback & Status",
     components: [
       { name: "Loading", icon: RotateCcw, description: "Loading indicator", type: "loading" },
       { name: "Progress Ring", icon: Circle, description: "Circular progress", type: "progress-ring" },
-      { name: "Status Badge", icon: Award, description: "Status indicator", type: "status-badge" },
       { name: "Notification", icon: Bell, description: "Notification bell", type: "notification" },
       { name: "Success Message", icon: Check, description: "Success alert", type: "success-message" },
       { name: "Error Message", icon: X, description: "Error alert", type: "error-message" },
