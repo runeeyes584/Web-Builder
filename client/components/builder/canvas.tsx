@@ -970,7 +970,7 @@ export function Canvas({
         animations: { type: "zoomIn", duration: 600, delay: 200 },
       },
       price: {
-        content: "$99.99",
+        content: "99.99",
         styles: {
           fontSize: "1.5rem",
           fontWeight: "bold",
@@ -997,8 +997,17 @@ export function Canvas({
           tablet: { fontSize: "1.125rem" },
           mobile: { fontSize: "1rem" },
         },
-        position: { x: 100, y: 100, width: 120, height: 30 },
+        position: { x: 100, y: 100, width: 300, height: 200 },
         animations: { type: "pulse", duration: 1000, delay: 0 },
+        props: {
+          value: 4,
+          maxStars: 5,
+          readonly: false,
+          showComment: true,
+          commentPlaceholder: "Write your review...",
+          showSubmitButton: true,
+          submitButtonText: "Submit Review"
+        }
       },
       cart: {
         content: "Add to Cart",
@@ -3924,38 +3933,304 @@ export function Canvas({
     )}
     {element.type === "product-card" && (
       <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg overflow-hidden" style={elementStyles}>
-        <div className="h-24 bg-muted flex items-center justify-center">
-          <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
+        <div 
+          className="bg-muted flex items-center justify-center overflow-hidden"
+          style={{
+            height: element.props?.enableScaling !== false 
+              ? `${Math.max(60, (element.position?.height || 200) * ((element.props?.imageHeight || 40) / 100))}px`
+              : `${(element.position?.height || 200) * ((element.props?.imageHeight || 40) / 100)}px`
+          }}
+        >
+          {element.props?.imageUrl ? (
+            <img 
+              src={element.props.imageUrl} 
+              alt={element.content}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <svg 
+              className="text-muted-foreground" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+              style={{
+                width: element.props?.enableScaling !== false 
+                  ? `${Math.max(20, (element.position?.width || 200) * 0.1)}px`
+                  : '32px',
+                height: element.props?.enableScaling !== false 
+                  ? `${Math.max(20, (element.position?.width || 200) * 0.1)}px`
+                  : '32px'
+              }}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          )}
         </div>
-        <div className="p-3">
-          <h3 className="font-semibold text-sm mb-1">{element.content}</h3>
-          <p className="text-xs text-muted-foreground mb-2">Product description</p>
+        <div 
+          style={{
+            padding: element.props?.enableScaling !== false 
+              ? `${Math.max(8, (element.position?.height || 200) * 0.04)}px`
+              : '12px'
+          }}
+        >
+          <h3 
+            className="mb-1"
+            style={{
+              fontFamily: element.props?.productNameFontFamily || 'inherit',
+              fontSize: element.props?.productNameFontSize 
+                ? `${element.props.productNameFontSize}px`
+                : element.props?.enableScaling !== false 
+                  ? `${Math.max(10, (element.position?.width || 200) * 0.05)}px`
+                  : '14px',
+              fontWeight: element.props?.productNameFontWeight || '600',
+              color: element.props?.productNameColor || 'inherit'
+            }}
+          >
+            {element.content}
+          </h3>
+          <p 
+            className="mb-2"
+            style={{
+              fontFamily: element.props?.descriptionFontFamily || 'inherit',
+              fontSize: element.props?.descriptionFontSize 
+                ? `${element.props.descriptionFontSize}px`
+                : element.props?.enableScaling !== false 
+                  ? `${Math.max(8, (element.position?.width || 200) * 0.035)}px`
+                  : '12px',
+              fontWeight: element.props?.descriptionFontWeight || '400',
+              color: element.props?.descriptionColor || '#a1a1aa'
+            }}
+          >
+            {element.props?.description || "Product description"}
+          </p>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-bold text-primary">$99.99</span>
-            <button className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">Add</button>
+            <span 
+              style={{
+                fontFamily: element.props?.priceFontFamily || 'inherit',
+                fontSize: element.props?.priceFontSize 
+                  ? `${element.props.priceFontSize}px`
+                  : element.props?.enableScaling !== false 
+                    ? `${Math.max(10, (element.position?.width || 200) * 0.045)}px`
+                    : '14px',
+                fontWeight: element.props?.priceFontWeight || '700',
+                color: element.props?.priceColor || '#3b82f6'
+              }}
+            >
+              {(() => {
+                const currency = element.props?.productCurrency || "USD";
+                const price = element.props?.price || "99.99";
+                
+                const currencySymbols: Record<string, string> = {
+                  USD: "$",
+                  EUR: "€",
+                  GBP: "£",
+                  JPY: "¥",
+                  VND: "₫",
+                  CNY: "¥",
+                  KRW: "₩",
+                  THB: "฿",
+                  SGD: "S$",
+                  AUD: "A$",
+                  CAD: "C$",
+                  INR: "₹"
+                };
+                
+                // Currencies with symbol after amount
+                const symbolAfter = ["VND", "KRW", "THB"];
+                const symbol = currencySymbols[currency] || "$";
+                
+                if (symbolAfter.includes(currency)) {
+                  return `${price}${symbol}`;
+                } else {
+                  return `${symbol}${price}`;
+                }
+              })()}
+            </span>
+            <button 
+              className="rounded"
+              style={{
+                fontFamily: element.props?.buttonFontFamily || 'inherit',
+                fontSize: element.props?.buttonFontSize 
+                  ? `${element.props.buttonFontSize}px`
+                  : element.props?.enableScaling !== false 
+                    ? `${Math.max(8, (element.position?.width || 200) * 0.035)}px`
+                    : '12px',
+                fontWeight: element.props?.buttonFontWeight || '400',
+                color: element.props?.buttonTextColor || '#ffffff',
+                backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
+                padding: element.props?.enableScaling !== false 
+                  ? `${Math.max(4, (element.position?.height || 200) * 0.015)}px ${Math.max(8, (element.position?.width || 200) * 0.025)}px`
+                  : '4px 8px'
+              }}
+            >
+              {element.props?.buttonText || "Add"}
+            </button>
           </div>
         </div>
       </div>
     )}
     {element.type === "price" && (
       <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-        <span className="text-2xl font-bold">{element.content}</span>
+        <span 
+          style={{
+            fontFamily: element.props?.priceFontFamily || 'inherit',
+            fontSize: element.props?.priceFontSize 
+              ? `${element.props.priceFontSize}px`
+              : '24px',
+            fontWeight: element.props?.priceFontWeight || '700',
+            color: element.props?.priceTextColor || 'inherit'
+          }}
+        >
+          {(() => {
+            const currency = element.props?.currency || "USD";
+            const amount = element.props?.priceAmount || element.content || "99.99";
+            const period = element.props?.period || "";
+            
+            const currencySymbols: Record<string, string> = {
+              USD: "$",
+              EUR: "€",
+              GBP: "£",
+              JPY: "¥",
+              VND: "₫",
+              CNY: "¥",
+              KRW: "₩",
+              THB: "฿",
+              SGD: "S$",
+              AUD: "A$",
+              CAD: "C$",
+              INR: "₹"
+            };
+            
+            // Currencies with symbol after amount
+            const symbolAfter = ["VND", "KRW", "THB"];
+            const symbol = currencySymbols[currency] || "$";
+            
+            if (symbolAfter.includes(currency)) {
+              return `${amount}${symbol}${period}`;
+            } else {
+              return `${symbol}${amount}${period}`;
+            }
+          })()}
+        </span>
       </div>
     )}
     {element.type === "rating" && (
-      <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-        <span className="text-lg">{element.content}</span>
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+        <div className="space-y-3">
+          {/* Stars */}
+          <div className="flex items-center justify-center gap-1">
+            {Array.from({ length: element.props?.maxStars || 5 }).map((_, index) => {
+              const value = element.props?.value || 4;
+              const isFilled = index < Math.floor(value);
+              const isHalf = index === Math.floor(value) && value % 1 !== 0;
+              
+              return (
+                <svg
+                  key={index}
+                  className={`w-6 h-6 ${
+                    isFilled || isHalf ? "text-yellow-400" : "text-muted-foreground/30"
+                  }`}
+                  fill={isFilled || isHalf ? "currentColor" : "none"}
+                  stroke="currentColor"
+                  strokeWidth={isFilled || isHalf ? 0 : 2}
+                  viewBox="0 0 24 24"
+                >
+                  {isHalf ? (
+                    <>
+                      <defs>
+                        <linearGradient id={`half-${index}`}>
+                          <stop offset="50%" stopColor="currentColor" />
+                          <stop offset="50%" stopColor="transparent" />
+                        </linearGradient>
+                      </defs>
+                      <path
+                        fill={`url(#half-${index})`}
+                        d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                      />
+                      <path
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                      />
+                    </>
+                  ) : (
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  )}
+                </svg>
+              );
+            })}
+          </div>
+
+          {/* Comment Box */}
+          {element.props?.showComment !== false && (
+            <textarea
+              placeholder={element.props?.commentPlaceholder || "Write your review..."}
+              className="w-full px-3 py-2 border border-border rounded bg-background resize-none"
+              style={{
+                fontFamily: element.props?.commentFontFamily || 'inherit',
+                fontSize: element.props?.commentFontSize 
+                  ? `${element.props.commentFontSize}px`
+                  : '14px',
+                fontWeight: element.props?.commentFontWeight || '400',
+                color: element.props?.commentTextColor || 'inherit'
+              }}
+              rows={3}
+              disabled
+            />
+          )}
+
+          {/* Submit Button */}
+          {element.props?.showSubmitButton !== false && (
+            <button 
+              className="w-full px-4 py-2 rounded hover:opacity-90 transition-opacity"
+              style={{
+                fontFamily: element.props?.buttonFontFamily || 'inherit',
+                fontSize: element.props?.buttonFontSize 
+                  ? `${element.props.buttonFontSize}px`
+                  : '14px',
+                fontWeight: element.props?.buttonFontWeight || '500',
+                color: element.props?.buttonTextColor || '#ffffff',
+                backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6'
+              }}
+            >
+              {element.props?.submitButtonText || "Submit Review"}
+            </button>
+          )}
+        </div>
       </div>
     )}
     {element.type === "cart" && (
-      <button className="w-full h-full bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors" style={elementStyles}>
+      <button 
+        className="w-full h-full rounded-lg hover:opacity-90 transition-opacity" 
+        style={{
+          ...elementStyles,
+          fontFamily: element.props?.cartFontFamily || 'inherit',
+          fontSize: element.props?.cartFontSize 
+            ? `${element.props.cartFontSize}px`
+            : '16px',
+          fontWeight: element.props?.cartFontWeight || '500',
+          color: element.props?.cartTextColor || '#ffffff',
+          backgroundColor: element.props?.cartBackgroundColor || '#3b82f6'
+        }}
+      >
         {element.content}
       </button>
     )}
     {element.type === "checkout" && (
-      <button className="w-full h-full bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors" style={elementStyles}>
+      <button 
+        className="w-full h-full rounded-lg hover:opacity-90 transition-opacity" 
+        style={{
+          ...elementStyles,
+          fontFamily: element.props?.checkoutFontFamily || 'inherit',
+          fontSize: element.props?.checkoutFontSize 
+            ? `${element.props.checkoutFontSize}px`
+            : '16px',
+          fontWeight: element.props?.checkoutFontWeight || '600',
+          color: element.props?.checkoutTextColor || '#ffffff',
+          backgroundColor: element.props?.checkoutBackgroundColor || '#3b82f6'
+        }}
+      >
         {element.content}
       </button>
     )}
@@ -4196,7 +4471,7 @@ export function Canvas({
       </div>
     )}
     {element.type === "form" && (
-      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={{...elementStyles, minHeight: '420px'}}>
+      <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
         <div className="space-y-3 h-full flex flex-col">
           <h3 
             className="font-semibold flex-shrink-0" 
@@ -4280,10 +4555,9 @@ export function Canvas({
                 backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
               }}
             />
-          </div>
-          <button 
-            className="w-full rounded flex-shrink-0 mt-2" 
-            style={element.props?.enableScaling ? {
+            <button 
+              className="w-full rounded flex-shrink-0" 
+              style={element.props?.enableScaling ? {
                 padding: `${Math.max(6, (element.position?.height || 200) * 0.03)}px ${Math.max(12, (element.position?.width || 300) * 0.04)}px`,
                 fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
                 borderRadius: element.props?.buttonBorderRadius || '4px',
@@ -4303,6 +4577,7 @@ export function Canvas({
             >
               {element.props?.buttonText !== undefined ? element.props.buttonText : "Submit"}
             </button>
+          </div>
         </div>
       </div>
     )}
