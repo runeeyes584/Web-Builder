@@ -1938,7 +1938,7 @@ export function Canvas({
         content: "Case Study",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
-        position: { x: 100, y: 100, width: 300, height: 200 },
+        position: { x: 100, y: 100, width: 300, height: 250 },
         animations: { type: "fadeIn", duration: 600, delay: 200 },
       },
       cta: {
@@ -6505,20 +6505,60 @@ export function Canvas({
     {element.type === "pricing-table" && (
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full flex flex-col items-center justify-center">
-          <h3 className="text-lg font-bold mb-4">{element.content}</h3>
-          <div className="grid grid-cols-3 gap-4 w-full">
-            <div className="bg-muted rounded-lg p-3 text-center">
-              <div className="text-sm font-medium">Basic</div>
-              <div className="text-lg font-bold text-primary">$9</div>
-            </div>
-            <div className="bg-primary/10 rounded-lg p-3 text-center border-2 border-primary">
-              <div className="text-sm font-medium">Pro</div>
-              <div className="text-lg font-bold text-primary">$29</div>
-            </div>
-            <div className="bg-muted rounded-lg p-3 text-center">
-              <div className="text-sm font-medium">Enterprise</div>
-              <div className="text-lg font-bold text-primary">$99</div>
-            </div>
+          <h3 
+            className="text-lg font-bold mb-4"
+            style={{
+              fontFamily: element.props?.titleFontFamily || 'inherit',
+              fontSize: element.props?.titleFontSize || '18px',
+              fontWeight: element.props?.titleFontWeight || '700',
+              color: element.props?.titleColor || 'inherit'
+            }}
+          >
+            {element.content}
+          </h3>
+          <div className={`grid gap-4 w-full`} style={{ 
+            gridTemplateColumns: `repeat(${(element.props?.plansArray || Array.from({ length: element.props?.plans || 3 }).map((_, i) => ({ 
+              name: ['Basic','Pro','Enterprise'][i] || 'Plan ' + (i+1), 
+              price: ['$9','$29','$99'][i] || '$0' 
+            }))).length}, minmax(0, 1fr))` 
+          }}>
+            {(element.props?.plansArray || Array.from({ length: element.props?.plans || 3 }).map((_, i) => ({ 
+              name: ['Basic','Pro','Enterprise'][i] || 'Plan ' + (i+1), 
+              price: ['$9','$29','$99'][i] || '$0' 
+            }))).map((plan: any, idx: number) => {
+              const highlightedIndex = element.props?.highlightedPlan ?? 1
+              return (
+                <div 
+                  key={idx}
+                  className={`rounded-lg p-3 text-center ${
+                    idx === highlightedIndex ? 'bg-primary/10 border-2 border-primary' : 'bg-muted'
+                  }`}
+                >
+                  <div 
+                    className="text-sm font-medium"
+                    style={{
+                      fontFamily: element.props?.planFontFamily || 'inherit',
+                      fontSize: element.props?.planNameSize || '14px',
+                      fontWeight: element.props?.planNameWeight || '500',
+                      color: element.props?.planNameColor || 'inherit'
+                    }}
+                  >
+                    {plan.name}
+                  </div>
+                  <div 
+                    className="text-lg font-bold text-primary"
+                    style={{
+                      fontFamily: element.props?.planFontFamily || 'inherit',
+                      fontSize: element.props?.planPriceSize || '18px',
+                      fontWeight: element.props?.planPriceWeight || '700',
+                      color: element.props?.planPriceColor || 'hsl(var(--primary))'
+                    }}
+                  >
+                    {plan.price}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -6526,26 +6566,71 @@ export function Canvas({
     {element.type === "feature-list" && (
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-3">
-          <h3 className="text-sm font-medium mb-3">{element.content}</h3>
+          <h3 
+            className="text-sm font-medium mb-3"
+            style={{
+              fontFamily: element.props?.titleFontFamily || 'inherit',
+              fontSize: element.props?.titleFontSize || '14px',
+              fontWeight: element.props?.titleFontWeight || '500',
+              color: element.props?.titleColor || 'inherit'
+            }}
+          >
+            {element.content}
+          </h3>
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs">
-              <svg className="w-3 h-3 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-              <span>Feature 1</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <svg className="w-3 h-3 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-              <span>Feature 2</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <svg className="w-3 h-3 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-              <span>Feature 3</span>
-            </div>
+            {(element.props?.featuresArray || [
+              { text: 'Feature 1' },
+              { text: 'Feature 2' },
+              { text: 'Feature 3' }
+            ]).map((feature: any, idx: number) => {
+              const iconType = element.props?.iconType || 'check'
+              const iconColor = element.props?.iconColor || 'hsl(var(--primary))'
+              
+              return (
+                <div key={idx} className="flex items-center gap-2 text-xs">
+                  {iconType === 'check' && (
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  {iconType === 'star' && (
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  )}
+                  {iconType === 'circle' && (
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
+                      <circle cx="10" cy="10" r="8" />
+                    </svg>
+                  )}
+                  {iconType === 'arrow' && (
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
+                      <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  {iconType === 'plus' && (
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
+                      <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  {iconType === 'heart' && (
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
+                      <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  <span
+                    style={{
+                      fontFamily: element.props?.featureFontFamily || 'inherit',
+                      fontSize: element.props?.featureFontSize || '12px',
+                      fontWeight: element.props?.featureFontWeight || '400',
+                      color: element.props?.featureColor || 'inherit'
+                    }}
+                  >
+                    {feature.text}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -6553,16 +6638,47 @@ export function Canvas({
     {element.type === "faq" && (
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-3">
-          <h3 className="text-sm font-medium mb-3">{element.content}</h3>
+          <h3 
+            className="text-sm font-medium mb-3"
+            style={{
+              fontFamily: element.props?.titleFontFamily || 'inherit',
+              fontSize: element.props?.titleFontSize || '14px',
+              fontWeight: element.props?.titleFontWeight || '500',
+              color: element.props?.titleColor || 'inherit'
+            }}
+          >
+            {element.content}
+          </h3>
           <div className="space-y-2">
-            <div className="border border-border rounded p-2">
-              <div className="text-xs font-medium mb-1">Q: What is this service?</div>
-              <div className="text-xs text-muted-foreground">A: This is a comprehensive solution...</div>
-            </div>
-            <div className="border border-border rounded p-2">
-              <div className="text-xs font-medium mb-1">Q: How does it work?</div>
-              <div className="text-xs text-muted-foreground">A: It works by...</div>
-            </div>
+            {(element.props?.faqArray || [
+              { question: 'What is this service?', answer: 'This is a comprehensive solution...' },
+              { question: 'How does it work?', answer: 'It works by...' }
+            ]).map((faq: any, idx: number) => (
+              <div key={idx} className="border border-border rounded p-2">
+                <div 
+                  className="text-xs font-medium mb-1"
+                  style={{
+                    fontFamily: element.props?.questionFontFamily || 'inherit',
+                    fontSize: element.props?.questionFontSize || '12px',
+                    fontWeight: element.props?.questionFontWeight || '500',
+                    color: element.props?.questionColor || 'inherit'
+                  }}
+                >
+                  Q: {faq.question}
+                </div>
+                <div 
+                  className="text-xs text-muted-foreground"
+                  style={{
+                    fontFamily: element.props?.answerFontFamily || 'inherit',
+                    fontSize: element.props?.answerFontSize || '12px',
+                    fontWeight: element.props?.answerFontWeight || '400',
+                    color: element.props?.answerColor || 'inherit'
+                  }}
+                >
+                  A: {faq.answer}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -6570,13 +6686,73 @@ export function Canvas({
     {element.type === "blog-post" && (
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-3">
-          <div className="w-full h-20 bg-muted rounded mb-3"></div>
-          <h3 className="text-sm font-medium">{element.content}</h3>
-          <p className="text-xs text-muted-foreground line-clamp-3">This is a sample blog post content that demonstrates how the blog post component would look...</p>
+          {/* Blog Image */}
+          {element.props?.imageUrl ? (
+            <div 
+              className="w-full bg-muted rounded mb-3 bg-cover bg-center"
+              style={{
+                height: element.props?.imageHeight || "80px",
+                backgroundImage: `url(${element.props?.imageUrl})`
+              }}
+            ></div>
+          ) : (
+            <div 
+              className="w-full bg-muted rounded mb-3"
+              style={{
+                height: element.props?.imageHeight || "80px"
+              }}
+            ></div>
+          )}
+          
+          {/* Blog Title */}
+          <h3 
+            className="text-sm font-medium"
+            style={{
+              fontFamily: element.props?.titleFontFamily || "inherit",
+              fontSize: element.props?.titleFontSize || "14px",
+              fontWeight: element.props?.titleFontWeight || "500",
+              color: element.props?.titleColor || "#ffffff"
+            }}
+          >
+            {element.props?.title || element.content || "Blog Article"}
+          </h3>
+          
+          {/* Blog Content */}
+          <p 
+            className="text-xs text-muted-foreground line-clamp-3"
+            style={{
+              fontFamily: element.props?.contentFontFamily || "inherit",
+              fontSize: element.props?.contentFontSize || "12px",
+              fontWeight: element.props?.contentFontWeight || "400",
+              color: element.props?.contentColor || "#a1a1aa"
+            }}
+          >
+            {element.props?.blogContent || "This is a sample blog post content that demonstrates how the blog post component would look..."}
+          </p>
+          
+          {/* Blog Meta (Author & Date) */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>By Author</span>
+            <span
+              style={{
+                fontFamily: element.props?.metaFontFamily || "inherit",
+                fontSize: element.props?.metaFontSize || "12px",
+                fontWeight: element.props?.metaFontWeight || "400",
+                color: element.props?.metaColor || "#a1a1aa"
+              }}
+            >
+              By {element.props?.author || "Author"}
+            </span>
             <span>•</span>
-            <span>Dec 2024</span>
+            <span
+              style={{
+                fontFamily: element.props?.metaFontFamily || "inherit",
+                fontSize: element.props?.metaFontSize || "12px",
+                fontWeight: element.props?.metaFontWeight || "400",
+                color: element.props?.metaColor || "#a1a1aa"
+              }}
+            >
+              {element.props?.date || "Dec 2024"}
+            </span>
           </div>
         </div>
       </div>
@@ -6584,12 +6760,69 @@ export function Canvas({
     {element.type === "case-study" && (
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-3">
-          <div className="w-full h-16 bg-muted rounded mb-3"></div>
-          <h3 className="text-sm font-medium">{element.content}</h3>
-          <p className="text-xs text-muted-foreground">Success story showcasing results and outcomes...</p>
+          {/* Case Study Image */}
+          {element.props?.imageUrl ? (
+            <div 
+              className="w-full bg-muted rounded mb-3 bg-cover bg-center"
+              style={{
+                height: element.props?.imageHeight || "64px",
+                backgroundImage: `url(${element.props?.imageUrl})`
+              }}
+            ></div>
+          ) : (
+            <div 
+              className="w-full bg-muted rounded mb-3"
+              style={{
+                height: element.props?.imageHeight || "64px"
+              }}
+            ></div>
+          )}
+          
+          {/* Case Study Title */}
+          <h3 
+            className="text-sm font-medium"
+            style={{
+              fontFamily: element.props?.titleFontFamily || "inherit",
+              fontSize: element.props?.titleFontSize || "18px",
+              fontWeight: element.props?.titleFontWeight || "600",
+              color: element.props?.titleColor || "#ffffff"
+            }}
+          >
+            {element.props?.title || element.content || "Case Study"}
+          </h3>
+          
+          {/* Case Study Description */}
+          <p 
+            className="text-xs text-muted-foreground"
+            style={{
+              fontFamily: element.props?.descriptionFontFamily || "inherit",
+              fontSize: element.props?.descriptionFontSize || "14px",
+              fontWeight: element.props?.descriptionFontWeight || "400",
+              color: element.props?.descriptionColor || "#a1a1aa"
+            }}
+          >
+            {element.props?.description || "Success story showcasing results and outcomes..."}
+          </p>
+          
+          {/* Case Study Metrics */}
           <div className="flex gap-2">
-            <div className="bg-primary/20 rounded px-2 py-1 text-xs">+50% Growth</div>
-            <div className="bg-primary/20 rounded px-2 py-1 text-xs">ROI: 300%</div>
+            {(element.props?.metricsArray || [
+              { label: '+50% Growth' },
+              { label: 'ROI: 300%' }
+            ]).map((metric: any, idx: number) => (
+              <div 
+                key={idx}
+                className="bg-primary/20 rounded px-2 py-1 text-xs"
+                style={{
+                  fontFamily: element.props?.metricFontFamily || "inherit",
+                  fontSize: element.props?.metricFontSize || "13px",
+                  fontWeight: element.props?.metricFontWeight || "500",
+                  color: element.props?.metricColor || "#ffffff"
+                }}
+              >
+                {metric.label}
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -6597,10 +6830,45 @@ export function Canvas({
     {element.type === "cta" && (
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full flex flex-col items-center justify-center text-center">
-          <h3 className="text-lg font-bold mb-2">{element.content}</h3>
-          <p className="text-sm mb-4 opacity-90">Get started today and transform your business</p>
-          <button className="px-4 py-2 bg-background text-primary rounded-lg text-sm font-medium hover:bg-background/80 transition-colors">
-            Get Started
+          {/* CTA Title */}
+          <h3 
+            className="text-lg font-bold mb-2"
+            style={{
+              fontFamily: element.props?.titleFontFamily || "inherit",
+              fontSize: element.props?.titleFontSize || "18px",
+              fontWeight: element.props?.titleFontWeight || "700",
+              color: element.props?.titleColor || "#ffffff"
+            }}
+          >
+            {element.props?.title || element.content || "Call to Action"}
+          </h3>
+          
+          {/* CTA Description */}
+          <p 
+            className="text-sm mb-4 opacity-90"
+            style={{
+              fontFamily: element.props?.descriptionFontFamily || "inherit",
+              fontSize: element.props?.descriptionFontSize || "14px",
+              fontWeight: element.props?.descriptionFontWeight || "400",
+              color: element.props?.descriptionColor || "#ffffff",
+              opacity: element.props?.descriptionOpacity || 0.9
+            }}
+          >
+            {element.props?.description || "Get started today and transform your business"}
+          </p>
+          
+          {/* CTA Button */}
+          <button 
+            className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-80 transition-all"
+            style={{
+              fontFamily: element.props?.buttonFontFamily || "inherit",
+              fontSize: element.props?.buttonFontSize || "14px",
+              fontWeight: element.props?.buttonFontWeight || "500",
+              backgroundColor: element.props?.buttonBgColor || "var(--color-background)",
+              color: element.props?.buttonTextColor || "var(--color-primary)"
+            }}
+          >
+            {element.props?.buttonText || "Get Started"}
           </button>
         </div>
       </div>
@@ -6608,14 +6876,54 @@ export function Canvas({
     {element.type === "hero" && (
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full flex flex-col items-center justify-center text-center">
-          <h1 className="text-2xl font-bold mb-3">Welcome to Our Platform</h1>
-          <p className="text-sm mb-6 opacity-80 max-w-md">Build amazing websites with our drag-and-drop builder. No coding required.</p>
+          <h1 
+            className="mb-3"
+            style={{
+              fontFamily: element.props?.titleFontFamily || 'Inter',
+              fontSize: `${element.props?.titleFontSize || 24}px`,
+              fontWeight: element.props?.titleFontWeight || '700',
+              color: element.props?.titleColor || '#ffffff'
+            }}
+          >
+            {element.props?.title || "Welcome to Our Platform"}
+          </h1>
+          <p 
+            className="mb-6 max-w-md"
+            style={{
+              fontFamily: element.props?.descriptionFontFamily || 'Inter',
+              fontSize: `${element.props?.descriptionFontSize || 14}px`,
+              fontWeight: element.props?.descriptionFontWeight || '400',
+              color: element.props?.descriptionColor || '#ffffff',
+              opacity: 0.8
+            }}
+          >
+            {element.props?.description || "Build amazing websites with our drag-and-drop builder. No coding required."}
+          </p>
           <div className="flex gap-3">
-            <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-              Get Started
+            <button 
+              className="px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+              style={{
+                fontFamily: element.props?.primaryButtonFontFamily || 'Inter',
+                fontSize: `${element.props?.primaryButtonFontSize || 14}px`,
+                fontWeight: element.props?.primaryButtonFontWeight || '500',
+                backgroundColor: element.props?.primaryButtonBgColor || 'var(--color-primary)',
+                color: element.props?.primaryButtonTextColor || '#ffffff'
+              }}
+            >
+              {element.props?.primaryButtonText || "Get Started"}
             </button>
-            <button className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors">
-              Learn More
+            <button 
+              className="px-4 py-2 rounded-lg transition-colors"
+              style={{
+                fontFamily: element.props?.secondaryButtonFontFamily || 'Inter',
+                fontSize: `${element.props?.secondaryButtonFontSize || 14}px`,
+                fontWeight: element.props?.secondaryButtonFontWeight || '500',
+                backgroundColor: element.props?.secondaryButtonBgColor || 'transparent',
+                color: element.props?.secondaryButtonTextColor || '#ffffff',
+                border: `1px solid ${element.props?.secondaryButtonBorderColor || 'var(--color-border)'}`
+              }}
+            >
+              {element.props?.secondaryButtonText || "Learn More"}
             </button>
           </div>
         </div>
@@ -6624,17 +6932,59 @@ export function Canvas({
     {element.type === "about" && (
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-3">
-          <h3 className="text-lg font-bold">{element.content}</h3>
-          <p className="text-sm opacity-80">We are a team of passionate developers and designers creating amazing digital experiences.</p>
+          <h3 
+            style={{
+              fontFamily: element.props?.titleFontFamily || 'Inter',
+              fontSize: `${element.props?.titleFontSize || 18}px`,
+              fontWeight: element.props?.titleFontWeight || '700',
+              color: element.props?.titleColor || '#ffffff'
+            }}
+          >
+            {element.props?.title || "About Us"}
+          </h3>
+          <p 
+            style={{
+              fontFamily: element.props?.descriptionFontFamily || 'Inter',
+              fontSize: `${element.props?.descriptionFontSize || 14}px`,
+              fontWeight: element.props?.descriptionFontWeight || '400',
+              color: element.props?.descriptionColor || '#ffffff',
+              opacity: 0.8
+            }}
+          >
+            {element.props?.description || "We are a team of passionate developers and designers creating amazing digital experiences."}
+          </p>
           <div className="grid grid-cols-2 gap-2 mt-4">
-            <div className="text-center">
-              <div className="text-lg font-bold text-primary">100+</div>
-              <div className="text-xs text-muted-foreground">Projects</div>
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-bold text-primary">50+</div>
-              <div className="text-xs text-muted-foreground">Clients</div>
-            </div>
+            {(() => {
+              const defaultStats = [
+                { value: '100+', label: 'Projects' },
+                { value: '50+', label: 'Clients' }
+              ]
+              const stats = element.props?.statsArray || defaultStats
+              return stats.map((stat: any, index: number) => (
+                <div key={index} className="text-center">
+                  <div 
+                    style={{
+                      fontFamily: element.props?.statValueFontFamily || 'Inter',
+                      fontSize: `${element.props?.statValueFontSize || 18}px`,
+                      fontWeight: element.props?.statValueFontWeight || '700',
+                      color: element.props?.statValueColor || 'var(--color-primary)'
+                    }}
+                  >
+                    {stat.value}
+                  </div>
+                  <div 
+                    style={{
+                      fontFamily: element.props?.statLabelFontFamily || 'Inter',
+                      fontSize: `${element.props?.statLabelFontSize || 12}px`,
+                      fontWeight: element.props?.statLabelFontWeight || '400',
+                      color: element.props?.statLabelColor || '#a1a1aa'
+                    }}
+                  >
+                    {stat.label}
+                  </div>
+                </div>
+              ))
+            })()}
           </div>
         </div>
       </div>
