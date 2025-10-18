@@ -52,10 +52,10 @@ const parseMarkdown = (text: string) => {
 }
 
 // Components that should fill the entire box without padding
-const NO_PADDING_COMPONENTS: ReadonlySet<BuilderElement["type"]> = new Set([
-  "video",
-  "image",
-])
+// const NO_PADDING_COMPONENTS: ReadonlySet<BuilderElement["type"]> = new Set([
+//   "video",
+//   "image",
+// ])
 
 // Counter Component with Animation
 function CounterComponent({ element, currentBreakpoint }: { element: BuilderElement, currentBreakpoint: Breakpoint }) {
@@ -2601,7 +2601,7 @@ export function Canvas({
         <div 
           className={`w-full h-full ${element.type === 'select' && element.props?.previewMode ? 'overflow-visible' : 'overflow-hidden'}`}
           style={{
-            padding: NO_PADDING_COMPONENTS.has(element.type) ? 0 : '0.5rem'
+            padding: 0
           }}
         >
           {element.type === "heading" && (
@@ -6417,10 +6417,11 @@ export function Canvas({
       </div>
     )}
     {element.type === "spacer" && (
-      <div className="w-full h-full bg-transparent" style={elementStyles}>
-        <div className="w-full h-full bg-muted/20 border border-dashed border-border rounded flex items-center justify-center">
-          <span className="text-xs text-muted-foreground">Spacer</span>
-        </div>
+      <div 
+        className="w-full h-full bg-muted/20 border border-dashed border-border rounded flex items-center justify-center" 
+        style={elementStyles}
+      >
+        <span className="text-xs text-muted-foreground">Spacer</span>
       </div>
     )}
     {element.type === "container" && (
@@ -6445,16 +6446,25 @@ export function Canvas({
     )}
     {element.type === "flexbox" && (
       <div className="w-full h-full" style={elementStyles}>
-        <div className="w-full h-full flex items-center justify-center gap-2">
-          <div className="w-8 h-8 bg-primary/20 rounded flex items-center justify-center">
-            <span className="text-xs">1</span>
-          </div>
-          <div className="w-8 h-8 bg-primary/20 rounded flex items-center justify-center">
-            <span className="text-xs">2</span>
-          </div>
-          <div className="w-8 h-8 bg-primary/20 rounded flex items-center justify-center">
-            <span className="text-xs">3</span>
-          </div>
+        <div 
+          className="w-full h-full flex"
+          style={{
+            flexDirection: element.props?.flexDirection || "row",
+            justifyContent: element.props?.justifyContent || "center",
+            alignItems: element.props?.alignItems || "center",
+            gap: `${element.props?.gap || 8}px`,
+            flexWrap: element.props?.flexWrap || "nowrap"
+          }}
+        >
+          {(element.props?.items || [
+            { id: "1", text: "Item 1", type: "box" },
+            { id: "2", text: "Item 2", type: "box" },
+            { id: "3", text: "Item 3", type: "box" }
+          ]).map((item: any) => (
+            <div key={item.id} className="w-8 h-8 bg-primary/20 rounded flex items-center justify-center">
+              <span className="text-xs">{item.text}</span>
+            </div>
+          ))}
         </div>
       </div>
     )}
@@ -6488,16 +6498,33 @@ export function Canvas({
     )}
     {element.type === "stack" && (
       <div className="w-full h-full" style={elementStyles}>
-        <div className="w-full h-full flex flex-col gap-2">
-          <div className="bg-primary/20 rounded p-2 text-center">
-            <span className="text-xs">Stack Item 1</span>
-          </div>
-          <div className="bg-primary/20 rounded p-2 text-center">
-            <span className="text-xs">Stack Item 2</span>
-          </div>
-          <div className="bg-primary/20 rounded p-2 text-center">
-            <span className="text-xs">Stack Item 3</span>
-          </div>
+        <div 
+          className="w-full h-full flex flex-col"
+          style={{
+            gap: `${element.props?.gap || 8}px`
+          }}
+        >
+          {(element.props?.items || [
+            { id: "1", text: "Stack Item 1" },
+            { id: "2", text: "Stack Item 2" },
+            { id: "3", text: "Stack Item 3" }
+          ]).map((item: any) => (
+            <div 
+              key={item.id} 
+              className="rounded p-2 text-center"
+              style={{
+                backgroundColor: element.props?.backgroundColor ? 
+                  `${element.props.backgroundColor}${Math.round((element.props?.backgroundOpacity || 20) * 2.55).toString(16).padStart(2, '0')}` : 
+                  'rgba(59, 130, 246, 0.2)',
+                fontFamily: element.props?.fontFamily || 'inherit',
+                fontSize: `${element.props?.fontSize || 12}px`,
+                fontWeight: element.props?.fontWeight || '400',
+                color: element.props?.textColor || '#ffffff'
+              }}
+            >
+              <span>{item.text}</span>
+            </div>
+          ))}
         </div>
       </div>
     )}

@@ -11,29 +11,29 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import type { Breakpoint, BuilderElement } from "@/lib/builder-types"
 import {
-  AlertCircle,
-  AlignCenter,
-  AlignJustify,
-  AlignLeft,
-  AlignRight,
-  Bell,
-  FolderIcon as BorderIcon,
-  Check,
-  Circle,
-  Code,
-  ImageIcon,
-  Layout,
-  Monitor,
-  Palette,
-  Plus,
-  Settings,
-  Shapes as Shadow,
-  Smartphone,
-  Tablet,
-  Trash2,
-  Type,
-  X,
-  Zap
+    AlertCircle,
+    AlignCenter,
+    AlignJustify,
+    AlignLeft,
+    AlignRight,
+    Bell,
+    FolderIcon as BorderIcon,
+    Check,
+    Circle,
+    Code,
+    ImageIcon,
+    Layout,
+    Monitor,
+    Palette,
+    Plus,
+    Settings,
+    Shapes as Shadow,
+    Smartphone,
+    Tablet,
+    Trash2,
+    Type,
+    X,
+    Zap
 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 
@@ -6133,6 +6133,260 @@ export function PropertiesPanel({
                       </Select>
                     </div>
                   </div>
+                ) : selectedElement.type === "stack" ? (
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                        <Layout className="w-4 h-4" />
+                        Stack Items
+                      </Label>
+                      <div className="space-y-3">
+                        {(selectedElement.props?.items || [
+                          { id: "1", text: "Stack Item 1" },
+                          { id: "2", text: "Stack Item 2" },
+                          { id: "3", text: "Stack Item 3" }
+                        ]).map((item: any, index: number) => (
+                          <div key={item.id} className="flex items-center gap-2 p-2 bg-sidebar-accent rounded border border-sidebar-border">
+                            <div className="flex-1">
+                              <Input
+                                value={item.text}
+                                onChange={(e) => {
+                                  const newItems = [...(selectedElement.props?.items || [
+                                    { id: "1", text: "Stack Item 1" },
+                                    { id: "2", text: "Stack Item 2" },
+                                    { id: "3", text: "Stack Item 3" }
+                                  ])]
+                                  newItems[index].text = e.target.value
+                                  updateElementProps({ items: newItems })
+                                }}
+                                className="bg-background border-border text-xs"
+                                placeholder="Stack item text"
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newItems = [...(selectedElement.props?.items || [
+                                  { id: "1", text: "Stack Item 1" },
+                                  { id: "2", text: "Stack Item 2" },
+                                  { id: "3", text: "Stack Item 3" }
+                                ])]
+                                newItems.splice(index, 1)
+                                updateElementProps({ items: newItems })
+                              }}
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const currentItems = selectedElement.props?.items || [
+                              { id: "1", text: "Stack Item 1" },
+                              { id: "2", text: "Stack Item 2" },
+                              { id: "3", text: "Stack Item 3" }
+                            ]
+                            const newItem = {
+                              id: Date.now().toString(),
+                              text: `Stack Item ${currentItems.length + 1}`
+                            }
+                            updateElementProps({ items: [...currentItems, newItem] })
+                          }}
+                          className="w-full"
+                        >
+                          <Plus className="w-3 h-3 mr-1" />
+                          Add Item
+                        </Button>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Gap (px)</Label>
+                      <Slider
+                        value={[selectedElement.props?.gap || 8]}
+                        onValueChange={([value]) => updateElementProps({ gap: value })}
+                        max={50}
+                        min={0}
+                        step={2}
+                        className="mt-2"
+                      />
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {selectedElement.props?.gap || 8}px
+                      </div>
+                    </div>
+                  </div>
+                ) : selectedElement.type === "flexbox" ? (
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                        <Layout className="w-4 h-4" />
+                        Flexbox Layout
+                      </Label>
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Flex Direction</Label>
+                          <Select
+                            value={selectedElement.props?.flexDirection || "row"}
+                            onValueChange={(value) => updateElementProps({ flexDirection: value })}
+                          >
+                            <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="row">Row (Horizontal)</SelectItem>
+                              <SelectItem value="column">Column (Vertical)</SelectItem>
+                              <SelectItem value="row-reverse">Row Reverse</SelectItem>
+                              <SelectItem value="column-reverse">Column Reverse</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Justify Content</Label>
+                          <Select
+                            value={selectedElement.props?.justifyContent || "center"}
+                            onValueChange={(value) => updateElementProps({ justifyContent: value })}
+                          >
+                            <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="flex-start">Start</SelectItem>
+                              <SelectItem value="center">Center</SelectItem>
+                              <SelectItem value="flex-end">End</SelectItem>
+                              <SelectItem value="space-between">Space Between</SelectItem>
+                              <SelectItem value="space-around">Space Around</SelectItem>
+                              <SelectItem value="space-evenly">Space Evenly</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Align Items</Label>
+                          <Select
+                            value={selectedElement.props?.alignItems || "center"}
+                            onValueChange={(value) => updateElementProps({ alignItems: value })}
+                          >
+                            <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="flex-start">Start</SelectItem>
+                              <SelectItem value="center">Center</SelectItem>
+                              <SelectItem value="flex-end">End</SelectItem>
+                              <SelectItem value="stretch">Stretch</SelectItem>
+                              <SelectItem value="baseline">Baseline</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Gap (px)</Label>
+                          <Slider
+                            value={[selectedElement.props?.gap || 8]}
+                            onValueChange={([value]) => updateElementProps({ gap: value })}
+                            max={50}
+                            min={0}
+                            step={2}
+                            className="mt-2"
+                          />
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {selectedElement.props?.gap || 8}px
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Wrap</Label>
+                          <Select
+                            value={selectedElement.props?.flexWrap || "nowrap"}
+                            onValueChange={(value) => updateElementProps({ flexWrap: value })}
+                          >
+                            <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="nowrap">No Wrap</SelectItem>
+                              <SelectItem value="wrap">Wrap</SelectItem>
+                              <SelectItem value="wrap-reverse">Wrap Reverse</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                    <Separator className="bg-sidebar-border" />
+                    <div>
+                      <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                        <Plus className="w-4 h-4" />
+                        Flexbox Items
+                      </Label>
+                      <div className="space-y-3">
+                        {(selectedElement.props?.items || [
+                          { id: "1", text: "Item 1", type: "box" },
+                          { id: "2", text: "Item 2", type: "box" },
+                          { id: "3", text: "Item 3", type: "box" }
+                        ]).map((item: any, index: number) => (
+                          <div key={item.id} className="flex items-center gap-2 p-2 bg-sidebar-accent rounded border border-sidebar-border">
+                            <div className="flex-1">
+                              <Input
+                                value={item.text}
+                                onChange={(e) => {
+                                  const newItems = [...(selectedElement.props?.items || [
+                                    { id: "1", text: "Item 1", type: "box" },
+                                    { id: "2", text: "Item 2", type: "box" },
+                                    { id: "3", text: "Item 3", type: "box" }
+                                  ])]
+                                  newItems[index].text = e.target.value
+                                  updateElementProps({ items: newItems })
+                                }}
+                                className="bg-background border-border text-xs"
+                                placeholder="Item text"
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newItems = [...(selectedElement.props?.items || [
+                                  { id: "1", text: "Item 1", type: "box" },
+                                  { id: "2", text: "Item 2", type: "box" },
+                                  { id: "3", text: "Item 3", type: "box" }
+                                ])]
+                                newItems.splice(index, 1)
+                                updateElementProps({ items: newItems })
+                              }}
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const currentItems = selectedElement.props?.items || [
+                              { id: "1", text: "Item 1", type: "box" },
+                              { id: "2", text: "Item 2", type: "box" },
+                              { id: "3", text: "Item 3", type: "box" }
+                            ]
+                            const newItem = {
+                              id: Date.now().toString(),
+                              text: `Item ${currentItems.length + 1}`,
+                              type: "box"
+                            }
+                            updateElementProps({ items: [...currentItems, newItem] })
+                          }}
+                          className="w-full"
+                        >
+                          <Plus className="w-3 h-3 mr-1" />
+                          Add Item
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <Textarea
                     placeholder="Enter content..."
@@ -6148,6 +6402,139 @@ export function PropertiesPanel({
           {/* Style Tab */}
           {activeTab === "style" && (
             <>
+              {/* Typography for Stack */}
+              {selectedElement.type === "stack" && (
+                <>
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Type className="w-4 h-4" />
+                      Stack Item Typography
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Family</Label>
+                        <Select
+                          value={selectedElement.props?.fontFamily || "inherit"}
+                          onValueChange={(value) => updateElementProps({ fontFamily: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="inherit">Default</SelectItem>
+                            <SelectItem value="'Inter', sans-serif">Inter</SelectItem>
+                            <SelectItem value="'Roboto', sans-serif">Roboto</SelectItem>
+                            <SelectItem value="'Open Sans', sans-serif">Open Sans</SelectItem>
+                            <SelectItem value="'Lato', sans-serif">Lato</SelectItem>
+                            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+                            <SelectItem value="'Poppins', sans-serif">Poppins</SelectItem>
+                            <SelectItem value="'Arial', sans-serif">Arial</SelectItem>
+                            <SelectItem value="'Helvetica', sans-serif">Helvetica</SelectItem>
+                            <SelectItem value="'Verdana', sans-serif">Verdana</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Size (px)</Label>
+                        <Slider
+                          value={[selectedElement.props?.fontSize || 12]}
+                          onValueChange={([value]) => updateElementProps({ fontSize: value })}
+                          max={24}
+                          min={8}
+                          step={1}
+                          className="mt-2"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedElement.props?.fontSize || 12}px
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                        <Select
+                          value={selectedElement.props?.fontWeight || "400"}
+                          onValueChange={(value) => updateElementProps({ fontWeight: value })}
+                        >
+                          <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="300">Light (300)</SelectItem>
+                            <SelectItem value="400">Normal (400)</SelectItem>
+                            <SelectItem value="500">Medium (500)</SelectItem>
+                            <SelectItem value="600">Semibold (600)</SelectItem>
+                            <SelectItem value="700">Bold (700)</SelectItem>
+                            <SelectItem value="800">Extra Bold (800)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Text Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.textColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ textColor: e.target.value })}
+                            onInput={(e) => updateElementProps({ textColor: (e.target as HTMLInputElement).value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.textColor || "#ffffff"}
+                            onChange={(e) => updateElementProps({ textColor: e.target.value })}
+                            placeholder="#ffffff"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Palette className="w-4 h-4" />
+                      Stack Item Background
+                    </Label>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Background Color</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input
+                            type="color"
+                            value={selectedElement.props?.backgroundColor || "#3b82f6"}
+                            onChange={(e) => updateElementProps({ backgroundColor: e.target.value })}
+                            onInput={(e) => updateElementProps({ backgroundColor: (e.target as HTMLInputElement).value })}
+                            className="w-12 h-8 bg-sidebar-accent border-sidebar-border p-1"
+                          />
+                          <Input
+                            value={selectedElement.props?.backgroundColor || "#3b82f6"}
+                            onChange={(e) => updateElementProps({ backgroundColor: e.target.value })}
+                            placeholder="#3b82f6"
+                            className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Background Opacity (%)</Label>
+                        <Slider
+                          value={[selectedElement.props?.backgroundOpacity || 20]}
+                          onValueChange={([value]) => updateElementProps({ backgroundOpacity: value })}
+                          max={100}
+                          min={0}
+                          step={5}
+                          className="mt-2"
+                        />
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedElement.props?.backgroundOpacity || 20}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-sidebar-border" />
+                </>
+              )}
+
               {/* Typography for Product Card */}
               {selectedElement.type === "product-card" && (
                 <>
@@ -19607,8 +19994,8 @@ export function PropertiesPanel({
                       Colors
                     </Label>
                     <div className="space-y-3">
-                      {/* Hide Text Color for tooltip, dropdown, tabs, table, progress, timeline, stats, counter, input, textarea, checkbox, radio, switch, select, form, contact-form, product-card, price, rating, contact-info, newsletter, team, testimonial, map, calendar, search-bar, filter, breadcrumb, pagination, alert, toast, code-block, markdown, rich-text, typography, link, tag, label, file-upload, file-download, and loading, pricing-table, feature-list, faq, blog-post, case-study, cta, hero, about */}
-                      {selectedElement.type !== "tooltip" && selectedElement.type !== "dropdown" && selectedElement.type !== "tabs" && selectedElement.type !== "table" && selectedElement.type !== "progress" && selectedElement.type !== "timeline" && selectedElement.type !== "stats" && selectedElement.type !== "counter" && selectedElement.type !== "input" && selectedElement.type !== "textarea" && selectedElement.type !== "checkbox" && selectedElement.type !== "radio" && selectedElement.type !== "switch" && selectedElement.type !== "select" && selectedElement.type !== "form" && selectedElement.type !== "contact-form" && selectedElement.type !== "product-card" && selectedElement.type !== "price" && selectedElement.type !== "rating" && selectedElement.type !== "contact-info" && selectedElement.type !== "newsletter" && selectedElement.type !== "team" && selectedElement.type !== "testimonial" && selectedElement.type !== "map" && selectedElement.type !== "calendar" && selectedElement.type !== "search-bar" && selectedElement.type !== "filter" && selectedElement.type !== "breadcrumb" && selectedElement.type !== "pagination" && selectedElement.type !== "alert" && selectedElement.type !== "toast" && selectedElement.type !== "code-block" && selectedElement.type !== "markdown" && selectedElement.type !== "rich-text" && selectedElement.type !== "typography" && selectedElement.type !== "link" && selectedElement.type !== "tag" && selectedElement.type !== "label" && selectedElement.type !== "file-upload" && selectedElement.type !== "file-download" && selectedElement.type !== "pdf-viewer" && selectedElement.type !== "document" && selectedElement.type !== "folder" && selectedElement.type !== "loading" && selectedElement.type !== "pricing-table" && selectedElement.type !== "feature-list" && selectedElement.type !== "faq" && selectedElement.type !== "blog-post" && selectedElement.type !== "case-study" && selectedElement.type !== "cta" && selectedElement.type !== "hero" && selectedElement.type !== "about" && (
+                      {/* Hide Text Color for tooltip, dropdown, tabs, table, progress, timeline, stats, counter, input, textarea, checkbox, radio, switch, select, form, contact-form, product-card, price, rating, contact-info, newsletter, team, testimonial, map, calendar, search-bar, filter, breadcrumb, pagination, alert, toast, code-block, markdown, rich-text, typography, link, tag, label, file-upload, file-download, and loading, pricing-table, feature-list, faq, blog-post, case-study, cta, hero, about, stack */}
+                      {selectedElement.type !== "tooltip" && selectedElement.type !== "dropdown" && selectedElement.type !== "tabs" && selectedElement.type !== "table" && selectedElement.type !== "progress" && selectedElement.type !== "timeline" && selectedElement.type !== "stats" && selectedElement.type !== "counter" && selectedElement.type !== "input" && selectedElement.type !== "textarea" && selectedElement.type !== "checkbox" && selectedElement.type !== "radio" && selectedElement.type !== "switch" && selectedElement.type !== "select" && selectedElement.type !== "form" && selectedElement.type !== "contact-form" && selectedElement.type !== "product-card" && selectedElement.type !== "price" && selectedElement.type !== "rating" && selectedElement.type !== "contact-info" && selectedElement.type !== "newsletter" && selectedElement.type !== "team" && selectedElement.type !== "testimonial" && selectedElement.type !== "map" && selectedElement.type !== "calendar" && selectedElement.type !== "search-bar" && selectedElement.type !== "filter" && selectedElement.type !== "breadcrumb" && selectedElement.type !== "pagination" && selectedElement.type !== "alert" && selectedElement.type !== "toast" && selectedElement.type !== "code-block" && selectedElement.type !== "markdown" && selectedElement.type !== "rich-text" && selectedElement.type !== "typography" && selectedElement.type !== "link" && selectedElement.type !== "tag" && selectedElement.type !== "label" && selectedElement.type !== "file-upload" && selectedElement.type !== "file-download" && selectedElement.type !== "pdf-viewer" && selectedElement.type !== "document" && selectedElement.type !== "folder" && selectedElement.type !== "loading" && selectedElement.type !== "pricing-table" && selectedElement.type !== "feature-list" && selectedElement.type !== "faq" && selectedElement.type !== "blog-post" && selectedElement.type !== "case-study" && selectedElement.type !== "cta" && selectedElement.type !== "hero" && selectedElement.type !== "about" && selectedElement.type !== "stack" && (
                         <div>
                           <Label className="text-xs text-muted-foreground">Text Color</Label>
                           <div className="flex gap-2 mt-1">
