@@ -24,7 +24,7 @@ export default function SignInPage() {
               footerActionLink: 'text-primary hover:text-primary/90'
             }
           }}
-          afterSignInUrl="/"
+          fallbackRedirectUrl="/"
           redirectUrl="/"
         />
       </div>

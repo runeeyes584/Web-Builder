@@ -1974,49 +1974,49 @@ export function Canvas({
         content: "Newsletter Signup",
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
-        position: { x: 100, y: 100, width: 250, height: 120 },
+        position: { x: 100, y: 100, width: 400, height: 180 },
         animations: { type: "fadeIn", duration: 500, delay: 100 },
       },
       "login-form": {
         content: "Login Form",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
-        position: { x: 100, y: 100, width: 250, height: 200 },
+        position: { x: 100, y: 100, width: 350, height: 280 },
         animations: { type: "fadeIn", duration: 600, delay: 200 },
       },
       "registration-form": {
         content: "Registration Form",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
-        position: { x: 100, y: 100, width: 300, height: 300 },
+        position: { x: 100, y: 100, width: 350, height: 320 },
         animations: { type: "fadeIn", duration: 600, delay: 200 },
       },
       "survey-form": {
         content: "Survey Form",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
-        position: { x: 100, y: 100, width: 300, height: 250 },
+        position: { x: 100, y: 100, width: 350, height: 310 },
         animations: { type: "fadeIn", duration: 600, delay: 200 },
       },
       "order-form": {
         content: "Order Form",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
-        position: { x: 100, y: 100, width: 300, height: 200 },
+        position: { x: 100, y: 100, width: 350, height: 270 },
         animations: { type: "fadeIn", duration: 600, delay: 200 },
       },
       "booking-form": {
         content: "Booking Form",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
-        position: { x: 100, y: 100, width: 300, height: 250 },
+        position: { x: 100, y: 100, width: 350, height: 280 },
         animations: { type: "fadeIn", duration: 600, delay: 200 },
       },
       "feedback-form": {
         content: "Feedback Form",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
-        position: { x: 100, y: 100, width: 300, height: 200 },
+        position: { x: 100, y: 100, width: 350, height: 270 },
         animations: { type: "fadeIn", duration: 600, delay: 200 },
       },
     }
@@ -2099,11 +2099,14 @@ export function Canvas({
 
   const getFormInputStyles = (element: BuilderElement) => {
     const baseStyles = {
+      fontFamily: element.props?.inputFontFamily || 'inherit',
       padding: element.props?.inputPadding || '8px 12px',
       fontSize: element.props?.inputFontSize || '12px',
+      fontWeight: element.props?.inputFontWeight || '400',
       borderRadius: element.props?.inputBorderRadius || '4px',
       borderColor: element.props?.inputBorderColor || '#374151',
-      backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
+      backgroundColor: element.props?.inputBackgroundColor || '#1f2937',
+      color: element.props?.inputTextColor || '#ffffff'
     }
     
     // Only apply scaling if autoScale is enabled
@@ -2130,8 +2133,10 @@ export function Canvas({
 
   const getFormButtonStyles = (element: BuilderElement) => {
     const baseStyles = {
+      fontFamily: element.props?.buttonFontFamily || 'inherit',
       padding: element.props?.buttonPadding || '8px 12px',
       fontSize: element.props?.buttonFontSize || '12px',
+      fontWeight: element.props?.buttonFontWeight || '400',
       borderRadius: element.props?.buttonBorderRadius || '4px',
       backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
       color: element.props?.buttonTextColor || '#ffffff',
@@ -7032,11 +7037,13 @@ export function Canvas({
     )}
     {element.type === "newsletter-signup" && (
       <div className="w-full h-full" style={elementStyles}>
-        <div className="w-full h-full flex flex-col items-center justify-center text-center space-y-3">
+        <div className="w-full h-full flex flex-col items-center justify-center space-y-3">
           <h3 
-            className="font-medium" 
+            className="w-full" 
             style={{
+              fontFamily: element.props?.titleFontFamily || 'inherit',
               fontSize: element.props?.titleFontSize || '14px',
+              fontWeight: element.props?.titleFontWeight || '500',
               textAlign: element.props?.titleAlign || 'center',
               color: element.props?.titleColor || '#ffffff'
             }}
@@ -7044,10 +7051,13 @@ export function Canvas({
             {element.content}
           </h3>
           <p 
-            className="text-muted-foreground" 
+            className="w-full" 
             style={{
+              fontFamily: element.props?.descriptionFontFamily || 'inherit',
               fontSize: element.props?.descriptionFontSize || '12px',
-              color: element.props?.descriptionColor || '#9ca3af'
+              fontWeight: element.props?.descriptionFontWeight || '400',
+              color: element.props?.descriptionColor || '#9ca3af',
+              textAlign: element.props?.titleAlign || 'center'
             }}
           >
             {element.props?.description || "Stay updated with our latest news"}
@@ -7055,7 +7065,7 @@ export function Canvas({
           <div className="flex gap-2 w-full">
             <input 
               type="email" 
-              placeholder="Enter email" 
+              placeholder={element.props?.emailPlaceholder || "Enter email"}
               className="flex-1 border" 
               style={{
                 padding: element.props?.inputPadding || '8px 12px',
@@ -7088,9 +7098,11 @@ export function Canvas({
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-3">
           <h3 
-            className="font-medium" 
+            className="w-full" 
             style={{
+              fontFamily: element.props?.titleFontFamily || 'inherit',
               fontSize: element.props?.titleFontSize || '14px',
+              fontWeight: element.props?.titleFontWeight || '500',
               textAlign: element.props?.titleAlign || 'left',
               color: element.props?.titleColor || '#ffffff'
             }}
@@ -7100,13 +7112,13 @@ export function Canvas({
           <div className="space-y-2">
             <input 
               type="email" 
-              placeholder="Email" 
+              placeholder={element.props?.emailPlaceholder || "Email"}
               className="w-full border" 
               style={getFormInputStyles(element)}
             />
             <input 
               type="password" 
-              placeholder="Password" 
+              placeholder={element.props?.passwordPlaceholder || "Password"}
               className="w-full border" 
               style={getFormInputStyles(element)}
             />
@@ -7125,9 +7137,11 @@ export function Canvas({
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-2">
           <h3 
-            className="font-medium" 
+            className="w-full" 
             style={{
+              fontFamily: element.props?.titleFontFamily || 'inherit',
               fontSize: element.props?.titleFontSize || '14px',
+              fontWeight: element.props?.titleFontWeight || '500',
               textAlign: element.props?.titleAlign || 'left',
               color: element.props?.titleColor || '#ffffff'
             }}
@@ -7135,10 +7149,10 @@ export function Canvas({
             {element.content}
           </h3>
           <div className="space-y-1">
-            <input type="text" placeholder="Full Name" className="w-full border" style={getFormInputStyles(element)} />
-            <input type="email" placeholder="Email" className="w-full border" style={getFormInputStyles(element)} />
-            <input type="password" placeholder="Password" className="w-full border" style={getFormInputStyles(element)} />
-            <input type="password" placeholder="Confirm Password" className="w-full border" style={getFormInputStyles(element)} />
+            <input type="text" placeholder={element.props?.fullNamePlaceholder || "Full Name"} className="w-full border" style={getFormInputStyles(element)} />
+            <input type="email" placeholder={element.props?.emailPlaceholder || "Email"} className="w-full border" style={getFormInputStyles(element)} />
+            <input type="password" placeholder={element.props?.passwordPlaceholder || "Password"} className="w-full border" style={getFormInputStyles(element)} />
+            <input type="password" placeholder={element.props?.confirmPasswordPlaceholder || "Confirm Password"} className="w-full border" style={getFormInputStyles(element)} />
             <button className="w-full rounded" style={getFormButtonStyles(element)}>
               {element.props?.submitText || "Register"}
             </button>
@@ -7150,9 +7164,11 @@ export function Canvas({
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-3">
           <h3 
-            className="font-medium" 
+            className="w-full" 
             style={{
+              fontFamily: element.props?.titleFontFamily || 'inherit',
               fontSize: element.props?.titleFontSize || '14px',
+              fontWeight: element.props?.titleFontWeight || '500',
               textAlign: element.props?.titleAlign || 'left',
               color: element.props?.titleColor || '#ffffff'
             }}
@@ -7163,7 +7179,9 @@ export function Canvas({
             <div 
               className="font-medium" 
               style={{
+                fontFamily: element.props?.questionFontFamily || 'inherit',
                 fontSize: element.props?.questionFontSize || '12px',
+                fontWeight: element.props?.questionFontWeight || '500',
                 color: element.props?.questionColor || '#ffffff'
               }}
             >
@@ -7175,9 +7193,11 @@ export function Canvas({
                   key={i} 
                   className="border rounded hover:bg-muted" 
                   style={{
+                    fontFamily: element.props?.ratingButtonFontFamily || 'inherit',
                     width: element.props?.ratingButtonSize || '24px',
                     height: element.props?.ratingButtonSize || '24px',
                     fontSize: element.props?.ratingButtonFontSize || '12px',
+                    fontWeight: element.props?.ratingButtonFontWeight || '400',
                     borderColor: element.props?.ratingButtonBorderColor || '#374151',
                     backgroundColor: element.props?.ratingButtonBackgroundColor || '#1f2937',
                     color: element.props?.ratingButtonTextColor || '#ffffff'
@@ -7188,11 +7208,13 @@ export function Canvas({
               ))}
             </div>
             <textarea 
-              placeholder="Additional comments" 
+              placeholder={element.props?.commentsPlaceholder || "Additional comments"} 
               className="w-full border resize-none" 
               style={{
+                fontFamily: element.props?.textareaFontFamily || 'inherit',
                 padding: element.props?.textareaPadding || '8px 12px',
                 fontSize: element.props?.textareaFontSize || '12px',
+                fontWeight: element.props?.textareaFontWeight || '400',
                 borderRadius: element.props?.textareaBorderRadius || '4px',
                 borderColor: element.props?.textareaBorderColor || '#374151',
                 backgroundColor: element.props?.textareaBackgroundColor || '#1f2937',
@@ -7214,9 +7236,11 @@ export function Canvas({
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-3">
           <h3 
-            className="font-medium" 
+            className="w-full" 
             style={{
+              fontFamily: element.props?.titleFontFamily || 'inherit',
               fontSize: element.props?.titleFontSize || '14px',
+              fontWeight: element.props?.titleFontWeight || '500',
               textAlign: element.props?.titleAlign || 'left',
               color: element.props?.titleColor || '#ffffff'
             }}
@@ -7226,19 +7250,19 @@ export function Canvas({
           <div className="space-y-2">
             <input 
               type="text" 
-              placeholder="Product Name" 
+              placeholder={element.props?.productPlaceholder || "Product Name"} 
               className="w-full border" 
               style={getFormInputStyles(element)}
             />
             <input 
               type="number" 
-              placeholder="Quantity" 
+              placeholder={element.props?.quantityPlaceholder || "Quantity"} 
               className="w-full border" 
               style={getFormInputStyles(element)}
             />
             <input 
               type="text" 
-              placeholder="Shipping Address" 
+              placeholder={element.props?.addressPlaceholder || "Shipping Address"} 
               className="w-full border" 
               style={getFormInputStyles(element)}
             />
@@ -7256,9 +7280,11 @@ export function Canvas({
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-3">
           <h3 
-            className="font-medium" 
+            className="w-full" 
             style={{
+              fontFamily: element.props?.titleFontFamily || 'inherit',
               fontSize: element.props?.titleFontSize || '14px',
+              fontWeight: element.props?.titleFontWeight || '500',
               textAlign: element.props?.titleAlign || 'left',
               color: element.props?.titleColor || '#ffffff'
             }}
@@ -7268,7 +7294,7 @@ export function Canvas({
           <div className="space-y-2">
             <input 
               type="text" 
-              placeholder="Service" 
+              placeholder={element.props?.servicePlaceholder || "Service"} 
               className="w-full border" 
               style={getFormInputStyles(element)}
             />
@@ -7296,9 +7322,11 @@ export function Canvas({
       <div className="w-full h-full" style={elementStyles}>
         <div className="w-full h-full space-y-3">
           <h3 
-            className="font-medium" 
+            className="w-full" 
             style={{
+              fontFamily: element.props?.titleFontFamily || 'inherit',
               fontSize: element.props?.titleFontSize || '14px',
+              fontWeight: element.props?.titleFontWeight || '500',
               textAlign: element.props?.titleAlign || 'left',
               color: element.props?.titleColor || '#ffffff'
             }}
@@ -7309,8 +7337,10 @@ export function Canvas({
             <select 
               className="w-full border" 
               style={{
+                fontFamily: element.props?.selectFontFamily || 'inherit',
                 padding: element.props?.selectPadding || '8px 12px',
                 fontSize: element.props?.selectFontSize || '12px',
+                fontWeight: element.props?.selectFontWeight || '400',
                 borderRadius: element.props?.selectBorderRadius || '4px',
                 borderColor: element.props?.selectBorderColor || '#374151',
                 backgroundColor: element.props?.selectBackgroundColor || '#1f2937',
@@ -7323,11 +7353,13 @@ export function Canvas({
               <option>General Feedback</option>
             </select>
             <textarea 
-              placeholder="Your feedback" 
+              placeholder={element.props?.feedbackPlaceholder || "Your feedback"} 
               className="w-full border resize-none" 
               style={{
+                fontFamily: element.props?.textareaFontFamily || 'inherit',
                 padding: element.props?.textareaPadding || '8px 12px',
                 fontSize: element.props?.textareaFontSize || '12px',
+                fontWeight: element.props?.textareaFontWeight || '400',
                 borderRadius: element.props?.textareaBorderRadius || '4px',
                 borderColor: element.props?.textareaBorderColor || '#374151',
                 backgroundColor: element.props?.textareaBackgroundColor || '#1f2937',
