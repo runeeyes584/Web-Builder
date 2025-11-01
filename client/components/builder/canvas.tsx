@@ -2492,6 +2492,10 @@ export function Canvas({
     if (!canvasEl) return
     const rect = canvasEl.getBoundingClientRect()
     const scale = zoom / 100
+    
+    // Store initial section heights for resizing logic
+    const initialSections = sections.map(s => s.height)
+    
     boundaryDragRef.current = {
       which,
       startY: clientY,
@@ -2505,18 +2509,89 @@ export function Canvas({
       const state = boundaryDragRef.current
       if (!state) return
       const dy = (ev.clientY - state.startY) / state.scale
+      
       if (state.which === "header") {
-        // Move boundary between header and section
+        // Logic 1: Dragging header-bottom boundary (top of section 1)
+        // Positive dy = dragging down → header expands, section 1 shrinks
+        // Negative dy = dragging up → header shrinks, section 1 expands
+        
         let nextHeader = state.startHeader + dy
-        const maxHeader = state.canvasHeight - state.startFooter - Math.max(MIN_SECTION, totalSectionsHeight)
-        nextHeader = Math.max(MIN_HEADER, Math.min(maxHeader, nextHeader))
-        setHeaderHeight(nextHeader)
+        
+        // Calculate the corresponding section 1 height change
+        // If only one section exists, adjust it; otherwise adjust the first section
+        if (sections.length > 0) {
+          const firstSectionInitialHeight = initialSections[0]
+          let nextFirstSectionHeight = firstSectionInitialHeight - dy
+          
+          // Enforce minimum sizes to prevent overlap
+          // Header must be at least MIN_HEADER
+          nextHeader = Math.max(MIN_HEADER, nextHeader)
+          
+          // Section 1 must be at least MIN_SECTION
+          nextFirstSectionHeight = Math.max(MIN_SECTION, nextFirstSectionHeight)
+          
+          // Ensure we don't exceed available space
+          const maxHeader = state.canvasHeight - state.startFooter - MIN_SECTION
+          nextHeader = Math.min(maxHeader, nextHeader)
+          
+          // Recalculate section height based on constrained header
+          nextFirstSectionHeight = firstSectionInitialHeight - (nextHeader - state.startHeader)
+          nextFirstSectionHeight = Math.max(MIN_SECTION, nextFirstSectionHeight)
+          
+          // Update both header and first section
+          setHeaderHeight(nextHeader)
+          setSections(prev => {
+            const next = [...prev]
+            next[0] = { ...next[0], height: nextFirstSectionHeight }
+            return next
+          })
+        } else {
+          // Fallback: no sections, just resize header
+          const maxHeader = state.canvasHeight - state.startFooter - MIN_SECTION
+          nextHeader = Math.max(MIN_HEADER, Math.min(maxHeader, nextHeader))
+          setHeaderHeight(nextHeader)
+        }
       } else {
-        // Move boundary (top of footer); positive dy moves boundary down -> footer shrinks
+        // Logic 2: Dragging footer-top boundary (bottom of last section)
+        // Positive dy = dragging down → footer shrinks, section expands
+        // Negative dy = dragging up → footer expands, section shrinks
+        
         let nextFooter = state.startFooter - dy
-        const maxFooter = state.canvasHeight - headerHeight - Math.max(MIN_SECTION, totalSectionsHeight)
-        nextFooter = Math.max(MIN_FOOTER, Math.min(maxFooter, nextFooter))
-        setFooterHeight(nextFooter)
+        
+        // Calculate the corresponding last section height change
+        if (sections.length > 0) {
+          const lastSectionIndex = sections.length - 1
+          const lastSectionInitialHeight = initialSections[lastSectionIndex]
+          let nextLastSectionHeight = lastSectionInitialHeight + dy
+          
+          // Enforce minimum sizes
+          // Footer must be at least MIN_FOOTER
+          nextFooter = Math.max(MIN_FOOTER, nextFooter)
+          
+          // Last section must be at least MIN_SECTION
+          nextLastSectionHeight = Math.max(MIN_SECTION, nextLastSectionHeight)
+          
+          // Ensure we don't exceed available space
+          const maxFooter = state.canvasHeight - state.startHeader - MIN_SECTION
+          nextFooter = Math.min(maxFooter, nextFooter)
+          
+          // Recalculate section height based on constrained footer
+          nextLastSectionHeight = lastSectionInitialHeight - (nextFooter - state.startFooter)
+          nextLastSectionHeight = Math.max(MIN_SECTION, nextLastSectionHeight)
+          
+          // Update both footer and last section
+          setFooterHeight(nextFooter)
+          setSections(prev => {
+            const next = [...prev]
+            next[lastSectionIndex] = { ...next[lastSectionIndex], height: nextLastSectionHeight }
+            return next
+          })
+        } else {
+          // Fallback: no sections, just resize footer
+          const maxFooter = state.canvasHeight - state.startHeader - MIN_SECTION
+          nextFooter = Math.max(MIN_FOOTER, Math.min(maxFooter, nextFooter))
+          setFooterHeight(nextFooter)
+        }
       }
     }
     const onMouseUp = () => {
@@ -2526,7 +2601,7 @@ export function Canvas({
     }
     document.addEventListener("mousemove", onMouseMove)
     document.addEventListener("mouseup", onMouseUp)
-  }, [canvasEl, zoom, headerHeight, footerHeight, contentHeight, totalSectionsHeight])
+  }, [canvasEl, zoom, headerHeight, footerHeight, contentHeight, totalSectionsHeight, sections])
 
   // Resize between sections by dragging a divider line (index is boundary between index and index+1)
   const sectionDividerDragRef = useRef<{
