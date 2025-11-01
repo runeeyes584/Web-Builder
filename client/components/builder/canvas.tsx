@@ -5,7 +5,7 @@ import type React from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import type { Breakpoint, BuilderElement } from "@/lib/builder-types"
+import type { Breakpoint, BuilderElement, RegionsLayout } from "@/lib/builder-types"
 import { Copy, Trash2 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useDrop } from "react-dnd"
@@ -285,6 +285,7 @@ interface CanvasProps {
   showSections?: boolean
   isPreviewMode?: boolean
   toggleCategoryRef?: React.MutableRefObject<((categoryName: string) => void) | null>
+  onRegionsChange?: (regions: RegionsLayout) => void
 }
 
 export function Canvas({
@@ -304,6 +305,7 @@ export function Canvas({
   showSections = true,
   isPreviewMode = false,
   toggleCategoryRef,
+  onRegionsChange,
 }: CanvasProps) {
   // Partition dynamic sizes
   const [headerHeight, setHeaderHeight] = useState<number>(96)
@@ -320,6 +322,20 @@ export function Canvas({
   ])
   const totalSectionsHeight = sections.reduce((sum, s) => sum + s.height, 0)
   const contentHeight = headerHeight + totalSectionsHeight + footerHeight
+
+  // Notify parent about current regions layout for LayersPanel grouping
+  useEffect(() => {
+    if (!onRegionsChange) return
+    const sectionTops: number[] = sections.map((_, idx) =>
+      headerHeight + sections.slice(0, idx).reduce((sum, s) => sum + s.height, 0)
+    )
+    onRegionsChange({
+      header: { top: 0, height: headerHeight },
+      sections: sections.map((s, idx) => ({ id: s.id, index: idx, top: sectionTops[idx], height: s.height })),
+      footer: { top: headerHeight + totalSectionsHeight, height: footerHeight },
+      contentHeight,
+    })
+  }, [onRegionsChange, headerHeight, sections, totalSectionsHeight, footerHeight, contentHeight])
 
   // Focused region for persistent controls
   const [focusedRegion, setFocusedRegion] = useState<null | "header" | "section" | "footer" >(null)

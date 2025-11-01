@@ -5,6 +5,7 @@ import { ComponentLibrary } from "@/components/builder/component-library"
 import { LayersPanel } from "@/components/builder/layers-panel"
 import { PropertiesPanel } from "@/components/builder/properties-panel"
 import { TopToolbar } from "@/components/builder/top-toolbar"
+import type { RegionsLayout } from "@/lib/builder-types"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { useBuilderState } from "@/hooks/use-builder-state"
 import type { BuilderElement } from "@/lib/builder-types"
@@ -44,6 +45,7 @@ export default function WebsiteBuilder() {
   const [zoom, setZoom] = useState(100)
   const [showGrid, setShowGrid] = useState(true)
   const [showLayers, setShowLayers] = useState(false)
+  const [regionsLayout, setRegionsLayout] = useState<RegionsLayout | null>(null)
   
   // Ref to control component library category expansion
   const toggleCategoryRef = useRef<((categoryName: string) => void) | null>(null)
@@ -338,6 +340,7 @@ export default function WebsiteBuilder() {
                     showSections={showSections}
                     isPreviewMode={isPreviewMode}
                     toggleCategoryRef={toggleCategoryRef}
+                    onRegionsChange={setRegionsLayout}
                   />
                 </div>
               </div>
@@ -374,6 +377,7 @@ export default function WebsiteBuilder() {
         onDuplicateElement={duplicateElement}
         isOpen={showLayers}
         onClose={() => setShowLayers(false)}
+        regions={regionsLayout || undefined}
       />
           </div>
           <DragLayer />

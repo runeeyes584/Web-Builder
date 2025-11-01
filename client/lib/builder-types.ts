@@ -52,3 +52,21 @@ export interface SnapSettings {
   snapToElements: boolean
   snapDistance: number
 }
+
+// Regions layout information shared between Canvas and Layers Panel
+export interface RegionInfo {
+  top: number
+  height: number
+}
+
+export interface SectionInfo extends RegionInfo {
+  id: string
+  index: number
+}
+
+export interface RegionsLayout {
+  header: RegionInfo
+  sections: SectionInfo[]
+  footer: RegionInfo
+  contentHeight: number
+}
