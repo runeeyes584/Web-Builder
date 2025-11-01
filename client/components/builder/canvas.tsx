@@ -2612,6 +2612,9 @@ export function Canvas({
     startBottom: number
   } | null>(null)
   const startSectionDividerResize = useCallback((index: number, clientY: number) => {
+    // Validate that we have sections to resize between
+    if (index < 0 || index >= sections.length - 1) return
+    
     const scale = zoom / 100
     sectionDividerDragRef.current = {
       index,
@@ -2620,24 +2623,45 @@ export function Canvas({
       startTop: sections[index].height,
       startBottom: sections[index + 1].height,
     }
+    
     const onMouseMove = (ev: MouseEvent) => {
       const st = sectionDividerDragRef.current
       if (!st) return
       const dy = (ev.clientY - st.startY) / st.scale
+      
       setSections((prev) => {
         const next = [...prev]
-        const topH = Math.max(MIN_SECTION, st.startTop + dy)
-        const bottomH = Math.max(MIN_SECTION, st.startBottom - dy)
-        next[st.index] = { ...next[st.index], height: topH }
-        next[st.index + 1] = { ...next[st.index + 1], height: bottomH }
+        
+        // Calculate new heights with constraints
+        // Positive dy = dragging down → top section grows, bottom section shrinks
+        // Negative dy = dragging up → top section shrinks, bottom section grows
+        let topH = st.startTop + dy
+        let bottomH = st.startBottom - dy
+        
+        // Enforce minimum section sizes to prevent overlap
+        topH = Math.max(MIN_SECTION, topH)
+        bottomH = Math.max(MIN_SECTION, bottomH)
+        
+        // Ensure the total height is conserved (what one gains, the other loses)
+        // This prevents unexpected size changes and maintains the overall layout
+        const totalAvailable = st.startTop + st.startBottom
+        const constrainedTop = Math.min(topH, totalAvailable - MIN_SECTION)
+        const constrainedBottom = totalAvailable - constrainedTop
+        
+        // Apply the constrained values
+        next[st.index] = { ...next[st.index], height: constrainedTop }
+        next[st.index + 1] = { ...next[st.index + 1], height: constrainedBottom }
+        
         return next
       })
     }
+    
     const onMouseUp = () => {
       document.removeEventListener("mousemove", onMouseMove)
       document.removeEventListener("mouseup", onMouseUp)
       sectionDividerDragRef.current = null
     }
+    
     document.addEventListener("mousemove", onMouseMove)
     document.addEventListener("mouseup", onMouseUp)
   }, [sections, zoom])
@@ -7780,16 +7804,12 @@ function PartitionsOverlay({
           >
             {(hoverSectionTopIndex === idx || (focusedRegion === 'section' && focusedSectionIndex === idx)) && boundaryBtn({ left: '50%', top: 0 }, { type: 'sec-top', index: idx })}
           </div>
-          {/* Per-section bottom add button and divider resize handle */}
+          {/* Per-section bottom add button */}
           <div
             className="absolute left-0 right-0 pointer-events-auto"
             style={{ bottom: 0, height: 24 }}
             onMouseEnter={() => setHoverSectionBottomIndex(idx)}
             onMouseLeave={() => setHoverSectionBottomIndex((v) => (v === idx ? null : v))}
-            onMouseDown={(e) => {
-              // Allow resizing between this section and the next if exists
-              if (idx < sections.length - 1) onStartSectionResize(idx, e.clientY)
-            }}
           >
             {(hoverSectionBottomIndex === idx || (focusedRegion === 'section' && focusedSectionIndex === idx)) && boundaryBtn({ left: '50%', bottom: 0 }, { type: 'sec-bottom', index: idx })}
           </div>
@@ -7814,8 +7834,7 @@ function PartitionsOverlay({
       </div>
 
       {/* Resizable boundary hotspots with +Add button visibility */}
-      {/* Header bottom boundary */
-      }
+      {/* Header bottom boundary */}
       <div
         className="absolute left-0 right-0 pointer-events-auto cursor-ns-resize"
         style={{ top: `${headerHeight}px`, height: 32 }}
@@ -7836,6 +7855,30 @@ function PartitionsOverlay({
       >
         {(hoverSectionTopIndex === 0) && boundaryBtn({ left: '50%', top: 0 }, { type: 'sec-top', index: 0 })}
       </div>
+
+      {/* Divider resize handles between sections */}
+      {sections.map((_, idx) => {
+        // Only render divider if there's a next section
+        if (idx >= sections.length - 1) return null
+        
+        // Calculate the position of this divider (bottom of current section / top of next section)
+        const dividerTop = sectionTops[idx] + sections[idx].height
+        
+        return (
+          <div
+            key={`divider-${idx}`}
+            className="absolute left-0 right-0 pointer-events-auto cursor-ns-resize"
+            style={{ top: `${dividerTop}px`, height: 32 }}
+            onMouseDown={(e) => {
+              e.stopPropagation()
+              onStartSectionResize(idx, e.clientY)
+            }}
+          >
+            {/* Optional: Add a visual indicator on hover */}
+            <div className="absolute inset-0 hover:bg-blue-400/5 transition-colors" />
+          </div>
+        )
+      })}
 
       {/* Footer top boundary */}
       <div
