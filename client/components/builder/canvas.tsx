@@ -323,6 +323,73 @@ export function Canvas({
   const [focusedRegion, setFocusedRegion] = useState<null | "header" | "section" | "footer" >(null)
   const [focusedSectionIndex, setFocusedSectionIndex] = useState<number | null>(null)
 
+  // Helper function to determine which region an element belongs to based on its Y position
+  const getElementRegion = useCallback((elementY: number): { type: 'header' | 'section' | 'footer', sectionIndex?: number, regionTop: number, regionHeight: number } => {
+    if (elementY < headerHeight) {
+      return { type: 'header', regionTop: 0, regionHeight: headerHeight }
+    }
+    
+    let sectionTop = headerHeight
+    for (let i = 0; i < sections.length; i++) {
+      const sectionBottom = sectionTop + sections[i].height
+      if (elementY >= sectionTop && elementY < sectionBottom) {
+        return { type: 'section', sectionIndex: i, regionTop: sectionTop, regionHeight: sections[i].height }
+      }
+      sectionTop = sectionBottom
+    }
+    
+    // Must be in footer
+    const footerTop = headerHeight + totalSectionsHeight
+    return { type: 'footer', regionTop: footerTop, regionHeight: footerHeight }
+  }, [headerHeight, sections, totalSectionsHeight, footerHeight])
+
+  // Store previous region heights to detect changes and adjust element positions
+  const previousRegionHeightsRef = useRef<{ header: number, sections: number[], footer: number }>({
+    header: headerHeight,
+    sections: sections.map(s => s.height),
+    footer: footerHeight
+  })
+
+  // Helper function to calculate minimum height for a region based on largest element
+  const getMinRegionHeight = useCallback((regionType: 'header' | 'section' | 'footer', sectionIndex?: number): number => {
+    let regionTop = 0
+    let regionBottom = 0
+    
+    // Calculate region bounds
+    if (regionType === 'header') {
+      regionTop = 0
+      regionBottom = headerHeight
+    } else if (regionType === 'footer') {
+      regionTop = headerHeight + totalSectionsHeight
+      regionBottom = regionTop + footerHeight
+    } else if (regionType === 'section' && sectionIndex !== undefined) {
+      regionTop = headerHeight
+      for (let i = 0; i < sectionIndex; i++) {
+        regionTop += sections[i]?.height || 0
+      }
+      regionBottom = regionTop + (sections[sectionIndex]?.height || 0)
+    }
+    
+    // Find all elements in this region and get the lowest point
+    let maxBottom = 0
+    elements.forEach(element => {
+      if (!element.position) return
+      
+      const elemY = element.position.y
+      const elemHeight = element.position.height || 0
+      const elemBottom = elemY + elemHeight
+      
+      // Check if element is in this region
+      if (elemY >= regionTop && elemY < regionBottom) {
+        maxBottom = Math.max(maxBottom, elemBottom - regionTop)
+      }
+    })
+    
+    // Return the larger of: base minimum or largest element bottom
+    const baseMin = regionType === 'header' ? MIN_HEADER : regionType === 'footer' ? MIN_FOOTER : MIN_SECTION
+    return Math.max(baseMin, maxBottom + 20) // Add 20px padding
+  }, [elements, headerHeight, footerHeight, sections, totalSectionsHeight, MIN_HEADER, MIN_FOOTER, MIN_SECTION])
+
   const [draggedElementId, setDraggedElementId] = useState<string | null>(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [isResizing, setIsResizing] = useState<string | null>(null)
@@ -350,6 +417,107 @@ export function Canvas({
       if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current)
     }
   }, [])
+
+  // Effect to adjust element positions when regions are resized (Logic 2 - Updated)
+  useEffect(() => {
+    const prev = previousRegionHeightsRef.current
+    const hasHeaderChanged = prev.header !== headerHeight
+    const hasFooterChanged = prev.footer !== footerHeight
+    const hasSectionsChanged = prev.sections.length !== sections.length || 
+      prev.sections.some((h, i) => sections[i] && h !== sections[i].height)
+    
+    if (!hasHeaderChanged && !hasFooterChanged && !hasSectionsChanged) {
+      return // No changes, skip adjustment
+    }
+
+    // Adjust positions of all elements based on their region
+    // NEW: Elements keep their size, only positions adjust
+    elements.forEach(element => {
+      if (!element.position) return
+      
+      const currentY = element.position.y
+      const currentX = element.position.x
+      
+      // Determine which region this element belongs to using PREVIOUS heights
+      let prevRegionTop = 0
+      let prevRegionHeight = prev.header
+      let newRegionTop = 0
+      let newRegionHeight = headerHeight
+      let regionType: 'header' | 'section' | 'footer' = 'header'
+      let sectionIdx = -1
+      
+      if (currentY < prev.header) {
+        // Element is in header
+        regionType = 'header'
+        prevRegionTop = 0
+        prevRegionHeight = prev.header
+        newRegionTop = 0
+        newRegionHeight = headerHeight
+      } else {
+        // Check sections
+        let prevSectionTop = prev.header
+        let newSectionTop = headerHeight
+        let foundInSection = false
+        
+        for (let i = 0; i < Math.max(prev.sections.length, sections.length); i++) {
+          const prevSectionHeight = prev.sections[i] || 0
+          const newSectionHeight = sections[i]?.height || 0
+          const prevSectionBottom = prevSectionTop + prevSectionHeight
+          
+          if (currentY >= prevSectionTop && currentY < prevSectionBottom) {
+            // Element is in this section
+            regionType = 'section'
+            sectionIdx = i
+            prevRegionTop = prevSectionTop
+            prevRegionHeight = prevSectionHeight
+            newRegionTop = newSectionTop
+            newRegionHeight = newSectionHeight
+            foundInSection = true
+            break
+          }
+          
+          prevSectionTop += prevSectionHeight
+          newSectionTop += newSectionHeight
+        }
+        
+        if (!foundInSection) {
+          // Element must be in footer
+          regionType = 'footer'
+          prevRegionTop = prev.header + prev.sections.reduce((sum, h) => sum + h, 0)
+          prevRegionHeight = prev.footer
+          newRegionTop = headerHeight + totalSectionsHeight
+          newRegionHeight = footerHeight
+        }
+      }
+      
+      // Calculate relative position within the region (as a percentage)
+      const relativeY = currentY - prevRegionTop
+      const relativeYPercent = prevRegionHeight > 0 ? relativeY / prevRegionHeight : 0.5
+      
+      // Calculate new position maintaining the same relative position
+      const newY = newRegionTop + (relativeYPercent * newRegionHeight)
+      
+      // NEW: Keep element size the same - DO NOT scale height
+      // Elements maintain their original size when regions resize
+      
+      // Update element position (only Y position changes, size stays the same)
+      if (Math.abs(newY - currentY) > 0.1) {
+        onUpdateElementPosition(element.id, {
+          x: currentX,
+          y: newY,
+          width: element.position.width,  // Keep width unchanged
+          height: element.position.height // Keep height unchanged
+        })
+      }
+    })
+    
+    // Update previous heights
+    previousRegionHeightsRef.current = {
+      header: headerHeight,
+      sections: sections.map(s => s.height),
+      footer: footerHeight
+    }
+  }, [headerHeight, footerHeight, sections, elements, onUpdateElementPosition, totalSectionsHeight])
 
   type ComponentDragItem = { type: "COMPONENT"; componentType: string }
 
@@ -2021,27 +2189,28 @@ export function Canvas({
       },
     }
 
+    // Get the default position for this element type
+    const defaultPosition = elementTemplates[type]?.position || { x: 100, y: 100, width: 200, height: 50 }
+    
+    // Store original dimensions in props for scaling calculations
+    const originalDimensions = {
+      originalWidth: defaultPosition.width,
+      originalHeight: defaultPosition.height,
+    }
+
     return {
       id,
       type: type as BuilderElement["type"],
       content: elementTemplates[type]?.content || "New Element",
       styles: elementTemplates[type]?.styles || {},
       responsiveStyles: elementTemplates[type]?.responsiveStyles || {},
-      position: elementTemplates[type]?.position || { x: 100, y: 100, width: 200, height: 50 },
-      ...elementTemplates[type],
+      position: defaultPosition,
+      props: {
+        ...elementTemplates[type]?.props,
+        ...originalDimensions,
+      },
+      animations: elementTemplates[type]?.animations,
     }
-
-    // Build the element and ensure required fields like `type` are present
-    const element: BuilderElement = {
-      id,
-      type: type as BuilderElement["type"],
-      content: elementTemplates[type]?.content as string || "New Element",
-      styles: elementTemplates[type]?.styles || {},
-      responsiveStyles: elementTemplates[type]?.responsiveStyles || {},
-      position: elementTemplates[type]?.position || { x: 100, y: 100, width: 200, height: 50 },
-      animations: (elementTemplates[type] as any)?.animations,
-    }
-    return element
   }
 
   const getElementStyles = (element: BuilderElement): Record<string, any> => {
@@ -2053,43 +2222,120 @@ export function Canvas({
       return { ...baseStyles, ...responsiveStyles }
     }
     
-    // Calculate scale factor for auto-scaling content
-    const originalPosition = element.position || { x: 0, y: 0, width: 200, height: 50 }
-    const currentPosition = {
-      width: transientRef.current.get(element.id)?.width ?? originalPosition.width,
-      height: transientRef.current.get(element.id)?.height ?? originalPosition.height,
-    }
+    // Get the element's original dimensions (stored when first created)
+    // If not stored, use the position as the baseline
+    const originalWidth = element.props?.originalWidth ?? element.position?.width ?? 200
+    const originalHeight = element.props?.originalHeight ?? element.position?.height ?? 50
     
-    const scaleX = (currentPosition.width || 200) / (originalPosition.width || 200)
-    const scaleY = (currentPosition.height || 50) / (originalPosition.height || 50)
+    // Get current dimensions (including transient changes during drag/resize)
+    const currentWidth = transientRef.current.get(element.id)?.width ?? element.position?.width ?? originalWidth
+    const currentHeight = transientRef.current.get(element.id)?.height ?? element.position?.height ?? originalHeight
+    
+    // Calculate scale factors
+    const scaleX = currentWidth / originalWidth
+    const scaleY = currentHeight / originalHeight
+    const uniformScale = Math.min(scaleX, scaleY) // Use smaller scale to maintain proportions
     
     // Apply scaling to font sizes and other scalable properties
     const scaledStyles: Record<string, any> = {}
     
     Object.entries({ ...baseStyles, ...responsiveStyles }).forEach(([key, value]) => {
-      if (typeof value === 'string' && value.includes('px')) {
-        const numericValue = parseFloat(value)
-        if (!isNaN(numericValue)) {
-          // Scale font sizes, padding, margins, etc.
-          if (key.includes('fontSize') || key.includes('padding') || key.includes('margin') || 
-              key.includes('borderRadius') || key.includes('gap') || key.includes('lineHeight')) {
-            scaledStyles[key] = `${numericValue * Math.min(scaleX, scaleY)}px`
-          }
-          // Scale width/height properties
-          else if (key.includes('width') || key.includes('height')) {
-            if (key.includes('width')) {
-              scaledStyles[key] = `${numericValue * scaleX}px`
-            } else {
-              scaledStyles[key] = `${numericValue * scaleY}px`
+      // Handle string values with units (px, rem, em, etc.)
+      if (typeof value === 'string') {
+        // Handle pixel values
+        if (value.includes('px')) {
+          const numericValue = parseFloat(value)
+          if (!isNaN(numericValue)) {
+            // Scale font sizes, padding, margins, border radius, gaps, line height
+            if (key.toLowerCase().includes('fontsize') || 
+                key.toLowerCase().includes('font-size')) {
+              scaledStyles[key] = `${numericValue * uniformScale}px`
             }
-          }
-          else {
+            else if (key.toLowerCase().includes('padding')) {
+              scaledStyles[key] = `${numericValue * uniformScale}px`
+            }
+            else if (key.toLowerCase().includes('margin')) {
+              scaledStyles[key] = `${numericValue * uniformScale}px`
+            }
+            else if (key.toLowerCase().includes('borderradius') || 
+                     key.toLowerCase().includes('border-radius')) {
+              scaledStyles[key] = `${numericValue * uniformScale}px`
+            }
+            else if (key.toLowerCase().includes('gap')) {
+              scaledStyles[key] = `${numericValue * uniformScale}px`
+            }
+            else if (key.toLowerCase().includes('lineheight') || 
+                     key.toLowerCase().includes('line-height')) {
+              scaledStyles[key] = `${numericValue * uniformScale}px`
+            }
+            else if (key.toLowerCase().includes('borderwidth') || 
+                     key.toLowerCase().includes('border-width')) {
+              scaledStyles[key] = `${Math.max(1, numericValue * uniformScale)}px` // Min 1px for borders
+            }
+            // Scale internal width/height properties (but not the container itself)
+            else if ((key.toLowerCase().includes('width') || key.toLowerCase().includes('height')) &&
+                     (key !== 'width' && key !== 'height')) {
+              if (key.toLowerCase().includes('width')) {
+                scaledStyles[key] = `${numericValue * scaleX}px`
+              } else {
+                scaledStyles[key] = `${numericValue * scaleY}px`
+              }
+            }
+            else {
+              scaledStyles[key] = value
+            }
+          } else {
             scaledStyles[key] = value
           }
+        }
+        // Handle rem values
+        else if (value.includes('rem')) {
+          const numericValue = parseFloat(value)
+          if (!isNaN(numericValue)) {
+            if (key.toLowerCase().includes('fontsize') || 
+                key.toLowerCase().includes('font-size') ||
+                key.toLowerCase().includes('padding') ||
+                key.toLowerCase().includes('margin') ||
+                key.toLowerCase().includes('gap')) {
+              scaledStyles[key] = `${numericValue * uniformScale}rem`
+            } else {
+              scaledStyles[key] = value
+            }
+          } else {
+            scaledStyles[key] = value
+          }
+        }
+        // Handle em values
+        else if (value.includes('em')) {
+          const numericValue = parseFloat(value)
+          if (!isNaN(numericValue)) {
+            if (key.toLowerCase().includes('fontsize') || 
+                key.toLowerCase().includes('font-size') ||
+                key.toLowerCase().includes('padding') ||
+                key.toLowerCase().includes('margin') ||
+                key.toLowerCase().includes('gap')) {
+              scaledStyles[key] = `${numericValue * uniformScale}em`
+            } else {
+              scaledStyles[key] = value
+            }
+          } else {
+            scaledStyles[key] = value
+          }
+        }
+        else {
+          scaledStyles[key] = value
+        }
+      } 
+      // Handle numeric values (without units)
+      else if (typeof value === 'number') {
+        if (key.toLowerCase().includes('fontsize') || 
+            key.toLowerCase().includes('font-size')) {
+          scaledStyles[key] = value * uniformScale
         } else {
           scaledStyles[key] = value
         }
-      } else {
+      } 
+      else {
         scaledStyles[key] = value
       }
     })
@@ -2114,20 +2360,22 @@ export function Canvas({
       return baseStyles
     }
     
-    const originalPosition = element.position || { x: 0, y: 0, width: 200, height: 50 }
-    const currentPosition = {
-      width: transientRef.current.get(element.id)?.width ?? originalPosition.width,
-      height: transientRef.current.get(element.id)?.height ?? originalPosition.height,
-    }
+    // Get original and current dimensions
+    const originalWidth = element.props?.originalWidth ?? element.position?.width ?? 200
+    const originalHeight = element.props?.originalHeight ?? element.position?.height ?? 50
+    const currentWidth = transientRef.current.get(element.id)?.width ?? element.position?.width ?? originalWidth
+    const currentHeight = transientRef.current.get(element.id)?.height ?? element.position?.height ?? originalHeight
     
-    const scaleX = (currentPosition.width || 200) / (originalPosition.width || 200)
-    const scaleY = (currentPosition.height || 50) / (originalPosition.height || 50)
-    const scale = Math.min(scaleX, scaleY)
+    const scaleX = currentWidth / originalWidth
+    const scaleY = currentHeight / originalHeight
+    const uniformScale = Math.min(scaleX, scaleY)
     
+    // Apply scaling to input styles
     return {
       ...baseStyles,
-      fontSize: `${(parseFloat(element.props?.inputFontSize) || 12) * scale}px`,
-      borderRadius: `${(parseFloat(element.props?.inputBorderRadius) || 4) * scale}px`,
+      fontSize: `${parseFloat(baseStyles.fontSize) * uniformScale}px`,
+      padding: baseStyles.padding.split(' ').map((p: string) => `${parseFloat(p) * uniformScale}px`).join(' '),
+      borderRadius: `${parseFloat(baseStyles.borderRadius) * uniformScale}px`,
     }
   }
 
@@ -2136,7 +2384,7 @@ export function Canvas({
       fontFamily: element.props?.buttonFontFamily || 'inherit',
       padding: element.props?.buttonPadding || '8px 12px',
       fontSize: element.props?.buttonFontSize || '12px',
-      fontWeight: element.props?.buttonFontWeight || '400',
+      fontWeight: element.props?.buttonFontWeight || '500',
       borderRadius: element.props?.buttonBorderRadius || '4px',
       backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
       color: element.props?.buttonTextColor || '#ffffff',
@@ -2149,20 +2397,22 @@ export function Canvas({
       return baseStyles
     }
     
-    const originalPosition = element.position || { x: 0, y: 0, width: 200, height: 50 }
-    const currentPosition = {
-      width: transientRef.current.get(element.id)?.width ?? originalPosition.width,
-      height: transientRef.current.get(element.id)?.height ?? originalPosition.height,
-    }
+    // Get original and current dimensions
+    const originalWidth = element.props?.originalWidth ?? element.position?.width ?? 200
+    const originalHeight = element.props?.originalHeight ?? element.position?.height ?? 50
+    const currentWidth = transientRef.current.get(element.id)?.width ?? element.position?.width ?? originalWidth
+    const currentHeight = transientRef.current.get(element.id)?.height ?? element.position?.height ?? originalHeight
     
-    const scaleX = (currentPosition.width || 200) / (originalPosition.width || 200)
-    const scaleY = (currentPosition.height || 50) / (originalPosition.height || 50)
-    const scale = Math.min(scaleX, scaleY)
+    const scaleX = currentWidth / originalWidth
+    const scaleY = currentHeight / originalHeight
+    const uniformScale = Math.min(scaleX, scaleY)
     
+    // Apply scaling to button styles
     return {
       ...baseStyles,
-      fontSize: `${(parseFloat(element.props?.buttonFontSize) || 12) * scale}px`,
-      borderRadius: `${(parseFloat(element.props?.buttonBorderRadius) || 4) * scale}px`,
+      fontSize: `${parseFloat(baseStyles.fontSize) * uniformScale}px`,
+      padding: baseStyles.padding.split(' ').map((p: string) => `${parseFloat(p) * uniformScale}px`).join(' '),
+      borderRadius: `${parseFloat(baseStyles.borderRadius) * uniformScale}px`,
     }
   }
 
@@ -2381,6 +2631,60 @@ export function Canvas({
     "feedback-form",
   ])
 
+  // Get minimum dimensions for an element based on its type and content (Logic 1)
+  const getElementMinDimensions = useCallback((element: BuilderElement): { minWidth: number, minHeight: number } => {
+    // Base minimum sizes
+    const baseMinWidth = 40
+    const baseMinHeight = 30
+    
+    // Type-specific minimums
+    const typeMinimums: Record<string, { minWidth?: number, minHeight?: number }> = {
+      'heading': { minWidth: 100, minHeight: 40 },
+      'paragraph': { minWidth: 120, minHeight: 50 },
+      'button': { minWidth: 80, minHeight: 36 },
+      'image': { minWidth: 60, minHeight: 60 },
+      'card': { minWidth: 150, minHeight: 100 },
+      'form': { minWidth: 200, minHeight: 150 },
+      'input': { minWidth: 120, minHeight: 36 },
+      'textarea': { minWidth: 150, minHeight: 80 },
+      'select': { minWidth: 120, minHeight: 36 },
+      'video': { minWidth: 200, minHeight: 150 },
+      'gallery': { minWidth: 200, minHeight: 150 },
+      'table': { minWidth: 200, minHeight: 100 },
+      'chart': { minWidth: 200, minHeight: 150 },
+      'carousel': { minWidth: 200, minHeight: 150 },
+      'modal': { minWidth: 250, minHeight: 150 },
+      'tabs': { minWidth: 200, minHeight: 100 },
+      'counter': { minWidth: 100, minHeight: 80 },
+      'icon': { minWidth: 24, minHeight: 24 },
+      'badge': { minWidth: 40, minHeight: 24 },
+      'avatar': { minWidth: 40, minHeight: 40 },
+    }
+    
+    const typeMin = typeMinimums[element.type] || {}
+    
+    // Content-based adjustments
+    let contentMinWidth = baseMinWidth
+    let contentMinHeight = baseMinHeight
+    
+    if (element.content && element.content.length > 0) {
+      // Estimate minimum width based on content length (rough approximation)
+      const estimatedCharWidth = 8
+      contentMinWidth = Math.min(300, Math.max(baseMinWidth, element.content.length * estimatedCharWidth))
+    }
+    
+    // For elements with internal components (forms, cards, etc.), use larger minimums
+    if (element.children && element.children.length > 0) {
+      contentMinWidth = Math.max(contentMinWidth, 150)
+      contentMinHeight = Math.max(contentMinHeight, 100)
+    }
+    
+    return {
+      minWidth: Math.max(typeMin.minWidth || baseMinWidth, contentMinWidth),
+      minHeight: Math.max(typeMin.minHeight || baseMinHeight, contentMinHeight)
+    }
+  }, [])
+
   const handleResizeMouseDown = (
     e: React.MouseEvent,
     elementId: string,
@@ -2395,6 +2699,9 @@ export function Canvas({
     if (!canvasEl) return
     const rect = canvasEl.getBoundingClientRect()
     const scale = zoom / 100
+    
+    // Get minimum dimensions for this element (Logic 1)
+    const { minWidth, minHeight } = getElementMinDimensions(element)
 
     const onMouseMove = (ev: MouseEvent) => {
       const localX = (ev.clientX - rect.left) / scale
@@ -2409,26 +2716,26 @@ export function Canvas({
       const isN = direction === "n" || direction === "ne" || direction === "nw"
 
       if (isE) {
-        nextWidth = Math.max(20, localX - startPos.x)
+        nextWidth = Math.max(minWidth, localX - startPos.x)
       }
       if (isS) {
-        nextHeight = Math.max(20, localY - startPos.y)
+        nextHeight = Math.max(minHeight, localY - startPos.y)
       }
       if (isW) {
-        const rawW = Math.max(20, startPos.x + (startPos.width || 0) - localX)
+        const rawW = Math.max(minWidth, startPos.x + (startPos.width || 0) - localX)
         const snappedW = snapSettings.enabled && startPos.width !== undefined
           ? snapToGrid(rawW, snapSettings.gridSize)
           : rawW
-        nextWidth = snappedW
-        nextX = startPos.x + (startPos.width! - snappedW)
+        nextWidth = Math.max(minWidth, snappedW)
+        nextX = startPos.x + (startPos.width! - nextWidth)
       }
       if (isN) {
-        const rawH = Math.max(20, startPos.y + (startPos.height || 0) - localY)
+        const rawH = Math.max(minHeight, startPos.y + (startPos.height || 0) - localY)
         const snappedH = snapSettings.enabled && startPos.height !== undefined
           ? snapToGrid(rawH, snapSettings.gridSize)
           : rawH
-        nextHeight = snappedH
-        nextY = startPos.y + (startPos.height! - snappedH)
+        nextHeight = Math.max(minHeight, snappedH)
+        nextY = startPos.y + (startPos.height! - nextHeight)
       }
       const snappedW = snapSettings.enabled && startPos.width !== undefined
         ? snapToGrid(nextWidth, snapSettings.gridSize)
@@ -2436,9 +2743,14 @@ export function Canvas({
       const snappedH = snapSettings.enabled && startPos.height !== undefined
         ? snapToGrid(nextHeight, snapSettings.gridSize)
         : nextHeight
+      
+      // Enforce minimum dimensions one more time after snapping
+      const finalWidth = Math.max(minWidth, snappedW)
+      const finalHeight = Math.max(minHeight, snappedH)
+      
       // Update transient size/position and render on next animation frame (no global commit yet)
       const prev = transientRef.current.get(elementId) || {}
-      const payload: any = { width: snappedW, height: snappedH }
+      const payload: any = { width: finalWidth, height: finalHeight }
       if (isW) payload.x = Math.max(0, nextX)
       if (isN) payload.y = Math.max(0, nextY)
       transientRef.current.set(elementId, { ...prev, ...payload })
@@ -2523,20 +2835,21 @@ export function Canvas({
           const firstSectionInitialHeight = initialSections[0]
           let nextFirstSectionHeight = firstSectionInitialHeight - dy
           
-          // Enforce minimum sizes to prevent overlap
-          // Header must be at least MIN_HEADER
-          nextHeader = Math.max(MIN_HEADER, nextHeader)
+          // NEW: Calculate minimum heights based on largest elements
+          const minHeaderHeight = getMinRegionHeight('header')
+          const minFirstSectionHeight = getMinRegionHeight('section', 0)
           
-          // Section 1 must be at least MIN_SECTION
-          nextFirstSectionHeight = Math.max(MIN_SECTION, nextFirstSectionHeight)
+          // Enforce minimum sizes to prevent overlap and content loss
+          nextHeader = Math.max(minHeaderHeight, nextHeader)
+          nextFirstSectionHeight = Math.max(minFirstSectionHeight, nextFirstSectionHeight)
           
           // Ensure we don't exceed available space
-          const maxHeader = state.canvasHeight - state.startFooter - MIN_SECTION
+          const maxHeader = state.canvasHeight - state.startFooter - minFirstSectionHeight
           nextHeader = Math.min(maxHeader, nextHeader)
           
           // Recalculate section height based on constrained header
           nextFirstSectionHeight = firstSectionInitialHeight - (nextHeader - state.startHeader)
-          nextFirstSectionHeight = Math.max(MIN_SECTION, nextFirstSectionHeight)
+          nextFirstSectionHeight = Math.max(minFirstSectionHeight, nextFirstSectionHeight)
           
           // Update both header and first section
           setHeaderHeight(nextHeader)
@@ -2547,51 +2860,71 @@ export function Canvas({
           })
         } else {
           // Fallback: no sections, just resize header
+          const minHeaderHeight = getMinRegionHeight('header')
           const maxHeader = state.canvasHeight - state.startFooter - MIN_SECTION
-          nextHeader = Math.max(MIN_HEADER, Math.min(maxHeader, nextHeader))
+          nextHeader = Math.max(minHeaderHeight, Math.min(maxHeader, nextHeader))
           setHeaderHeight(nextHeader)
         }
       } else {
         // Logic 2: Dragging footer-top boundary (bottom of last section)
-        // Positive dy = dragging down → footer shrinks, section expands
-        // Negative dy = dragging up → footer expands, section shrinks
+        // Behavior depends on number of sections:
+        // - Single section (default): Footer resizes inversely with section (Task 1 behavior)
+        // - Multiple sections: Footer stays constant, only section resizes (Task 2+ behavior)
         
-        let nextFooter = state.startFooter - dy
-        
-        // Calculate the corresponding last section height change
         if (sections.length > 0) {
           const lastSectionIndex = sections.length - 1
           const lastSectionInitialHeight = initialSections[lastSectionIndex]
+          
+          // Calculate new last section height
+          // Positive dy = dragging down → section expands
+          // Negative dy = dragging up → section shrinks
           let nextLastSectionHeight = lastSectionInitialHeight + dy
           
-          // Enforce minimum sizes
-          // Footer must be at least MIN_FOOTER
-          nextFooter = Math.max(MIN_FOOTER, nextFooter)
+          // Calculate minimum height based on largest element in last section
+          const minLastSectionHeight = getMinRegionHeight('section', lastSectionIndex)
           
-          // Last section must be at least MIN_SECTION
-          nextLastSectionHeight = Math.max(MIN_SECTION, nextLastSectionHeight)
+          // Enforce minimum section size to prevent content overlap
+          nextLastSectionHeight = Math.max(minLastSectionHeight, nextLastSectionHeight)
           
-          // Ensure we don't exceed available space
-          const maxFooter = state.canvasHeight - state.startHeader - MIN_SECTION
-          nextFooter = Math.min(maxFooter, nextFooter)
-          
-          // Recalculate section height based on constrained footer
-          nextLastSectionHeight = lastSectionInitialHeight - (nextFooter - state.startFooter)
-          nextLastSectionHeight = Math.max(MIN_SECTION, nextLastSectionHeight)
-          
-          // Update both footer and last section
-          setFooterHeight(nextFooter)
-          setSections(prev => {
-            const next = [...prev]
-            next[lastSectionIndex] = { ...next[lastSectionIndex], height: nextLastSectionHeight }
-            return next
-          })
-        } else {
-          // Fallback: no sections, just resize footer
-          const maxFooter = state.canvasHeight - state.startHeader - MIN_SECTION
-          nextFooter = Math.max(MIN_FOOTER, Math.min(maxFooter, nextFooter))
-          setFooterHeight(nextFooter)
+          // DIFFERENTIATE: Single section vs multiple sections
+          if (sections.length === 1) {
+            // DEFAULT CASE (header/section 1/footer): Footer resizes inversely
+            // This maintains total canvas height and prevents black space
+            let nextFooter = state.startFooter - dy
+            
+            // Calculate minimum footer height
+            const minFooterHeight = getMinRegionHeight('footer')
+            
+            // Enforce minimum footer size
+            nextFooter = Math.max(minFooterHeight, nextFooter)
+            
+            // Ensure we don't exceed available space
+            const maxFooter = state.canvasHeight - state.startHeader - minLastSectionHeight
+            nextFooter = Math.min(maxFooter, nextFooter)
+            
+            // Recalculate section height based on constrained footer
+            nextLastSectionHeight = lastSectionInitialHeight - (nextFooter - state.startFooter)
+            nextLastSectionHeight = Math.max(minLastSectionHeight, nextLastSectionHeight)
+            
+            // Update both footer and section (inverse relationship)
+            setFooterHeight(nextFooter)
+            setSections(prev => {
+              const next = [...prev]
+              next[lastSectionIndex] = { ...next[lastSectionIndex], height: nextLastSectionHeight }
+              return next
+            })
+          } else {
+            // MULTI-SECTION CASE: Footer stays constant, only section resizes
+            // This allows canvas to expand/shrink dynamically
+            setSections(prev => {
+              const next = [...prev]
+              next[lastSectionIndex] = { ...next[lastSectionIndex], height: nextLastSectionHeight }
+              return next
+            })
+            // Footer height is NOT changed, only its position changes
+          }
         }
+        // If no sections exist, do nothing
       }
     }
     const onMouseUp = () => {
@@ -2601,7 +2934,55 @@ export function Canvas({
     }
     document.addEventListener("mousemove", onMouseMove)
     document.addEventListener("mouseup", onMouseUp)
-  }, [canvasEl, zoom, headerHeight, footerHeight, contentHeight, totalSectionsHeight, sections])
+  }, [canvasEl, zoom, headerHeight, footerHeight, contentHeight, totalSectionsHeight, sections, getMinRegionHeight])
+
+  // Resize footer by dragging its bottom boundary (expands/shrinks canvas)
+  const footerBottomDragRef = useRef<{
+    startY: number
+    startFooter: number
+    scale: number
+  } | null>(null)
+  
+  const startFooterBottomResize = useCallback((clientY: number) => {
+    if (!canvasEl) return
+    const scale = zoom / 100
+    
+    footerBottomDragRef.current = {
+      startY: clientY,
+      startFooter: footerHeight,
+      scale,
+    }
+
+    const onMouseMove = (ev: MouseEvent) => {
+      const state = footerBottomDragRef.current
+      if (!state) return
+      const dy = (ev.clientY - state.startY) / state.scale
+      
+      // Dragging footer bottom boundary
+      // Positive dy = dragging down → footer expands (canvas expands)
+      // Negative dy = dragging up → footer shrinks (canvas shrinks)
+      
+      let nextFooter = state.startFooter + dy
+      
+      // Calculate minimum footer height based on content
+      const minFooterHeight = getMinRegionHeight('footer')
+      
+      // Enforce minimum size
+      nextFooter = Math.max(minFooterHeight, nextFooter)
+      
+      // Update footer height (this will automatically expand/shrink the canvas via contentHeight)
+      setFooterHeight(nextFooter)
+    }
+    
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove)
+      document.removeEventListener("mouseup", onMouseUp)
+      footerBottomDragRef.current = null
+    }
+    
+    document.addEventListener("mousemove", onMouseMove)
+    document.addEventListener("mouseup", onMouseUp)
+  }, [canvasEl, zoom, footerHeight, getMinRegionHeight])
 
   // Resize between sections by dragging a divider line (index is boundary between index and index+1)
   const sectionDividerDragRef = useRef<{
@@ -2632,25 +3013,50 @@ export function Canvas({
       setSections((prev) => {
         const next = [...prev]
         
-        // Calculate new heights with constraints
+        // Calculate new heights
         // Positive dy = dragging down → top section grows, bottom section shrinks
         // Negative dy = dragging up → top section shrinks, bottom section grows
         let topH = st.startTop + dy
         let bottomH = st.startBottom - dy
         
-        // Enforce minimum section sizes to prevent overlap
-        topH = Math.max(MIN_SECTION, topH)
-        bottomH = Math.max(MIN_SECTION, bottomH)
+        // Calculate minimum heights based on largest elements
+        const minTopHeight = getMinRegionHeight('section', st.index)
+        const minBottomHeight = getMinRegionHeight('section', st.index + 1)
         
-        // Ensure the total height is conserved (what one gains, the other loses)
-        // This prevents unexpected size changes and maintains the overall layout
-        const totalAvailable = st.startTop + st.startBottom
-        const constrainedTop = Math.min(topH, totalAvailable - MIN_SECTION)
-        const constrainedBottom = totalAvailable - constrainedTop
+        // Check if bottom section would go below minimum
+        if (bottomH < minBottomHeight && dy > 0) {
+          // User is trying to expand top section, but bottom is at minimum
+          // SOLUTION: Expand canvas by growing top section while keeping bottom at minimum
+          topH = st.startTop + dy
+          bottomH = minBottomHeight
+          // This naturally expands the canvas since total section height increases
+        } 
+        // Check if top section would go below minimum
+        else if (topH < minTopHeight && dy < 0) {
+          // User is trying to expand bottom section, but top is at minimum
+          // SOLUTION: Expand canvas by growing bottom section while keeping top at minimum
+          topH = minTopHeight
+          bottomH = st.startBottom - dy
+          // This naturally expands the canvas since total section height increases
+        }
+        // Normal case: both sections have room to resize
+        else {
+          // Enforce minimum section sizes
+          topH = Math.max(minTopHeight, topH)
+          bottomH = Math.max(minBottomHeight, bottomH)
+          
+          // Conserve total height (what one gains, other loses) - traditional behavior
+          const totalAvailable = st.startTop + st.startBottom
+          const constrainedTop = Math.min(topH, totalAvailable - minBottomHeight)
+          const constrainedBottom = totalAvailable - constrainedTop
+          
+          topH = constrainedTop
+          bottomH = constrainedBottom
+        }
         
-        // Apply the constrained values
-        next[st.index] = { ...next[st.index], height: constrainedTop }
-        next[st.index + 1] = { ...next[st.index + 1], height: constrainedBottom }
+        // Apply the calculated values
+        next[st.index] = { ...next[st.index], height: topH }
+        next[st.index + 1] = { ...next[st.index + 1], height: bottomH }
         
         return next
       })
@@ -2664,7 +3070,7 @@ export function Canvas({
     
     document.addEventListener("mousemove", onMouseMove)
     document.addEventListener("mouseup", onMouseUp)
-  }, [sections, zoom])
+  }, [sections, zoom, getMinRegionHeight])
 
   const renderElement = (element: BuilderElement) => {
     const isSelected = selectedElements.includes(element.id)
@@ -7577,6 +7983,7 @@ export function Canvas({
           setFocusedSectionIndex={setFocusedSectionIndex}
           onStartResize={startBoundaryResize}
           onStartSectionResize={startSectionDividerResize}
+          onStartFooterBottomResize={startFooterBottomResize}
           defaultSectionHeight={DEFAULT_SECTION}
         />
       )}
@@ -7659,6 +8066,7 @@ function PartitionsOverlay({
   setFocusedSectionIndex,
   onStartResize,
   onStartSectionResize,
+  onStartFooterBottomResize,
   defaultSectionHeight,
 }: {
   headerHeight: number
@@ -7671,6 +8079,7 @@ function PartitionsOverlay({
   setFocusedSectionIndex: (i: number | null) => void
   onStartResize: (which: "header" | "footer", clientY: number) => void
   onStartSectionResize: (index: number, clientY: number) => void
+  onStartFooterBottomResize: (clientY: number) => void
   defaultSectionHeight: number
 }) {
   // Fine-grained hover states so sections act independently
@@ -7678,6 +8087,7 @@ function PartitionsOverlay({
   const [hoverFooter, setHoverFooter] = useState(false)
   const [hoverHeaderBottom, setHoverHeaderBottom] = useState(false)
   const [hoverFooterTop, setHoverFooterTop] = useState(false)
+  const [hoverFooterBottom, setHoverFooterBottom] = useState(false)
   const [hoverSectionIndex, setHoverSectionIndex] = useState<number | null>(null)
   const [hoverSectionTopIndex, setHoverSectionTopIndex] = useState<number | null>(null)
   const [hoverSectionBottomIndex, setHoverSectionBottomIndex] = useState<number | null>(null)
@@ -7889,6 +8299,27 @@ function PartitionsOverlay({
         onMouseDown={(e) => onStartResize("footer", e.clientY)}
       >
         {(hoverFooterTop || focusedBoundary === "f-top") && boundaryBtn({ left: '50%', bottom: 0 }, { type: 'footer-top' })}
+      </div>
+
+      {/* Footer bottom boundary - NEW: Allows expanding/shrinking canvas */}
+      <div
+        className="absolute left-0 right-0 pointer-events-auto cursor-ns-resize"
+        style={{ bottom: 0, height: 32 }}
+        onMouseEnter={() => setHoverFooterBottom(true)}
+        onMouseLeave={() => setHoverFooterBottom(false)}
+        onMouseDown={(e) => {
+          e.stopPropagation()
+          onStartFooterBottomResize(e.clientY)
+        }}
+      >
+        {/* Visual indicator on hover */}
+        {hoverFooterBottom && (
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-400/30 transition-colors">
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-emerald-400 text-white text-[10px] px-2 py-0.5 rounded-t whitespace-nowrap">
+              Resize Canvas
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
