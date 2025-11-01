@@ -11,9 +11,10 @@ import { TemplateLibrary } from "./template-library"
 
 interface ComponentLibraryProps {
   onAddTemplate?: (elements: BuilderElement[]) => void
+  onToggleCategoryRef?: React.MutableRefObject<((categoryName: string) => void) | null>
 }
 
-export function ComponentLibrary({ onAddTemplate }: ComponentLibraryProps) {
+export function ComponentLibrary({ onAddTemplate, onToggleCategoryRef }: ComponentLibraryProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
 
   const DraggableCard: React.FC<{ component: { name: string; description: string; icon: any; type: string } }> = React.memo(({ component }) => {
@@ -110,6 +111,13 @@ export function ComponentLibrary({ onAddTemplate }: ComponentLibraryProps) {
     }
     setExpandedCategories(newExpanded)
   }
+
+  // Expose toggleCategory via ref
+  React.useEffect(() => {
+    if (onToggleCategoryRef) {
+      onToggleCategoryRef.current = toggleCategory
+    }
+  }, [onToggleCategoryRef, expandedCategories])
 
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-sidebar via-sidebar/95 to-sidebar/90 backdrop-blur-xl relative overflow-hidden">

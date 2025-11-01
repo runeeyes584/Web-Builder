@@ -10,7 +10,7 @@ import { useBuilderState } from "@/hooks/use-builder-state"
 import type { BuilderElement } from "@/lib/builder-types"
 import { componentCategories } from "@/lib/component-categories"
 import { SignedIn, SignedOut } from "@clerk/nextjs"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { DndProvider, useDragLayer } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 
@@ -44,6 +44,9 @@ export default function WebsiteBuilder() {
   const [zoom, setZoom] = useState(100)
   const [showGrid, setShowGrid] = useState(true)
   const [showLayers, setShowLayers] = useState(false)
+  
+  // Ref to control component library category expansion
+  const toggleCategoryRef = useRef<((categoryName: string) => void) | null>(null)
 
   // Load dark mode preference from localStorage
   useEffect(() => {
@@ -302,7 +305,10 @@ export default function WebsiteBuilder() {
           {/* Left Sidebar - resizable */}
           <ResizablePanel defaultSize={20} minSize={12} maxSize={35} className="min-w-[200px]">
             <div className="h-full bg-sidebar border-r border-sidebar-border">
-              <ComponentLibrary onAddTemplate={handleAddTemplate} />
+              <ComponentLibrary 
+                onAddTemplate={handleAddTemplate} 
+                onToggleCategoryRef={toggleCategoryRef}
+              />
             </div>
           </ResizablePanel>
 
@@ -331,6 +337,7 @@ export default function WebsiteBuilder() {
                     showGrid={showGrid}
                     showSections={showSections}
                     isPreviewMode={isPreviewMode}
+                    toggleCategoryRef={toggleCategoryRef}
                   />
                 </div>
               </div>

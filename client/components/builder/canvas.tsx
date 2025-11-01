@@ -284,6 +284,7 @@ interface CanvasProps {
   showGrid?: boolean
   showSections?: boolean
   isPreviewMode?: boolean
+  toggleCategoryRef?: React.MutableRefObject<((categoryName: string) => void) | null>
 }
 
 export function Canvas({
@@ -302,6 +303,7 @@ export function Canvas({
   showGrid = true,
   showSections = true,
   isPreviewMode = false,
+  toggleCategoryRef,
 }: CanvasProps) {
   // Partition dynamic sizes
   const [headerHeight, setHeaderHeight] = useState<number>(96)
@@ -390,13 +392,34 @@ export function Canvas({
     return Math.max(baseMin, maxBottom + 20) // Add 20px padding
   }, [elements, headerHeight, footerHeight, sections, totalSectionsHeight, MIN_HEADER, MIN_FOOTER, MIN_SECTION])
 
+  // Helper function to check if a section contains any elements
+  const sectionHasElements = useCallback((sectionIndex: number): boolean => {
+    if (sectionIndex < 0 || sectionIndex >= sections.length) return false
+    
+    // Calculate section bounds
+    let sectionTop = headerHeight
+    for (let i = 0; i < sectionIndex; i++) {
+      sectionTop += sections[i]?.height || 0
+    }
+    const sectionBottom = sectionTop + (sections[sectionIndex]?.height || 0)
+    
+    // Check if any element exists within this section's boundaries
+    return elements.some(element => {
+      if (!element.position) return false
+      const elemY = element.position.y
+      // Element is in section if its Y position is within section bounds
+      return elemY >= sectionTop && elemY < sectionBottom
+    })
+  }, [elements, sections, headerHeight])
+
   const [draggedElementId, setDraggedElementId] = useState<string | null>(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [isResizing, setIsResizing] = useState<string | null>(null)
+  const [isRotating, setIsRotating] = useState<string | null>(null)
   const [canvasEl, setCanvasEl] = useState<HTMLDivElement | null>(null)
 
-  // Transient positions/sizes while dragging/resizing to avoid heavy global updates
-  const transientRef = useRef(new Map<string, { x?: number; y?: number; width?: number; height?: number }>())
+  // Transient positions/sizes/rotation while dragging/resizing/rotating to avoid heavy global updates
+  const transientRef = useRef(new Map<string, { x?: number; y?: number; width?: number; height?: number; rotation?: number }>())
   const rafIdRef = useRef<number | null>(null)
   const dragGroupRef = useRef<{
     ids: string[]
@@ -2778,6 +2801,72 @@ export function Canvas({
     document.addEventListener("mouseup", onMouseUp)
   }
 
+  const handleRotateMouseDown = (e: React.MouseEvent, elementId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const element = elements.find((el) => el.id === elementId)
+    if (!element?.position) return
+    setIsRotating(elementId)
+    
+    if (!canvasEl) return
+    const rect = canvasEl.getBoundingClientRect()
+    const scale = zoom / 100
+    
+    // Get element center point
+    const centerX = element.position.x + (element.position.width || 0) / 2
+    const centerY = element.position.y + (element.position.height || 0) / 2
+    
+    // Get initial rotation (from element props or 0)
+    const startRotation = element.props?.rotation || 0
+    
+    // Calculate initial angle from center to mouse
+    const startMouseX = (e.clientX - rect.left) / scale
+    const startMouseY = (e.clientY - rect.top) / scale
+    const startAngle = Math.atan2(startMouseY - centerY, startMouseX - centerX) * (180 / Math.PI)
+    
+    const onMouseMove = (ev: MouseEvent) => {
+      const mouseX = (ev.clientX - rect.left) / scale
+      const mouseY = (ev.clientY - rect.top) / scale
+      
+      // Calculate current angle from center to mouse
+      const currentAngle = Math.atan2(mouseY - centerY, mouseX - centerX) * (180 / Math.PI)
+      
+      // Calculate rotation delta
+      const angleDelta = currentAngle - startAngle
+      
+      // Apply rotation (allow full 360 degrees)
+      let nextRotation = startRotation + angleDelta
+      
+      // Normalize to 0-360 range
+      nextRotation = ((nextRotation % 360) + 360) % 360
+      
+      // Update transient rotation and render on next animation frame
+      const prev = transientRef.current.get(elementId) || {}
+      transientRef.current.set(elementId, { ...prev, rotation: nextRotation })
+      scheduleRerender()
+    }
+    
+    const onMouseUp = () => {
+      setIsRotating(null)
+      // Commit final rotation
+      const last = transientRef.current.get(elementId)
+      if (last?.rotation != null) {
+        onUpdateElement(elementId, {
+          props: {
+            ...element.props,
+            rotation: last.rotation
+          }
+        })
+      }
+      transientRef.current.delete(elementId)
+      document.removeEventListener("mousemove", onMouseMove)
+      document.removeEventListener("mouseup", onMouseUp)
+    }
+    
+    document.addEventListener("mousemove", onMouseMove)
+    document.addEventListener("mouseup", onMouseUp)
+  }
+
   const handleElementClick = (e: React.MouseEvent, elementId: string) => {
     e.stopPropagation()
     const isMultiSelect = e.ctrlKey || e.metaKey
@@ -3083,16 +3172,20 @@ export function Canvas({
     const dy = transient?.y != null ? (transient.y - position.y) : 0
     const finalWidth = transient?.width != null ? transient.width : position.width
     const finalHeight = transient?.height != null ? transient.height : position.height
+    
+    // Get rotation (from transient during rotation, or from element props, or 0)
+    const rotation = transient?.rotation ?? element.props?.rotation ?? 0
 
     const isActiveMove = draggedElementId === element.id
     const isActiveResize = isResizing === element.id
+    const isActiveRotate = isRotating === element.id
 
     return (
       <div
         key={element.id}
         className={`
           absolute cursor-pointer rounded-md group
-          ${isActiveMove || isActiveResize ? "transition-none" : "transition-all duration-200"}
+          ${isActiveMove || isActiveResize || isActiveRotate ? "transition-none" : "transition-all duration-200"}
           ${isSelected ? "ring-2 ring-primary bg-primary/20" : "hover:bg-primary/10"}
           ${isActiveMove ? "z-50" : "z-10"}
         `}
@@ -3101,8 +3194,14 @@ export function Canvas({
           top: position.y,
           width: finalWidth,
           height: finalHeight,
-          transform: dx !== 0 || dy !== 0 ? `translate(${dx}px, ${dy}px)` : undefined,
-          willChange: dx !== 0 || dy !== 0 ? "transform" : isActiveResize ? "width, height" : undefined,
+          transform: (() => {
+            const transforms = []
+            if (dx !== 0 || dy !== 0) transforms.push(`translate(${dx}px, ${dy}px)`)
+            if (rotation !== 0) transforms.push(`rotate(${rotation}deg)`)
+            return transforms.length > 0 ? transforms.join(' ') : undefined
+          })(),
+          transformOrigin: 'center center',
+          willChange: (dx !== 0 || dy !== 0) ? "transform" : isActiveResize ? "width, height" : isActiveRotate ? "transform" : undefined,
         }}
         onClick={(e) => handleElementClick(e, element.id)}
         onMouseDown={(e) => handleElementMouseDown(e, element.id)}
@@ -7951,6 +8050,21 @@ export function Canvas({
               className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-3 bg-primary rounded cursor-e-resize z-20"
               onMouseDown={(e) => handleResizeMouseDown(e, element.id, "e")}
             />
+            
+            {/* Rotation handle - positioned above element */}
+            <div
+              className="absolute -top-8 left-1/2 -translate-x-1/2 cursor-grab active:cursor-grabbing z-20"
+              onMouseDown={(e) => handleRotateMouseDown(e, element.id)}
+              title="Rotate element"
+            >
+              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                <svg className="w-4 h-4 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+              {/* Connection line from handle to element */}
+              <div className="absolute top-6 left-1/2 -translate-x-1/2 w-0.5 h-2 bg-primary"></div>
+            </div>
           </>
         )}
       </div>
@@ -7985,6 +8099,8 @@ export function Canvas({
           onStartSectionResize={startSectionDividerResize}
           onStartFooterBottomResize={startFooterBottomResize}
           defaultSectionHeight={DEFAULT_SECTION}
+          toggleCategoryRef={toggleCategoryRef}
+          sectionHasElements={sectionHasElements}
         />
       )}
       {/* Enhanced Grid overlay */}
@@ -8068,6 +8184,8 @@ function PartitionsOverlay({
   onStartSectionResize,
   onStartFooterBottomResize,
   defaultSectionHeight,
+  toggleCategoryRef,
+  sectionHasElements,
 }: {
   headerHeight: number
   footerHeight: number
@@ -8081,6 +8199,8 @@ function PartitionsOverlay({
   onStartSectionResize: (index: number, clientY: number) => void
   onStartFooterBottomResize: (clientY: number) => void
   defaultSectionHeight: number
+  toggleCategoryRef?: React.MutableRefObject<((categoryName: string) => void) | null>
+  sectionHasElements: (sectionIndex: number) => boolean
 }) {
   // Fine-grained hover states so sections act independently
   const [hoverHeader, setHoverHeader] = useState(false)
@@ -8203,6 +8323,168 @@ function PartitionsOverlay({
           ) && (
             <div className={`absolute inset-0 ${focusedSectionIndex === idx ? "ring-1 ring-blue-400/50" : ""} bg-blue-400/10 border border-blue-400/30 pointer-events-none`}>
               <div className="absolute top-1 left-2 text-[11px] text-blue-400">Section {idx + 1}</div>
+              
+              {/* Display buttons only if section is empty (no elements) */}
+              {!sectionHasElements(idx) && (
+                <>
+                  {/* Choose your starting point - Smooth transitioning UI */}
+                  {sec.height > 160 ? (
+                /* Full size - show all elements with text */
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto transition-all duration-300 ease-in-out">
+                  <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-300">
+                    <h3 className="text-sm font-medium text-blue-400 mb-2 transition-opacity duration-200">Choose your starting point</h3>
+                    <div className="flex gap-4">
+                      {/* Designed Section Button */}
+                      <button
+                        type="button"
+                        className="flex flex-col items-center gap-3 px-6 py-5 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg border-2 border-border hover:border-blue-400 w-32"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (toggleCategoryRef?.current) {
+                            toggleCategoryRef.current("Layout")
+                          }
+                        }}
+                        title="Choose from pre-designed sections"
+                      >
+                        <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center border border-blue-500/30 transition-transform duration-200">
+                          <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
+                          </svg>
+                        </div>
+                        <span className="text-xs font-medium text-card-foreground text-center transition-opacity duration-200">Designed Section</span>
+                      </button>
+
+                      {/* Grid Layout Button */}
+                      <button
+                        type="button"
+                        className="flex flex-col items-center gap-3 px-6 py-5 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg border-2 border-border hover:border-blue-400 w-32"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (toggleCategoryRef?.current) {
+                            toggleCategoryRef.current("Layout")
+                          }
+                        }}
+                        title="Create a custom grid layout"
+                      >
+                        <div className="w-12 h-12 bg-muted/50 rounded-lg flex items-center justify-center border border-border transition-transform duration-200">
+                          <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                          </svg>
+                        </div>
+                        <span className="text-xs font-medium text-card-foreground text-center transition-opacity duration-200">Grid Layout</span>
+                      </button>
+
+                      {/* Add an Element Button */}
+                      <button
+                        type="button"
+                        className="flex flex-col items-center gap-3 px-6 py-5 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg border-2 border-border hover:border-blue-400 w-32"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (toggleCategoryRef?.current) {
+                            toggleCategoryRef.current("Basic Elements")
+                          }
+                        }}
+                        title="Add individual elements from the sidebar"
+                      >
+                        <div className="w-12 h-12 bg-muted/50 rounded-lg flex items-center justify-center border border-border transition-transform duration-200">
+                          <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                        </div>
+                        <span className="text-xs font-medium text-card-foreground text-center transition-opacity duration-200">Add an Element</span>
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 transition-opacity duration-200">
+                      Choose a grid layout, add elements<br />
+                      or add a <a href="#" className="text-blue-400 hover:underline" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>Designed Section</a>
+                    </p>
+                  </div>
+                </div>
+              ) : sec.height > 128 ? (
+                /* Compact size - show 3 icon buttons without labels (smooth transition) */
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto transition-all duration-300 ease-in-out">
+                  <div className="flex gap-3 animate-in fade-in zoom-in-95 duration-300">
+                    {/* Designed Section Button - Icon Only */}
+                    <button
+                      type="button"
+                      className="flex items-center justify-center p-3 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 border-2 border-border hover:border-blue-400"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (toggleCategoryRef?.current) {
+                          toggleCategoryRef.current("Layout")
+                        }
+                      }}
+                      title="Designed Section"
+                    >
+                      <div className="w-8 h-8 bg-blue-500/10 rounded flex items-center justify-center border border-blue-500/30">
+                        <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
+                        </svg>
+                      </div>
+                    </button>
+
+                    {/* Grid Layout Button - Icon Only */}
+                    <button
+                      type="button"
+                      className="flex items-center justify-center p-3 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 border-2 border-border hover:border-blue-400"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (toggleCategoryRef?.current) {
+                          toggleCategoryRef.current("Layout")
+                        }
+                      }}
+                      title="Grid Layout"
+                    >
+                      <div className="w-8 h-8 bg-muted/50 rounded flex items-center justify-center border border-border">
+                        <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                        </svg>
+                      </div>
+                    </button>
+
+                    {/* Add Element Button - Icon Only */}
+                    <button
+                      type="button"
+                      className="flex items-center justify-center p-3 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 border-2 border-border hover:border-blue-400"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (toggleCategoryRef?.current) {
+                          toggleCategoryRef.current("Basic Elements")
+                        }
+                      }}
+                      title="Add an Element"
+                    >
+                      <div className="w-8 h-8 bg-muted/50 rounded flex items-center justify-center border border-border">
+                        <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Minimal size - show single centered button with smooth fade-in */
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto transition-all duration-300 ease-in-out">
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-500/90 hover:bg-blue-600 text-white text-xs rounded-lg shadow-md transition-all duration-200 hover:shadow-lg hover:scale-105 border border-blue-400/50 animate-in fade-in zoom-in-95 duration-300"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (toggleCategoryRef?.current) {
+                        toggleCategoryRef.current("Basic Elements")
+                      }
+                    }}
+                    title="Add Element - Expand section for more options"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span className="font-medium">Add Element</span>
+                  </button>
+                </div>
+              )}
+                </>
+              )}
             </div>
           )}
           {/* Per-section top add button (behaves like s-top for the first section; otherwise insert before idx) */}
