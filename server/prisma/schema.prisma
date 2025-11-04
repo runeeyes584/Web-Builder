@@ -10,7 +10,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ----------------------
 // User model
+// ----------------------
 model User {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   clerk_id    String   @unique
@@ -23,30 +25,35 @@ model User {
   updated_at  DateTime @updatedAt
 
   // Relations
-  projects    Project[]
-  editHistory EditHistory[]
-  exports     Export[]
+  projects    Project[]        @relation("UserProjects")
+  editHistory EditHistory[]    @relation("UserEditHistory")
+  exports     Export[]         @relation("UserExports")
 
   @@map("users")
 }
 
+// ----------------------
 // Project model
+// ----------------------
 model Project {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  clerk_id    String   // FK → User.clerk_id
+  clerk_id    String
   name        String
   description String?
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
   // Relations
-  pages   Page[]
-  exports Export[]
+  user     User?     @relation("UserProjects", fields: [clerk_id], references: [clerk_id])
+  pages    Page[]    @relation("ProjectPages")
+  exports  Export[]  @relation("ProjectExports")
 
   @@map("projects")
 }
 
+// ----------------------
 // Page model
+// ----------------------
 model Page {
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
   project_id     String   @db.ObjectId
@@ -56,47 +63,65 @@ model Page {
   updated_at     DateTime @updatedAt
 
   // Relations
-  components    Component[]
-  editHistories EditHistory[]
+  project       Project?       @relation("ProjectPages", fields: [project_id], references: [id])
+  components    Component[]    @relation("PageComponents")
+  editHistories EditHistory[]  @relation("PageEditHistories")
 
   @@map("pages")
 }
 
+// ----------------------
 // Component model
+// ----------------------
 model Component {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
   page_id       String?  @db.ObjectId
   theme         String?
-  type          String   // Text, Image, Video, Button, Input, Container, Row, Column
+  type          String
   properties    Json
   order_index   Int?
   parent_id     String?  @db.ObjectId
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
 
+  // Relation
+  page          Page?    @relation("PageComponents", fields: [page_id], references: [id])
+
   @@map("components")
 }
 
+// ----------------------
 // Edit History model
+// ----------------------
 model EditHistory {
   id                 String   @id @default(auto()) @map("_id") @db.ObjectId
   page_id            String   @db.ObjectId
-  clerk_id           String   // FK → User.clerk_id
+  clerk_id           String
   action             String   // ADD, UPDATE, DELETE, DUPLICATE, MOVE
   component_snapshot Json
   created_at         DateTime @default(now())
 
+  // Relations
+  user  User?  @relation("UserEditHistory", fields: [clerk_id], references: [clerk_id])
+  page  Page?  @relation("PageEditHistories", fields: [page_id], references: [id])
+
   @@map("edit_history")
 }
 
+// ----------------------
 // Export model
+// ----------------------
 model Export {
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
   project_id     String   @db.ObjectId
-  clerk_id       String   // FK → User.clerk_id
+  clerk_id       String
   json_snapshot  Json
   bundle_path    String
   created_at     DateTime @default(now())
+
+  // Relations
+  user    User?    @relation("UserExports", fields: [clerk_id], references: [clerk_id])
+  project Project? @relation("ProjectExports", fields: [project_id], references: [id])
 
   @@map("exports")
 }
