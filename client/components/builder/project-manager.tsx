@@ -2,15 +2,16 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { projectsApi, type Project } from "@/api/projects.api"
 import { Badge } from "@/components/ui/badge"
-import { ProjectManager, type ProjectData } from "@/lib/project-manager"
-import { Save, FolderOpen, Download, Upload, Trash2, Calendar } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
+import { useUser } from "@clerk/nextjs"
+import { Calendar, Download, FolderOpen, Save, Trash2, Upload } from "lucide-react"
+import { useEffect, useState } from "react"
 
 interface ProjectManagerProps {
   elements: any[]
@@ -19,17 +20,44 @@ interface ProjectManagerProps {
 }
 
 export function ProjectManagerComponent({ elements, onLoadProject, currentProjectName }: ProjectManagerProps) {
-  const [projects, setProjects] = useState<ProjectData[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [loadDialogOpen, setLoadDialogOpen] = useState(false)
   const [projectName, setProjectName] = useState(currentProjectName || "")
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null) // Track current project
+  const [loading, setLoading] = useState(false)
   const { toast } = useToast()
+  const { user } = useUser()
 
+  // Load projects from database
   useEffect(() => {
-    setProjects(ProjectManager.getAllProjects())
-  }, [])
+    if (user?.id) {
+      loadProjects()
+    }
+  }, [user])
 
-  const handleSave = () => {
+  const loadProjects = async () => {
+    if (!user?.id) return
+
+    try {
+      setLoading(true)
+      const response = await projectsApi.getByUser(user.id)
+      if (response.success && response.data) {
+        setProjects(response.data)
+      }
+    } catch (error) {
+      console.error("Failed to load projects:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load projects from server",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
     if (!projectName.trim()) {
       toast({
         title: "Error",
@@ -39,25 +67,72 @@ export function ProjectManagerComponent({ elements, onLoadProject, currentProjec
       return
     }
 
-    try {
-      const savedProject = ProjectManager.saveProject(projectName.trim(), elements)
-      setProjects(ProjectManager.getAllProjects())
-      setSaveDialogOpen(false)
+    if (!user?.id) {
       toast({
-        title: "Success",
-        description: `Project "${savedProject.name}" saved successfully`,
+        title: "Error",
+        description: "You must be logged in to save projects",
+        variant: "destructive",
       })
+      return
+    }
+
+    try {
+      setLoading(true)
+      
+      // Check if updating existing project or creating new one
+      if (currentProjectId) {
+        // UPDATE existing project
+        const response = await projectsApi.update(currentProjectId, {
+          name: projectName.trim(),
+          description: "",
+          elements: elements,
+        })
+
+        if (response.success) {
+          setSaveDialogOpen(false)
+          toast({
+            title: "Success",
+            description: `Project "${projectName}" updated successfully`,
+          })
+          await loadProjects()
+        }
+      } else {
+        // CREATE new project
+        const response = await projectsApi.create({
+          clerk_id: user.id,
+          name: projectName.trim(),
+          description: "",
+          elements: elements,
+        })
+
+        if (response.success && response.data) {
+          setCurrentProjectId(response.data.id) // Save project ID for future updates
+          setSaveDialogOpen(false)
+          toast({
+            title: "Success",
+            description: `Project "${projectName}" created successfully`,
+          })
+          await loadProjects()
+        }
+      }
     } catch (error) {
+      console.error("Failed to save project:", error)
       toast({
         title: "Error",
         description: "Failed to save project",
         variant: "destructive",
       })
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleLoad = (project: ProjectData) => {
-    onLoadProject(project.elements)
+  const handleLoad = (project: Project) => {
+    // Get elements from first page
+    const projectElements = project.pages?.[0]?.json_structure?.elements || []
+    onLoadProject(projectElements)
+    setCurrentProjectId(project.id) // Set current project ID
+    setProjectName(project.name)    // Set project name
     setLoadDialogOpen(false)
     toast({
       title: "Success",
@@ -65,49 +140,100 @@ export function ProjectManagerComponent({ elements, onLoadProject, currentProjec
     })
   }
 
-  const handleDelete = (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete "${name}"?`)) {
-      ProjectManager.deleteProject(id)
-      setProjects(ProjectManager.getAllProjects())
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"?`)) return
+
+    try {
+      setLoading(true)
+      const response = await projectsApi.delete(id)
+      
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: `Project "${name}" deleted successfully`,
+        })
+        await loadProjects() // Reload projects list
+      }
+    } catch (error) {
+      console.error("Failed to delete project:", error)
       toast({
-        title: "Success",
-        description: `Project "${name}" deleted successfully`,
+        title: "Error",
+        description: "Failed to delete project",
+        variant: "destructive",
       })
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleExport = (project: ProjectData) => {
-    ProjectManager.exportProject(project)
+  const handleExport = (project: Project) => {
+    const projectElements = project.pages?.[0]?.json_structure?.elements || []
+    const exportData = {
+      id: project.id,
+      name: project.name,
+      elements: projectElements,
+      createdAt: project.created_at,
+      updatedAt: project.updated_at,
+      version: project.pages?.[0]?.json_structure?.version || "1.0.0",
+    }
+
+    const dataStr = JSON.stringify(exportData, null, 2)
+    const dataBlob = new Blob([dataStr], { type: "application/json" })
+    const url = URL.createObjectURL(dataBlob)
+
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `${project.name.replace(/\s+/g, "-").toLowerCase()}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
     toast({
       title: "Success",
       description: `Project "${project.name}" exported successfully`,
     })
   }
 
-  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file) return
+    if (!file || !user?.id) return
 
-    ProjectManager.importProject(file)
-      .then((project) => {
-        const savedProject = ProjectManager.saveProject(project.name, project.elements)
-        setProjects(ProjectManager.getAllProjects())
-        onLoadProject(project.elements)
+    try {
+      const text = await file.text()
+      const importedData = JSON.parse(text)
+
+      if (!importedData.name || !importedData.elements || !Array.isArray(importedData.elements)) {
+        throw new Error("Invalid project file format")
+      }
+
+      setLoading(true)
+      const response = await projectsApi.create({
+        clerk_id: user.id,
+        name: importedData.name,
+        description: "",
+        elements: importedData.elements,
+      })
+
+      if (response.success) {
+        onLoadProject(importedData.elements)
         toast({
           title: "Success",
-          description: `Project "${project.name}" imported successfully`,
+          description: `Project "${importedData.name}" imported successfully`,
         })
+        await loadProjects()
+      }
+    } catch (error) {
+      console.error("Failed to import project:", error)
+      toast({
+        title: "Error",
+        description: "Failed to import project file",
+        variant: "destructive",
       })
-      .catch((error) => {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        })
-      })
-
-    // Reset input
-    event.target.value = ""
+    } finally {
+      setLoading(false)
+      event.target.value = ""
+    }
   }
 
   return (
@@ -134,11 +260,30 @@ export function ProjectManagerComponent({ elements, onLoadProject, currentProjec
                 className="mt-1"
               />
             </div>
+            {currentProjectId && (
+              <div className="text-sm text-muted-foreground">
+                Updating existing project
+              </div>
+            )}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSave}>Save Project</Button>
+              {currentProjectId && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setCurrentProjectId(null)
+                    handleSave()
+                  }}
+                  disabled={loading}
+                >
+                  Save As New
+                </Button>
+              )}
+              <Button onClick={handleSave} disabled={loading}>
+                {loading ? "Saving..." : currentProjectId ? "Update" : "Save"}
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -157,7 +302,9 @@ export function ProjectManagerComponent({ elements, onLoadProject, currentProjec
             <DialogTitle>Load Project</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 max-h-96 overflow-y-auto">
-            {projects.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-8 text-muted-foreground">Loading projects...</div>
+            ) : projects.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">No saved projects found</div>
             ) : (
               <div className="grid gap-3">
@@ -168,7 +315,7 @@ export function ProjectManagerComponent({ elements, onLoadProject, currentProjec
                         <CardTitle className="text-base">{project.name}</CardTitle>
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary" className="text-xs">
-                            {project.elements.length} elements
+                            {project.pages?.[0]?.json_structure?.elements?.length || 0} elements
                           </Badge>
                           <Button
                             variant="ghost"
@@ -197,7 +344,7 @@ export function ProjectManagerComponent({ elements, onLoadProject, currentProjec
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4" />
-                          {new Date(project.updatedAt).toLocaleDateString()}
+                          {new Date(project.updated_at).toLocaleDateString()}
                         </div>
                         <Button size="sm" onClick={() => handleLoad(project)}>
                           Load Project

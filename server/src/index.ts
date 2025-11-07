@@ -4,7 +4,10 @@ import dotenv from 'dotenv';
 import express from 'express';
 import morgan from 'morgan';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import editHistoryRouter from './routes/EditHistory.route';
 import { healthRouter } from './routes/health';
+import pageRouter from './routes/Page.route';
+import projectRouter from './routes/Project.route';
 import userRouter from './routes/Users.route';
 
 dotenv.config();
@@ -25,6 +28,9 @@ app.use(bodyParser.json({
 
 // Routes
 app.use('/api/users', userRouter);
+app.use('/api/projects', projectRouter);
+app.use('/api/pages', pageRouter);
+app.use('/api/history', editHistoryRouter);
 app.use('/health', healthRouter);
 
 app.get('/', (_req: any, res: { json: (arg0: { ok: boolean; service: string; }) => void; }) => {
