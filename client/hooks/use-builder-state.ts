@@ -1,9 +1,20 @@
 "use client"
 
+import { editHistoryApi } from "@/api/editHistory.api"
 import type { Breakpoint, BuilderElement, SnapSettings } from "@/lib/builder-types"
-import { useCallback, useState } from "react"
+import { useUser } from "@clerk/nextjs"
+import { useCallback, useRef, useState } from "react"
 
 export function useBuilderState() {
+  const { user } = useUser()
+  const [currentPageId, setCurrentPageId] = useState<string | null>(null)
+  
+  // Track last action to prevent duplicates
+  const lastActionRef = useRef<{ action: string; elementId: string; timestamp: number } | null>(null)
+  
+  // Debounce timers
+  const moveDebounceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const updateDebounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [elements, setElements] = useState<BuilderElement[]>([
     {
       id: "1",
@@ -47,6 +58,46 @@ export function useBuilderState() {
   const [showSections, setShowSections] = useState<boolean>(false)
   const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false)
 
+  // Helper function to save action to database (with duplicate prevention)
+  const saveActionToDB = useCallback(async (
+    action: 'ADD' | 'UPDATE' | 'DELETE' | 'DUPLICATE' | 'MOVE',
+    componentSnapshot: any
+  ) => {
+    // Only save if we have pageId and user
+    if (!currentPageId || !user?.id) {
+      console.warn('Cannot save to DB: missing pageId or user')
+      return
+    }
+
+    // Prevent duplicate saves within 1 second
+    const now = Date.now()
+    const lastAction = lastActionRef.current
+    const elementId = componentSnapshot?.id || 'unknown'
+    
+    if (
+      lastAction &&
+      lastAction.action === action &&
+      lastAction.elementId === elementId &&
+      now - lastAction.timestamp < 1000 // 1 second debounce
+    ) {
+      return
+    }
+
+    // Update last action tracker
+    lastActionRef.current = { action, elementId, timestamp: now }
+
+    try {
+      await editHistoryApi.createHistory({
+        page_id: currentPageId,
+        clerk_id: user.id,
+        action,
+        component_snapshot: componentSnapshot,
+      })
+    } catch (error) {
+      console.error(`Failed to save ${action} to DB:`, error)
+    }
+  }, [currentPageId, user])
+
   const addElement = useCallback((element: BuilderElement, position?: { x: number; y: number }) => {
     setElements((prev) => {
       const basePosition = element.position || { x: 100, y: 100, width: 200, height: 50 }
@@ -57,31 +108,44 @@ export function useBuilderState() {
       }
       const newElements = [...prev, newElement]
       
-      // Save to history
+      // Save to local history (for Undo/Redo)
       setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])
       setHistoryIndex((idx) => idx + 1)
       
+      // Save to database (async, non-blocking)
+      saveActionToDB('ADD', newElement)
+      
       return newElements
     })
-  }, [historyIndex])
+  }, [historyIndex, saveActionToDB])
 
   const updateElement = useCallback((id: string, updates: Partial<BuilderElement>) => {
     setElements((prev) => {
       const newElements = prev.map((el) => {
         if (el.id === id) {
           const updated = { ...el, ...updates };
+          
+          // Debounce UPDATE action (chỉ save sau 1 giây không có changes nữa)
+          if (updateDebounceTimerRef.current) {
+            clearTimeout(updateDebounceTimerRef.current)
+          }
+          
+          updateDebounceTimerRef.current = setTimeout(() => {
+            saveActionToDB('UPDATE', updated)
+          }, 1000) // Đợi 1 giây sau khi user ngừng gõ
+          
           return updated;
         }
         return el;
       });
       
-      // Save to history
+      // Save to local history (ngay lập tức cho Undo/Redo)
       setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])
       setHistoryIndex((idx) => idx + 1)
       
       return newElements
     })
-  }, [historyIndex])
+  }, [historyIndex, saveActionToDB])
 
   const updateElementResponsiveStyle = useCallback(
     (id: string, breakpoint: Breakpoint, styles: Record<string, any>) => {
@@ -107,23 +171,24 @@ export function useBuilderState() {
   )
 
   const deleteElement = useCallback((id: string) => {
-    console.log('Delete element:', id)
     setElements((prev) => {
+      // Get element before deleting (để lưu vào history)
+      const deletedElement = prev.find((el) => el.id === id)
       const newElements = prev.filter((el) => el.id !== id)
       
-      // Save to history
+      // Save to local history
       setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])
       setHistoryIndex((idx) => idx + 1)
       
-      console.log('Element deleted, history updated:', { 
-        newHistoryLength: historyIndex + 2, 
-        newElementsCount: newElements.length 
-      })
+      // Save to database (async)
+      if (deletedElement) {
+        saveActionToDB('DELETE', deletedElement)
+      }
       
       return newElements
     })
     setSelectedElements((prev) => prev.filter((elId) => elId !== id))
-  }, [historyIndex])
+  }, [historyIndex, saveActionToDB])
 
   const duplicateElement = useCallback(
     (id: string) => {
@@ -133,25 +198,55 @@ export function useBuilderState() {
           ...element,
           id: `${element.id}-copy-${Date.now()}`,
         }
-        addElement(newElement)
+        
+        // Save to database with DUPLICATE action
+        // Không gọi addElement() vì nó sẽ tạo thêm record với action ADD
+        setElements((prev) => {
+          const newElements = [...prev, newElement]
+          
+          // Save to local history
+          setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])
+          setHistoryIndex((idx) => idx + 1)
+          
+          return newElements
+        })
+        
+        // Save to database (async)
+        saveActionToDB('DUPLICATE', newElement)
       }
     },
-    [elements, addElement],
+    [elements, historyIndex, saveActionToDB],
   )
 
   const updateElementPosition = useCallback(
     (id: string, position: { x: number; y: number; width?: number; height?: number }) => {
       setElements((prev) => {
-        const newElements = prev.map((el) => (el.id === id ? { ...el, position: { ...el.position, ...position } } : el))
+        const newElements = prev.map((el) => {
+          if (el.id === id) {
+            const movedElement = { ...el, position: { ...el.position, ...position } }
+            
+            // Debounce MOVE action (chỉ save sau 500ms không có movement nữa)
+            if (moveDebounceTimerRef.current) {
+              clearTimeout(moveDebounceTimerRef.current)
+            }
+            
+            moveDebounceTimerRef.current = setTimeout(() => {
+              saveActionToDB('MOVE', movedElement)
+            }, 500) // Đợi 500ms sau khi user ngừng drag
+            
+            return movedElement
+          }
+          return el
+        })
         
-        // Save to history
+        // Save to local history
         setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])
         setHistoryIndex((idx) => idx + 1)
         
         return newElements
       })
     },
-    [historyIndex],
+    [historyIndex, saveActionToDB],
   )
 
   const snapToGrid = useCallback((value: number, gridSize: number) => {
@@ -159,22 +254,18 @@ export function useBuilderState() {
   }, [])
 
   const undo = useCallback(() => {
-    console.log('Undo called:', { historyIndex, historyLength: history.length })
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1
       setHistoryIndex(newIndex)
       setElements(history[newIndex])
-      console.log('Undo successful:', { newIndex, elementsCount: history[newIndex].length })
     }
   }, [history, historyIndex])
 
   const redo = useCallback(() => {
-    console.log('Redo called:', { historyIndex, historyLength: history.length })
     if (historyIndex < history.length - 1) {
       const newIndex = historyIndex + 1
       setHistoryIndex(newIndex)
       setElements(history[newIndex])
-      console.log('Redo successful:', { newIndex, elementsCount: history[newIndex].length })
     }
   }, [history, historyIndex])
 
@@ -183,11 +274,16 @@ export function useBuilderState() {
     setHistoryIndex((prev) => prev + 1)
   }, [elements, historyIndex])
 
-  const loadProject = useCallback((newElements: BuilderElement[]) => {
+  const loadProject = useCallback((newElements: BuilderElement[], pageId?: string) => {
     setElements(newElements)
     setSelectedElements([])
     setHistory([newElements])
     setHistoryIndex(0)
+    
+    // Set pageId để có thể save history
+    if (pageId) {
+      setCurrentPageId(pageId)
+    }
   }, [])
 
   return {
@@ -217,5 +313,7 @@ export function useBuilderState() {
     canUndo: historyIndex > 0,
     canRedo: historyIndex < history.length - 1,
     loadProject,
+    currentPageId,
+    setCurrentPageId,
   }
 }

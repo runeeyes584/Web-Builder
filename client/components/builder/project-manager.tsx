@@ -15,7 +15,7 @@ import { useEffect, useState } from "react"
 
 interface ProjectManagerProps {
   elements: any[]
-  onLoadProject: (elements: any[]) => void
+  onLoadProject: (elements: any[], pageId?: string) => void
   currentProjectName?: string
 }
 
@@ -130,7 +130,9 @@ export function ProjectManagerComponent({ elements, onLoadProject, currentProjec
   const handleLoad = (project: Project) => {
     // Get elements from first page
     const projectElements = project.pages?.[0]?.json_structure?.elements || []
-    onLoadProject(projectElements)
+    const pageId = project.pages?.[0]?.id // Get pageId để track history
+    
+    onLoadProject(projectElements, pageId) // Pass pageId
     setCurrentProjectId(project.id) // Set current project ID
     setProjectName(project.name)    // Set project name
     setLoadDialogOpen(false)
