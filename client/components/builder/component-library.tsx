@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card"
 import type { BuilderElement } from "@/lib/builder-types"
 import { componentCategories } from "@/lib/component-categories"
 import { ChevronDown, Move, Search, Sparkles } from "lucide-react"
-import React, { useState } from "react"
+import React, { useCallback, useMemo, useState } from "react"
 import { useDrag } from "react-dnd"
 import { getEmptyImage } from "react-dnd-html5-backend"
 import { TemplateLibrary } from "./template-library"
@@ -14,8 +14,27 @@ interface ComponentLibraryProps {
   onToggleCategoryRef?: React.MutableRefObject<((categoryName: string) => void) | null>
 }
 
-export function ComponentLibrary({ onAddTemplate, onToggleCategoryRef }: ComponentLibraryProps) {
+export const ComponentLibrary = React.memo(function ComponentLibrary({ onAddTemplate, onToggleCategoryRef }: ComponentLibraryProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [searchQuery, setSearchQuery] = useState<string>("")
+
+  // Memoize filtered categories để tránh tính toán lại mỗi lần render
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return componentCategories
+
+    const query = searchQuery.toLowerCase()
+    return componentCategories
+      .map((category) => ({
+        ...category,
+        components: category.components.filter(
+          (comp) =>
+            comp.name.toLowerCase().includes(query) ||
+            comp.description.toLowerCase().includes(query) ||
+            comp.type.toLowerCase().includes(query)
+        ),
+      }))
+      .filter((category) => category.components.length > 0)
+  }, [searchQuery])
 
   const DraggableCard: React.FC<{ component: { name: string; description: string; icon: any; type: string } }> = React.memo(({ component }) => {
     const [{ isDragging }, dragRef, preview] = useDrag(() => ({
@@ -102,15 +121,17 @@ export function ComponentLibrary({ onAddTemplate, onToggleCategoryRef }: Compone
     )
   })
 
-  const toggleCategory = (categoryName: string) => {
-    const newExpanded = new Set(expandedCategories)
-    if (newExpanded.has(categoryName)) {
-      newExpanded.delete(categoryName)
-    } else {
-      newExpanded.add(categoryName)
-    }
-    setExpandedCategories(newExpanded)
-  }
+  const toggleCategory = useCallback((categoryName: string) => {
+    setExpandedCategories((prev) => {
+      const newExpanded = new Set(prev)
+      if (newExpanded.has(categoryName)) {
+        newExpanded.delete(categoryName)
+      } else {
+        newExpanded.add(categoryName)
+      }
+      return newExpanded
+    })
+  }, [])
 
   // Expose toggleCategory via ref
   React.useEffect(() => {
@@ -148,7 +169,9 @@ export function ComponentLibrary({ onAddTemplate, onToggleCategoryRef }: Compone
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors duration-200" />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search components..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-3 py-2 bg-sidebar-accent/50 border border-sidebar-border/30 rounded-lg text-xs text-sidebar-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 focus:bg-sidebar-accent/70 transition-all duration-200"
           />
         </div>
@@ -157,7 +180,16 @@ export function ComponentLibrary({ onAddTemplate, onToggleCategoryRef }: Compone
       {/* Compact Categories */}
       <div className="flex-1 overflow-y-auto custom-scrollbar relative">
         <div className="p-3 space-y-2">
-          {componentCategories.map((category, categoryIndex) => {
+          {filteredCategories.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+              <div className="w-16 h-16 bg-muted/20 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium text-foreground mb-1">No components found</p>
+              <p className="text-xs text-muted-foreground">Try a different search term</p>
+            </div>
+          ) : (
+            filteredCategories.map((category, categoryIndex) => {
             const isExpanded = expandedCategories.has(category.name)
             return (
               <div key={category.name} className="animate-in slide-in-from-left duration-300" style={{ animationDelay: `${categoryIndex * 50}ms` }}>
@@ -218,7 +250,8 @@ export function ComponentLibrary({ onAddTemplate, onToggleCategoryRef }: Compone
                 )}
               </div>
             )
-          })}
+          })
+          )}
         </div>
       </div>
 
@@ -230,4 +263,4 @@ export function ComponentLibrary({ onAddTemplate, onToggleCategoryRef }: Compone
       </div>
     </div>
   )
-}
+})

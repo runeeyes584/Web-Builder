@@ -3,7 +3,7 @@
 import { Card } from "@/components/ui/card"
 import type { BuilderElement, RegionsLayout } from "@/lib/builder-types"
 import { Copy, Eye, EyeOff, Lock, Trash2, Unlock } from "lucide-react"
-import { useState } from "react"
+import React, { useCallback, useMemo, useState } from "react"
 
 interface LayersPanelProps {
   elements: BuilderElement[]
@@ -17,7 +17,7 @@ interface LayersPanelProps {
   regions?: RegionsLayout
 }
 
-export function LayersPanel({
+export const LayersPanel = React.memo(function LayersPanel({
   elements,
   selectedElements,
   onElementSelect,
@@ -32,17 +32,19 @@ export function LayersPanel({
 
   if (!isOpen) return null
 
-  const toggleGroup = (groupName: string) => {
-    const newExpanded = new Set(expandedGroups)
-    if (newExpanded.has(groupName)) {
-      newExpanded.delete(groupName)
-    } else {
-      newExpanded.add(groupName)
-    }
-    setExpandedGroups(newExpanded)
-  }
+  const toggleGroup = useCallback((groupName: string) => {
+    setExpandedGroups((prev) => {
+      const newExpanded = new Set(prev)
+      if (newExpanded.has(groupName)) {
+        newExpanded.delete(groupName)
+      } else {
+        newExpanded.add(groupName)
+      }
+      return newExpanded
+    })
+  }, [])
 
-  const toggleElementVisibility = (elementId: string) => {
+  const toggleElementVisibility = useCallback((elementId: string) => {
     const element = elements.find(el => el.id === elementId)
     if (element) {
       const isHidden = element.styles.display === "none"
@@ -53,9 +55,9 @@ export function LayersPanel({
         }
       })
     }
-  }
+  }, [elements, onUpdateElement])
 
-  const toggleElementLock = (elementId: string) => {
+  const toggleElementLock = useCallback((elementId: string) => {
     const element = elements.find(el => el.id === elementId)
     if (element) {
       const isLocked = element.props?.locked || false
@@ -66,10 +68,10 @@ export function LayersPanel({
         }
       })
     }
-  }
+  }, [elements, onUpdateElement])
 
-  // Helper to group elements by region using the passed layout
-  const groupByRegion = () => {
+  // Helper to group elements by region using the passed layout - memoized để tránh tính toán lại
+  const grouped = useMemo(() => {
     if (!regions) {
       return {
         header: [] as BuilderElement[],
@@ -109,9 +111,7 @@ export function LayersPanel({
     sectionGroups.forEach((g) => g.elements.sort(byY))
 
     return { header: headerEls, sections: sectionGroups, footer: footerEls }
-  }
-
-  const grouped = groupByRegion()
+  }, [elements, regions])
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose}>
@@ -327,4 +327,4 @@ export function LayersPanel({
       </div>
     </div>
   )
-}
+})

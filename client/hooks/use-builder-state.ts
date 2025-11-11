@@ -3,7 +3,10 @@
 import { editHistoryApi } from "@/api/editHistory.api"
 import type { Breakpoint, BuilderElement, SnapSettings } from "@/lib/builder-types"
 import { useUser } from "@clerk/nextjs"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+
+// Giới hạn lịch sử tối đa 50 bước để tránh tốn bộ nhớ
+const MAX_HISTORY_SIZE = 50
 
 export function useBuilderState() {
   const { user } = useUser()
@@ -58,6 +61,30 @@ export function useBuilderState() {
   const [showSections, setShowSections] = useState<boolean>(false)
   const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false)
 
+  // Helper function để giới hạn kích thước history
+  const addToHistory = useCallback((newState: BuilderElement[][]) => {
+    // Nếu history vượt quá MAX_HISTORY_SIZE, xóa các bước cũ nhất
+    if (newState.length > MAX_HISTORY_SIZE) {
+      return newState.slice(newState.length - MAX_HISTORY_SIZE)
+    }
+    return newState
+  }, [])
+
+  // Cleanup timers khi component unmount
+  useEffect(() => {
+    return () => {
+      // Dọn dẹp tất cả timers khi component bị unmount
+      if (moveDebounceTimerRef.current) {
+        clearTimeout(moveDebounceTimerRef.current)
+        moveDebounceTimerRef.current = null
+      }
+      if (updateDebounceTimerRef.current) {
+        clearTimeout(updateDebounceTimerRef.current)
+        updateDebounceTimerRef.current = null
+      }
+    }
+  }, [])
+
   // Helper function to save action to database (with duplicate prevention)
   const saveActionToDB = useCallback(async (
     action: 'ADD' | 'UPDATE' | 'DELETE' | 'DUPLICATE' | 'MOVE',
@@ -108,8 +135,11 @@ export function useBuilderState() {
       }
       const newElements = [...prev, newElement]
       
-      // Save to local history (for Undo/Redo)
-      setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])
+      // Save to local history (for Undo/Redo) với giới hạn kích thước
+      setHistory((hist) => {
+        const newHistory = [...hist.slice(0, historyIndex + 1), newElements]
+        return addToHistory(newHistory)
+      })
       setHistoryIndex((idx) => idx + 1)
       
       // Save to database (async, non-blocking)
@@ -117,7 +147,7 @@ export function useBuilderState() {
       
       return newElements
     })
-  }, [historyIndex, saveActionToDB])
+  }, [historyIndex, saveActionToDB, addToHistory])
 
   const updateElement = useCallback((id: string, updates: Partial<BuilderElement>) => {
     setElements((prev) => {
@@ -139,13 +169,16 @@ export function useBuilderState() {
         return el;
       });
       
-      // Save to local history (ngay lập tức cho Undo/Redo)
-      setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])
+      // Save to local history (ngay lập tức cho Undo/Redo) với giới hạn kích thước
+      setHistory((hist) => {
+        const newHistory = [...hist.slice(0, historyIndex + 1), newElements]
+        return addToHistory(newHistory)
+      })
       setHistoryIndex((idx) => idx + 1)
       
       return newElements
     })
-  }, [historyIndex, saveActionToDB])
+  }, [historyIndex, saveActionToDB, addToHistory])
 
   const updateElementResponsiveStyle = useCallback(
     (id: string, breakpoint: Breakpoint, styles: Record<string, any>) => {
@@ -176,8 +209,11 @@ export function useBuilderState() {
       const deletedElement = prev.find((el) => el.id === id)
       const newElements = prev.filter((el) => el.id !== id)
       
-      // Save to local history
-      setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])
+      // Save to local history với giới hạn kích thước
+      setHistory((hist) => {
+        const newHistory = [...hist.slice(0, historyIndex + 1), newElements]
+        return addToHistory(newHistory)
+      })
       setHistoryIndex((idx) => idx + 1)
       
       // Save to database (async)
@@ -188,7 +224,7 @@ export function useBuilderState() {
       return newElements
     })
     setSelectedElements((prev) => prev.filter((elId) => elId !== id))
-  }, [historyIndex, saveActionToDB])
+  }, [historyIndex, saveActionToDB, addToHistory])
 
   const duplicateElement = useCallback(
     (id: string) => {
@@ -204,8 +240,11 @@ export function useBuilderState() {
         setElements((prev) => {
           const newElements = [...prev, newElement]
           
-          // Save to local history
-          setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])
+          // Save to local history với giới hạn kích thước
+          setHistory((hist) => {
+            const newHistory = [...hist.slice(0, historyIndex + 1), newElements]
+            return addToHistory(newHistory)
+          })
           setHistoryIndex((idx) => idx + 1)
           
           return newElements
@@ -215,7 +254,7 @@ export function useBuilderState() {
         saveActionToDB('DUPLICATE', newElement)
       }
     },
-    [elements, historyIndex, saveActionToDB],
+    [elements, historyIndex, saveActionToDB, addToHistory],
   )
 
   const updateElementPosition = useCallback(
@@ -239,14 +278,17 @@ export function useBuilderState() {
           return el
         })
         
-        // Save to local history
-        setHistory((hist) => [...hist.slice(0, historyIndex + 1), newElements])
+        // Save to local history với giới hạn kích thước
+        setHistory((hist) => {
+          const newHistory = [...hist.slice(0, historyIndex + 1), newElements]
+          return addToHistory(newHistory)
+        })
         setHistoryIndex((idx) => idx + 1)
         
         return newElements
       })
     },
-    [historyIndex, saveActionToDB],
+    [historyIndex, saveActionToDB, addToHistory],
   )
 
   const snapToGrid = useCallback((value: number, gridSize: number) => {
@@ -270,9 +312,12 @@ export function useBuilderState() {
   }, [history, historyIndex])
 
   const saveToHistory = useCallback(() => {
-    setHistory((prev) => [...prev.slice(0, historyIndex + 1), elements])
+    setHistory((prev) => {
+      const newHistory = [...prev.slice(0, historyIndex + 1), elements]
+      return addToHistory(newHistory)
+    })
     setHistoryIndex((prev) => prev + 1)
-  }, [elements, historyIndex])
+  }, [elements, historyIndex, addToHistory])
 
   const loadProject = useCallback((newElements: BuilderElement[], pageId?: string) => {
     setElements(newElements)
