@@ -40,15 +40,73 @@ model Project {
   clerk_id    String
   name        String
   description String?
+  is_public   Boolean  @default(false)  // Public projects can be viewed by anyone
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
   // Relations
-  user     User?     @relation("UserProjects", fields: [clerk_id], references: [clerk_id])
-  pages    Page[]    @relation("ProjectPages")
-  exports  Export[]  @relation("ProjectExports")
+  user            User?              @relation("UserProjects", fields: [clerk_id], references: [clerk_id])
+  pages           Page[]             @relation("ProjectPages")
+  exports         Export[]           @relation("ProjectExports")
+  collaborators   ProjectCollaborator[] @relation("ProjectCollaborators")
+  invitations     ProjectInvitation[]   @relation("ProjectInvitations")
 
   @@map("projects")
+}
+
+// ----------------------
+// Project Collaborator model
+// ----------------------
+model ProjectCollaborator {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  project_id  String   @db.ObjectId
+  clerk_id    String   // User being granted access
+  role        String   @default("editor") // owner, editor, viewer
+  added_by    String   // clerk_id of the person who added this collaborator
+  added_at    DateTime @default(now())
+  last_active DateTime @default(now())
+
+  // Relations
+  project     Project  @relation("ProjectCollaborators", fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, clerk_id])
+  @@map("project_collaborators")
+}
+
+// ----------------------
+// Project Invitation model
+// ----------------------
+model ProjectInvitation {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  project_id  String   @db.ObjectId
+  email       String   // Email of invitee
+  role        String   @default("editor")
+  invited_by  String   // clerk_id
+  token       String   @unique
+  status      String   @default("pending") // pending, accepted, rejected, expired
+  expires_at  DateTime
+  created_at  DateTime @default(now())
+
+  // Relations
+  project     Project  @relation("ProjectInvitations", fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("project_invitations")
+}
+
+// ----------------------
+// Active Session model (for real-time presence)
+// ----------------------
+model ActiveSession {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  project_id  String   @db.ObjectId
+  clerk_id    String
+  username    String
+  color       String   // Cursor color for this user
+  last_seen   DateTime @default(now())
+  cursor_pos  Json?    // {x, y, elementId}
+  
+  @@unique([project_id, clerk_id])
+  @@map("active_sessions")
 }
 
 // ----------------------

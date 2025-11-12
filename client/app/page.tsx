@@ -1,6 +1,6 @@
 "use client"
 
-import { Canvas } from "@/components/builder/canvas"
+import { CollaborativeCanvas } from "@/components/builder/collaborative-canvas"
 import { ComponentLibrary } from "@/components/builder/component-library"
 import { LayersPanel } from "@/components/builder/layers-panel"
 import { PropertiesPanel } from "@/components/builder/properties-panel"
@@ -9,7 +9,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { useBuilderState } from "@/hooks/use-builder-state"
 import type { BuilderElement, RegionsLayout } from "@/lib/builder-types"
 import { componentCategories } from "@/lib/component-categories"
-import { SignedIn, SignedOut } from "@clerk/nextjs"
+import { SignedIn, SignedOut, useUser } from "@clerk/nextjs"
 import { useEffect, useRef, useState } from "react"
 import { DndProvider, useDragLayer } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
@@ -45,6 +45,206 @@ export default function WebsiteBuilder() {
   const [showGrid, setShowGrid] = useState(true)
   const [showLayers, setShowLayers] = useState(false)
   const [regionsLayout, setRegionsLayout] = useState<RegionsLayout | null>(null)
+  
+  // Project and collaboration state
+  const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(undefined)
+  const [currentProjectName, setCurrentProjectName] = useState("Untitled Project")
+  const [isProjectOwner, setIsProjectOwner] = useState(true)
+  const [userRole, setUserRole] = useState<'OWNER' | 'EDITOR' | 'VIEWER'>('OWNER')
+  
+  // Get current user info from Clerk
+  const { user } = useUser()
+  
+  // Computed property for edit permission
+  const canEdit = userRole !== 'VIEWER'
+
+  console.log('👤 Current user role:', userRole, '| Can edit:', canEdit)
+  
+  // Ref to store sendElementChange function from CollaborativeCanvas
+  const sendElementChangeRef = useRef<((change: any) => void) | null>(null)
+  
+  // Track undo/redo operations
+  const undoRedoRef = useRef<{ isActive: boolean; beforeElements: BuilderElement[] }>({
+    isActive: false,
+    beforeElements: [],
+  })
+  
+  // Callback when CollaborativeCanvas is ready
+  const handleCollaborationReady = (sendElementChange: (change: any) => void) => {
+    sendElementChangeRef.current = sendElementChange
+  }
+  
+  // Detect and broadcast changes between two element states
+  const broadcastElementsDiff = (oldElements: BuilderElement[], newElements: BuilderElement[]) => {
+    if (!currentProjectId || !sendElementChangeRef.current) return
+    
+    const oldIds = new Set(oldElements.map(el => el.id))
+    const newIds = new Set(newElements.map(el => el.id))
+    
+    // Elements deleted (were in old, not in new)
+    oldElements.forEach(el => {
+      if (!newIds.has(el.id)) {
+        sendElementChangeRef.current!({
+          action: 'delete',
+          element: { id: el.id },
+        })
+      }
+    })
+    
+    // Elements added (in new, not in old)
+    newElements.forEach(el => {
+      if (!oldIds.has(el.id)) {
+        sendElementChangeRef.current!({
+          action: 'add',
+          element: el,
+        })
+      }
+    })
+    
+    // Elements updated (in both, but different)
+    newElements.forEach(newEl => {
+      if (oldIds.has(newEl.id)) {
+        const oldEl = oldElements.find(el => el.id === newEl.id)
+        if (oldEl && JSON.stringify(oldEl) !== JSON.stringify(newEl)) {
+          sendElementChangeRef.current!({
+            action: 'update',
+            element: newEl,
+          })
+        }
+      }
+    })
+  }
+  
+  // Watch for elements changes after undo/redo
+  useEffect(() => {
+    if (undoRedoRef.current.isActive) {
+      broadcastElementsDiff(undoRedoRef.current.beforeElements, elements)
+      undoRedoRef.current.isActive = false
+      undoRedoRef.current.beforeElements = []
+    }
+  }, [elements])
+  
+  // Wrapped undo that broadcasts changes
+  const collaborativeUndo = () => {
+    if (!canEdit || !canUndo) return // Block if viewer
+    
+    undoRedoRef.current = {
+      isActive: true,
+      beforeElements: [...elements],
+    }
+    undo()
+  }
+  
+  // Wrapped redo that broadcasts changes
+  const collaborativeRedo = () => {
+    if (!canEdit || !canRedo) return // Block if viewer
+    
+    undoRedoRef.current = {
+      isActive: true,
+      beforeElements: [...elements],
+    }
+    redo()
+  }
+  
+  // Wrapped callbacks that broadcast changes (with permission check)
+  const collaborativeUpdateElement = (id: string, updates: Partial<BuilderElement>) => {
+    if (!canEdit) return // Block if viewer
+    
+    // Apply locally first
+    updateElement(id, updates)
+    
+    // Broadcast to others if in a project
+    if (currentProjectId && sendElementChangeRef.current) {
+      sendElementChangeRef.current({
+        action: 'update',
+        element: { id, ...updates },
+      })
+    }
+  }
+  
+  const collaborativeUpdateElementPosition = (id: string, position: { x: number; y: number; width?: number; height?: number }) => {
+    if (!canEdit) return // Block if viewer
+    
+    // Apply locally first
+    updateElementPosition(id, position)
+    
+    // Broadcast to others if in a project
+    if (currentProjectId && sendElementChangeRef.current) {
+      sendElementChangeRef.current({
+        action: 'move',
+        element: { id, ...position },
+      })
+    }
+  }
+  
+  const collaborativeDeleteElement = (id: string) => {
+    if (!canEdit) return // Block if viewer
+    
+    // Apply locally first
+    deleteElement(id)
+    
+    // Broadcast to others if in a project
+    if (currentProjectId && sendElementChangeRef.current) {
+      sendElementChangeRef.current({
+        action: 'delete',
+        element: { id },
+      })
+    }
+  }
+  
+  // Handle project change from ProjectManager
+  const handleProjectChange = async (projectId: string, projectName: string) => {
+    setCurrentProjectId(projectId)
+    setCurrentProjectName(projectName)
+    
+    // Check user role in this project
+    if (user?.id) {
+      try {
+        console.log('🔍 Fetching role for project:', projectId, 'user:', user.id)
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/projects/${projectId}/role/${user.id}`)
+        console.log('📡 Role API response status:', response.status)
+        
+        if (response.ok) {
+          const data = await response.json()
+          console.log('✅ Role fetched:', data.role)
+          setUserRole(data.role) // 'OWNER', 'EDITOR', or 'VIEWER'
+          setIsProjectOwner(data.role === 'OWNER')
+        } else {
+          const errorData = await response.json()
+          console.error('❌ Failed to fetch user role:', response.status, errorData)
+          // Default to OWNER if error (for backward compatibility)
+          setUserRole('OWNER')
+          setIsProjectOwner(true)
+        }
+      } catch (error) {
+        console.error('❌ Failed to fetch user role:', error)
+        // Default to OWNER if error (for backward compatibility)
+        setUserRole('OWNER')
+        setIsProjectOwner(true)
+      }
+    }
+  }
+
+  // Fetch role when project changes (important for refreshing role after owner changes it)
+  useEffect(() => {
+    if (currentProjectId && user?.id) {
+      const fetchRole = async () => {
+        try {
+          console.log('🔄 Refreshing role for project:', currentProjectId)
+          const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/projects/${currentProjectId}/role/${user.id}`)
+          if (response.ok) {
+            const data = await response.json()
+            console.log('✅ Role refreshed:', data.role)
+            setUserRole(data.role)
+            setIsProjectOwner(data.role === 'OWNER')
+          }
+        } catch (error) {
+          console.error('Failed to refresh role:', error)
+        }
+      }
+      fetchRole()
+    }
+  }, [currentProjectId, user?.id])
   
   // Ref to control component library category expansion
   const toggleCategoryRef = useRef<((categoryName: string) => void) | null>(null)
@@ -224,20 +424,23 @@ export default function WebsiteBuilder() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Block all keyboard shortcuts for viewers
+      if (!canEdit) return
+      
       if (e.ctrlKey || e.metaKey) {
         switch (e.key.toLowerCase()) {
           case 'z':
             if (e.shiftKey) {
               e.preventDefault()
-              redo()
+              collaborativeRedo()
             } else {
               e.preventDefault()
-              undo()
+              collaborativeUndo()
             }
             break
           case 'y':
             e.preventDefault()
-            redo()
+            collaborativeRedo()
             break
           case 'd':
             e.preventDefault()
@@ -257,7 +460,7 @@ export default function WebsiteBuilder() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [undo, redo, selectedElements, duplicateElement, handleRotateSelected])
+  }, [collaborativeUndo, collaborativeRedo, selectedElements, duplicateElement, handleRotateSelected, canEdit])
 
 
 
@@ -279,8 +482,8 @@ export default function WebsiteBuilder() {
         onBreakpointChange={setCurrentBreakpoint}
         isDarkMode={isDarkMode}
         onDarkModeToggle={() => setIsDarkMode(!isDarkMode)}
-        onUndo={undo}
-        onRedo={redo}
+        onUndo={collaborativeUndo}
+        onRedo={collaborativeRedo}
         canUndo={canUndo}
         canRedo={canRedo}
         selectedElements={selectedElements}
@@ -298,7 +501,24 @@ export default function WebsiteBuilder() {
         onRotateSelected={handleRotateSelected}
         showSections={showSections}
         onSectionsToggle={setShowSections}
+        // Share props
+        projectId={currentProjectId}
+        projectName={currentProjectName}
+        isOwner={isProjectOwner}
+        currentUserClerkId={user?.id || ""}
+        onProjectChange={handleProjectChange}
       />
+
+      {/* View Only Banner for Viewers */}
+      {userRole === 'VIEWER' && (
+        <div className="bg-yellow-500/20 border-b border-yellow-500/50 px-4 py-2 flex items-center justify-center gap-2">
+          <svg className="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          <span className="text-sm font-medium text-yellow-500">View Only Mode - You cannot edit this project</span>
+        </div>
+      )}
 
       {/* Main Layout */}
       <div className="flex-1 overflow-hidden">
@@ -322,7 +542,9 @@ export default function WebsiteBuilder() {
                 <div
                   className={`${breakpointWidths[currentBreakpoint]} transition-all duration-300 bg-card border border-border rounded-lg shadow-lg min-h-[600px]`}
                 >
-                  <Canvas
+                  <CollaborativeCanvas
+                    projectId={currentProjectId || null}
+                    canEdit={canEdit}
                     elements={elements}
                     selectedElements={selectedElements}
                     currentBreakpoint={currentBreakpoint}
@@ -332,6 +554,19 @@ export default function WebsiteBuilder() {
                     onUpdateElementPosition={updateElementPosition}
                     onDeleteElement={deleteElement}
                     onDuplicateElement={duplicateElement}
+                    onCollaborationReady={handleCollaborationReady}
+                    onRoleChanged={(newRole) => {
+                      console.log('🔄 Role changed callback triggered:', newRole)
+                      setUserRole(newRole as 'OWNER' | 'EDITOR' | 'VIEWER')
+                      setIsProjectOwner(newRole === 'OWNER')
+                      
+                      // Show toast notification
+                      if (newRole === 'VIEWER') {
+                        alert('⚠️ Your role has been changed to VIEWER. You can no longer edit this project.')
+                      } else if (newRole === 'EDITOR') {
+                        alert('✅ Your role has been changed to EDITOR. You can now edit this project.')
+                      }
+                    }}
                     snapToGrid={snapToGrid}
                     snapSettings={snapSettings}
                     zoom={zoom}
@@ -355,9 +590,9 @@ export default function WebsiteBuilder() {
                 selectedElements={selectedElements}
                 elements={elements}
                 currentBreakpoint={currentBreakpoint}
-                onUpdateElement={updateElement}
+                onUpdateElement={collaborativeUpdateElement}
                 onUpdateElementResponsiveStyle={updateElementResponsiveStyle}
-                onUpdateElementPosition={updateElementPosition}
+                onUpdateElementPosition={collaborativeUpdateElementPosition}
                 isPreviewMode={isPreviewMode}
                 onPreviewModeToggle={setIsPreviewMode}
               />
@@ -371,8 +606,8 @@ export default function WebsiteBuilder() {
         elements={elements}
         selectedElements={selectedElements}
         onElementSelect={handleElementSelect}
-        onUpdateElement={updateElement}
-        onDeleteElement={deleteElement}
+        onUpdateElement={collaborativeUpdateElement}
+        onDeleteElement={collaborativeDeleteElement}
         onDuplicateElement={duplicateElement}
         isOpen={showLayers}
         onClose={() => setShowLayers(false)}

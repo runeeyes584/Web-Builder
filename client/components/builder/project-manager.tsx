@@ -17,9 +17,10 @@ interface ProjectManagerProps {
   elements: any[]
   onLoadProject: (elements: any[], pageId?: string) => void
   currentProjectName?: string
+  onProjectChange?: (projectId: string, projectName: string) => void
 }
 
-export function ProjectManagerComponent({ elements, onLoadProject, currentProjectName }: ProjectManagerProps) {
+export function ProjectManagerComponent({ elements, onLoadProject, currentProjectName, onProjectChange }: ProjectManagerProps) {
   const [projects, setProjects] = useState<Project[]>([])
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [loadDialogOpen, setLoadDialogOpen] = useState(false)
@@ -108,6 +109,10 @@ export function ProjectManagerComponent({ elements, onLoadProject, currentProjec
         if (response.success && response.data) {
           setCurrentProjectId(response.data.id) // Save project ID for future updates
           setSaveDialogOpen(false)
+          
+          // Notify parent component about project change
+          onProjectChange?.(response.data.id, projectName.trim())
+          
           toast({
             title: "Success",
             description: `Project "${projectName}" created successfully`,
@@ -135,6 +140,10 @@ export function ProjectManagerComponent({ elements, onLoadProject, currentProjec
     onLoadProject(projectElements, pageId) // Pass pageId
     setCurrentProjectId(project.id) // Set current project ID
     setProjectName(project.name)    // Set project name
+    
+    // Notify parent component about project change
+    onProjectChange?.(project.id, project.name)
+    
     setLoadDialogOpen(false)
     toast({
       title: "Success",

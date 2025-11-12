@@ -272,10 +272,12 @@ interface CanvasProps {
   elements: BuilderElement[]
   selectedElements: string[]
   currentBreakpoint: Breakpoint
+  canEdit?: boolean
   onElementSelect: (elementId: string, multiSelect?: boolean) => void
   onAddElement: (element: BuilderElement, position?: { x: number; y: number }) => void
   onUpdateElement: (id: string, updates: Partial<BuilderElement>) => void
   onUpdateElementPosition: (id: string, position: { x: number; y: number; width?: number; height?: number }) => void
+  onElementDragMove?: (id: string, position: { x: number; y: number }) => void // New callback for real-time dragging
   onDeleteElement: (id: string) => void
   onDuplicateElement: (id: string) => void
   snapToGrid: (value: number, gridSize: number) => number
@@ -292,10 +294,12 @@ export function Canvas({
   elements,
   selectedElements,
   currentBreakpoint,
+  canEdit = true,
   onElementSelect,
   onAddElement,
   onUpdateElement,
   onUpdateElementPosition,
+  onElementDragMove,
   onDeleteElement,
   onDuplicateElement,
   snapToGrid,
@@ -2458,6 +2462,10 @@ export function Canvas({
   // overlay uses `isOver` directly
 
   const handleElementMouseDown = (e: React.MouseEvent, elementId: string) => {
+    if (!canEdit) {
+      console.log('🚫 VIEWER: Cannot drag - edit permission denied')
+      return // Block dragging for viewers
+    }
     if (e.button !== 0) return // Only left click
 
     const element = elements.find((el) => el.id === elementId)
@@ -2509,8 +2517,15 @@ export function Canvas({
         const newY = start.y + dy
         const snappedX = snapSettings.enabled ? snapToGrid(newX, snapSettings.gridSize) : newX
         const snappedY = snapSettings.enabled ? snapToGrid(newY, snapSettings.gridSize) : newY
+        const finalX = Math.max(0, snappedX)
+        const finalY = Math.max(0, snappedY)
         const prev = transientRef.current.get(id) || {}
-        transientRef.current.set(id, { ...prev, x: Math.max(0, snappedX), y: Math.max(0, snappedY) })
+        transientRef.current.set(id, { ...prev, x: finalX, y: finalY })
+        
+        // Notify about drag movement for real-time collaboration
+        if (onElementDragMove) {
+          onElementDragMove(id, { x: finalX, y: finalY })
+        }
       }
       scheduleRerender()
     }
@@ -2729,6 +2744,7 @@ export function Canvas({
     elementId: string,
     direction: "e" | "s" | "se" | "n" | "w" | "ne" | "nw" | "sw"
   ) => {
+    if (!canEdit) return // Block resizing for viewers
     e.preventDefault()
     e.stopPropagation()
     const element = elements.find((el) => el.id === elementId)
@@ -2818,6 +2834,7 @@ export function Canvas({
   }
 
   const handleRotateMouseDown = (e: React.MouseEvent, elementId: string) => {
+    if (!canEdit) return // Block rotating for viewers
     e.preventDefault()
     e.stopPropagation()
     const element = elements.find((el) => el.id === elementId)
@@ -8006,81 +8023,85 @@ export function Canvas({
               <span>{element.type}</span>
               <span className="text-xs opacity-75">({currentBreakpoint})</span>
             </div>
-            <div className="absolute -top-6 right-0 flex gap-1 z-20">
-              <Button
-                size="sm"
-                variant="secondary"
-                className="h-6 w-6 p-0"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onDuplicateElement(element.id)
-                }}
-              >
-                <Copy className="w-3 h-3" />
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                className="h-6 w-6 p-0"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onDeleteElement(element.id)
-                }}
-              >
-                <Trash2 className="w-3 h-3" />
-              </Button>
-            </div>
+            {canEdit && (
+              <>
+                <div className="absolute -top-6 right-0 flex gap-1 z-20">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-6 w-6 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDuplicateElement(element.id)
+                    }}
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="h-6 w-6 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDeleteElement(element.id)
+                    }}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
 
-            {/* Resize handles: corners */}
-            <div
-              className="absolute -top-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-nw-resize z-20"
-              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "nw")}
-            />
-            <div
-              className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-ne-resize z-20"
-              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "ne")}
-            />
-            <div
-              className="absolute -bottom-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-sw-resize z-20"
-              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "sw")}
-            />
-            <div
-              className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-se-resize z-20"
-              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "se")}
-            />
+                {/* Resize handles: corners */}
+                <div
+                  className="absolute -top-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-nw-resize z-20"
+                  onMouseDown={(e) => handleResizeMouseDown(e, element.id, "nw")}
+                />
+                <div
+                  className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-ne-resize z-20"
+                  onMouseDown={(e) => handleResizeMouseDown(e, element.id, "ne")}
+                />
+                <div
+                  className="absolute -bottom-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-sw-resize z-20"
+                  onMouseDown={(e) => handleResizeMouseDown(e, element.id, "sw")}
+                />
+                <div
+                  className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-se-resize z-20"
+                  onMouseDown={(e) => handleResizeMouseDown(e, element.id, "se")}
+                />
 
-            {/* Resize handles: edges */}
-            <div
-              className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-2 bg-primary rounded cursor-n-resize z-20"
-              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "n")}
-            />
-            <div
-              className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-2 bg-primary rounded cursor-s-resize z-20"
-              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "s")}
-            />
-            <div
-              className="absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-3 bg-primary rounded cursor-w-resize z-20"
-              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "w")}
-            />
-            <div
-              className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-3 bg-primary rounded cursor-e-resize z-20"
-              onMouseDown={(e) => handleResizeMouseDown(e, element.id, "e")}
-            />
-            
-            {/* Rotation handle - positioned above element */}
-            <div
-              className="absolute -top-8 left-1/2 -translate-x-1/2 cursor-grab active:cursor-grabbing z-20"
-              onMouseDown={(e) => handleRotateMouseDown(e, element.id)}
-              title="Rotate element"
-            >
-              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
-                <svg className="w-4 h-4 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </div>
-              {/* Connection line from handle to element */}
-              <div className="absolute top-6 left-1/2 -translate-x-1/2 w-0.5 h-2 bg-primary"></div>
-            </div>
+                {/* Resize handles: edges */}
+                <div
+                  className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-2 bg-primary rounded cursor-n-resize z-20"
+                  onMouseDown={(e) => handleResizeMouseDown(e, element.id, "n")}
+                />
+                <div
+                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-2 bg-primary rounded cursor-s-resize z-20"
+                  onMouseDown={(e) => handleResizeMouseDown(e, element.id, "s")}
+                />
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-3 bg-primary rounded cursor-w-resize z-20"
+                  onMouseDown={(e) => handleResizeMouseDown(e, element.id, "w")}
+                />
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-3 bg-primary rounded cursor-e-resize z-20"
+                  onMouseDown={(e) => handleResizeMouseDown(e, element.id, "e")}
+                />
+                
+                {/* Rotation handle - positioned above element */}
+                <div
+                  className="absolute -top-8 left-1/2 -translate-x-1/2 cursor-grab active:cursor-grabbing z-20"
+                  onMouseDown={(e) => handleRotateMouseDown(e, element.id)}
+                  title="Rotate element"
+                >
+                  <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                    <svg className="w-4 h-4 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </div>
+                  {/* Connection line from handle to element */}
+                  <div className="absolute top-6 left-1/2 -translate-x-1/2 w-0.5 h-2 bg-primary"></div>
+                </div>
+              </>
+            )}
           </>
         )}
       </div>

@@ -3,11 +3,12 @@
 import { Button } from "@/components/ui/button"
 import type { Breakpoint, BuilderElement } from "@/lib/builder-types"
 import { UserButton } from "@clerk/nextjs"
-import { Copy, Download, Eye, Grid, Layers, Layout, Monitor, Moon, Redo, RotateCcw, Smartphone, Sun, Tablet, Undo, ZoomIn, ZoomOut } from "lucide-react"
+import { Copy, Download, Eye, Grid, Layers, Layout, Monitor, Moon, Redo, RotateCcw, Share2, Smartphone, Sun, Tablet, Undo, ZoomIn, ZoomOut } from "lucide-react"
 import { useState } from "react"
 import { ExportModal } from "./export-modal"
 import { PreviewModal } from "./preview-modal"
 import { ProjectManagerComponent } from "./project-manager"
+import { ShareDialog } from "./share-dialog"
 
 interface TopToolbarProps {
   currentBreakpoint: Breakpoint
@@ -31,6 +32,12 @@ interface TopToolbarProps {
   onRotateSelected?: () => void
   showSections?: boolean
   onSectionsToggle?: (show: boolean) => void
+  // Share props
+  projectId?: string
+  projectName?: string
+  isOwner?: boolean
+  currentUserClerkId?: string
+  onProjectChange?: (projectId: string, projectName: string) => void
 }
 
 export function TopToolbar({
@@ -55,9 +62,15 @@ export function TopToolbar({
   onRotateSelected,
   showSections = true,
   onSectionsToggle,
+  projectId,
+  projectName = "Untitled Project",
+  isOwner = true,
+  currentUserClerkId = "",
+  onProjectChange,
 }: TopToolbarProps) {
   const [showPreview, setShowPreview] = useState(false)
   const [showExport, setShowExport] = useState(false)
+  const [showShare, setShowShare] = useState(false)
 
   return (
     <>
@@ -78,7 +91,12 @@ export function TopToolbar({
           <div className="h-8 w-px bg-border" />
 
           <div className="shrink-0">
-            <ProjectManagerComponent elements={elements} onLoadProject={onLoadProject || (() => {})} />
+            <ProjectManagerComponent 
+              elements={elements} 
+              onLoadProject={onLoadProject || (() => {})}
+              currentProjectName={projectName}
+              onProjectChange={onProjectChange}
+            />
           </div>
 
           <div className="h-8 w-px bg-border" />
@@ -201,6 +219,16 @@ export function TopToolbar({
 
           {/* Main Actions */}
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowShare(true)} 
+              className="bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20"
+              disabled={!projectId}
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setShowPreview(true)} className="bg-primary/5 hover:bg-primary/10">
               <Eye className="w-4 h-4 mr-2" />
               Preview Window
@@ -241,6 +269,16 @@ export function TopToolbar({
       {/* Modals */}
       <PreviewModal isOpen={showPreview} onClose={() => setShowPreview(false)} elements={elements} />
       <ExportModal isOpen={showExport} onClose={() => setShowExport(false)} elements={elements} />
+      {projectId && (
+        <ShareDialog
+          open={showShare}
+          onOpenChange={setShowShare}
+          projectId={projectId}
+          projectName={projectName}
+          isOwner={isOwner}
+          currentUserClerkId={currentUserClerkId}
+        />
+      )}
     </>
   )
 }
