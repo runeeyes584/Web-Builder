@@ -10,6 +10,7 @@ import { CollaborativeCursor } from "./collaborative-cursor"
 
 interface CollaborativeCanvasProps {
   projectId: string | null
+  canEdit?: boolean
   elements: any[]
   selectedElements: string[]
   currentBreakpoint: Breakpoint
@@ -32,7 +33,8 @@ interface CollaborativeCanvasProps {
 }
 
 export function CollaborativeCanvas({ 
-  projectId, 
+  projectId,
+  canEdit = true,
   elements,
   selectedElements,
   currentBreakpoint,
@@ -122,6 +124,8 @@ export function CollaborativeCanvas({
 
   // Wrap canvas callbacks to broadcast changes
   const handleAddElement = (element: any) => {
+    if (!canEdit) return;
+    
     // Apply locally first
     onAddElement?.(element)
     
@@ -135,6 +139,8 @@ export function CollaborativeCanvas({
   }
 
   const handleUpdateElement = (id: string, updates: any) => {
+    if (!canEdit) return;
+    
     // Apply locally first
     onUpdateElement?.(id, updates)
     
@@ -153,7 +159,7 @@ export function CollaborativeCanvas({
   
   // Handle real-time drag movement (called on every mousemove during drag)
   const handleElementDragMove = (id: string, position: { x: number; y: number }) => {
-    if (!projectId) return
+    if (!canEdit || !projectId) return
     
     // Throttle: only broadcast max once per 50ms per element
     const now = Date.now()
@@ -173,6 +179,8 @@ export function CollaborativeCanvas({
   }
   
   const handleUpdateElementPosition = (id: string, position: any) => {
+    if (!canEdit) return;
+    
     // Apply locally first (immediate UI update)
     onUpdateElementPosition?.(id, position)
     
@@ -189,6 +197,8 @@ export function CollaborativeCanvas({
   }
 
   const handleDeleteElement = (id: string) => {
+    if (!canEdit) return;
+    
     // Apply locally first
     onDeleteElement?.(id)
     
@@ -202,6 +212,8 @@ export function CollaborativeCanvas({
   }
 
   const handleDuplicateElement = (id: string) => {
+    if (!canEdit) return;
+    
     // Apply locally first
     const newElement = onDuplicateElement?.(id)
     
@@ -246,27 +258,28 @@ export function CollaborativeCanvas({
     return null
   }
 
-  // Filter out current user from active users
-  const otherUsers = activeUsers.filter(u => u.clerkId !== user?.id)
-
   return (
     <div className="relative w-full h-full" id="builder-canvas" ref={canvasRef}>
       {/* Active users display */}
-      {projectId && otherUsers.length > 0 && (
+      {projectId && activeUsers.length > 0 && (
         <div className="absolute top-4 right-4 z-50">
           <ActiveUsers 
-            users={otherUsers} 
+            users={activeUsers} 
             currentUserClerkId={user?.id || ""}
           />
         </div>
       )}
 
-      {/* Collaborative cursors */}
-      <CollaborativeCursor users={otherUsers} containerRef={canvasRef} />
+      {/* Collaborative cursors - filter out current user */}
+      <CollaborativeCursor 
+        users={activeUsers.filter(u => u.clerkId !== user?.id)} 
+        containerRef={canvasRef} 
+      />
 
       {/* Original canvas with collaborative callbacks */}
       <Canvas 
         {...canvasProps}
+        canEdit={canEdit}
         elements={elements}
         selectedElements={selectedElements}
         currentBreakpoint={currentBreakpoint}

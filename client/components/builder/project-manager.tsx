@@ -18,9 +18,10 @@ interface ProjectManagerProps {
   onLoadProject: (elements: any[], pageId?: string) => void
   currentProjectName?: string
   onProjectChange?: (projectId: string, projectName: string) => void
+  hasUnsavedChanges?: boolean
 }
 
-export function ProjectManagerComponent({ elements, onLoadProject, currentProjectName, onProjectChange }: ProjectManagerProps) {
+export function ProjectManagerComponent({ elements, onLoadProject, currentProjectName, onProjectChange, hasUnsavedChanges = false }: ProjectManagerProps) {
   const [projects, setProjects] = useState<Project[]>([])
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [loadDialogOpen, setLoadDialogOpen] = useState(false)
@@ -252,7 +253,11 @@ export function ProjectManagerComponent({ elements, onLoadProject, currentProjec
       {/* Save Project */}
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            className={!hasUnsavedChanges ? "opacity-50" : ""}
+          >
             <Save className="h-4 w-4 mr-2" />
             Save
           </Button>

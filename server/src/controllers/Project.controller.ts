@@ -412,10 +412,12 @@ export const getUserRole = async (req: Request, res: Response) => {
       });
     }
 
-    console.log('✅ Returning role:', collaborator.role);
+    // Convert role to UPPERCASE to match frontend expectations
+    const role = collaborator.role.toUpperCase();
+    console.log('✅ Returning role:', role);
     return res.status(200).json({
       success: true,
-      role: collaborator.role,
+      role: role, // Returns 'EDITOR' or 'VIEWER'
     });
   } catch (error) {
     console.error("Error fetching user role:", error);

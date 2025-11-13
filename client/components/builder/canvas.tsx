@@ -570,8 +570,11 @@ export function Canvas({
     { isOver: boolean }
   >(() => ({
     accept: "COMPONENT",
+    canDrop: () => canEdit, // Only allow drop if user can edit
     collect: (monitor) => ({ isOver: monitor.isOver({ shallow: true }) }),
     drop: (item, monitor) => {
+      if (!canEdit) return;
+      
       console.log('Drop event triggered:', item)
       if (!canvasEl) {
         console.warn('Canvas element not found')
@@ -634,7 +637,7 @@ export function Canvas({
       console.log('Adding element:', newElement.type)
       onAddElement(newElement, { x: Math.max(0, snappedX), y: Math.max(0, snappedY) })
     },
-  }), [canvasEl, zoom, snapSettings, snapToGrid, onAddElement, headerHeight, footerHeight, sections, totalSectionsHeight, contentHeight])
+  }), [canvasEl, zoom, snapSettings, snapToGrid, onAddElement, headerHeight, footerHeight, sections, totalSectionsHeight, contentHeight, canEdit])
 
   const setCanvasNode = useCallback((node: HTMLDivElement | null) => {
     console.log('Setting canvas node:', !!node)
@@ -2462,10 +2465,7 @@ export function Canvas({
   // overlay uses `isOver` directly
 
   const handleElementMouseDown = (e: React.MouseEvent, elementId: string) => {
-    if (!canEdit) {
-      console.log('🚫 VIEWER: Cannot drag - edit permission denied')
-      return // Block dragging for viewers
-    }
+    if (!canEdit) return;
     if (e.button !== 0) return // Only left click
 
     const element = elements.find((el) => el.id === elementId)

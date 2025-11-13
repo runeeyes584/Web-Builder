@@ -66,12 +66,9 @@ export function ShareDialog({
   const loadCollaborators = async () => {
     try {
       const apiUrl = `${process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:4000'}/api/collaboration/projects/${projectId}/collaborators`;
-      console.log('📡 Loading collaborators from:', apiUrl);
       
       const response = await fetch(apiUrl);
       const data = await response.json();
-      
-      console.log('📥 Collaborators data:', data);
       
       if (data.success) {
         setCollaborators(data.data || []);
@@ -89,18 +86,9 @@ export function ShareDialog({
       return;
     }
 
-    console.log('🚀 Sending invitation...', {
-      projectId,
-      email: inviteEmail,
-      role: inviteRole,
-      invitedBy: currentUserClerkId,
-      serverUrl: process.env.NEXT_PUBLIC_SERVER_URL,
-    });
-
     setIsLoading(true);
     try {
       const apiUrl = `${process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:4000'}/api/collaboration/projects/invitations`;
-      console.log('📡 API URL:', apiUrl);
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -112,8 +100,6 @@ export function ShareDialog({
           invited_by: currentUserClerkId,
         }),
       });
-
-      console.log('📥 Response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -239,12 +225,15 @@ export function ShareDialog({
             Share "{projectName}"
           </DialogTitle>
           <DialogDescription>
-            Invite people to collaborate on this project
+            {isOwner 
+              ? 'Invite people to collaborate on this project' 
+              : 'View people who have access to this project'
+            }
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Invite Section */}
+          {/* Invite Section - ONLY for owners */}
           {isOwner && (
             <div className="space-y-3">
               <Label>Invite by email</Label>
@@ -314,32 +303,47 @@ export function ShareDialog({
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {/* Only owner can change roles */}
                     {isOwner && collaborator.role !== 'owner' ? (
-                      <Select
-                        value={collaborator.role}
-                        onValueChange={(value) =>
-                          handleUpdateRole(collaborator.id, value)
-                        }
-                      >
-                        <SelectTrigger className="w-[110px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="editor">
-                            <span className="flex items-center gap-2">
-                              <Edit3 className="h-3 w-3" />
-                              Editor
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="viewer">
-                            <span className="flex items-center gap-2">
-                              <Eye className="h-3 w-3" />
-                              Viewer
-                            </span>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <>
+                        <Select
+                          value={collaborator.role}
+                          onValueChange={(value) =>
+                            handleUpdateRole(collaborator.id, value)
+                          }
+                        >
+                          <SelectTrigger className="w-[110px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="editor">
+                              <span className="flex items-center gap-2">
+                                <Edit3 className="h-3 w-3" />
+                                Editor
+                              </span>
+                            </SelectItem>
+                            <SelectItem value="viewer">
+                              <span className="flex items-center gap-2">
+                                <Eye className="h-3 w-3" />
+                                Viewer
+                              </span>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        {/* Remove button - only for owner and not for self */}
+                        {collaborator.clerk_id !== currentUserClerkId && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleRemoveCollaborator(collaborator.id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </>
                     ) : (
+                      /* Non-owners only see role badge, cannot edit */
                       <Badge variant={getRoleBadgeVariant(collaborator.role)}>
                         <span className="flex items-center gap-1">
                           {getRoleIcon(collaborator.role)}
@@ -347,18 +351,6 @@ export function ShareDialog({
                         </span>
                       </Badge>
                     )}
-
-                    {isOwner &&
-                      collaborator.role !== 'owner' &&
-                      collaborator.clerk_id !== currentUserClerkId && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleRemoveCollaborator(collaborator.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
                   </div>
                 </div>
               ))}

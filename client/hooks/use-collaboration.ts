@@ -83,8 +83,10 @@ export function useCollaboration({
 
     socket.on('user-joined', (user: ActiveUser) => {
       setActiveUsers((prev) => {
-        // Remove any existing user with same clerkId (handle reconnection)
-        const withoutOld = prev.filter(u => u.clerkId !== user.clerkId);
+        // Remove any existing user with same clerkId OR same socketId (handle reconnection)
+        const withoutOld = prev.filter(
+          u => u.clerkId !== user.clerkId && u.socketId !== user.socketId
+        );
         // Add new user
         return [...withoutOld, user];
       });
@@ -102,23 +104,12 @@ export function useCollaboration({
       position: { x: number; y: number; elementId?: string };
     }) => {
       setActiveUsers((prev) => {
+        // Only update cursor position if user exists, don't add new users here
         const updated = prev.map((u) =>
           u.socketId === data.socketId
             ? { ...u, cursorPosition: data.position }
             : u
         );
-        
-        // If user not found, add them (they might have joined but we missed the event)
-        const found = updated.find(u => u.socketId === data.socketId);
-        if (!found) {
-          return [...updated, {
-            socketId: data.socketId,
-            clerkId: '', // We don't have this from cursor update
-            username: data.username,
-            color: data.color,
-            cursorPosition: data.position,
-          }];
-        }
         
         return updated;
       });

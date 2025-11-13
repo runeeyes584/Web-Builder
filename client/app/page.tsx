@@ -6,6 +6,7 @@ import { LayersPanel } from "@/components/builder/layers-panel"
 import { PropertiesPanel } from "@/components/builder/properties-panel"
 import { TopToolbar } from "@/components/builder/top-toolbar"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
+import { useAutoSave } from "@/hooks/use-auto-save"
 import { useBuilderState } from "@/hooks/use-builder-state"
 import type { BuilderElement, RegionsLayout } from "@/lib/builder-types"
 import { componentCategories } from "@/lib/component-categories"
@@ -57,8 +58,15 @@ export default function WebsiteBuilder() {
   
   // Computed property for edit permission
   const canEdit = userRole !== 'VIEWER'
-
-  console.log('👤 Current user role:', userRole, '| Can edit:', canEdit)
+  
+  // Auto-save hook - only enabled when user has edit permission and project is open
+  const { hasUnsavedChanges } = useAutoSave({
+    projectId: currentProjectId || null,
+    projectName: currentProjectName,
+    elements: elements,
+    enabled: canEdit && !!currentProjectId, // Only auto-save if can edit and project is open
+    interval: 30000, // Auto-save every 30 seconds after last change
+  })
   
   // Ref to store sendElementChange function from CollaborativeCanvas
   const sendElementChangeRef = useRef<((change: any) => void) | null>(null)
@@ -200,24 +208,18 @@ export default function WebsiteBuilder() {
     // Check user role in this project
     if (user?.id) {
       try {
-        console.log('🔍 Fetching role for project:', projectId, 'user:', user.id)
         const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/projects/${projectId}/role/${user.id}`)
-        console.log('📡 Role API response status:', response.status)
         
         if (response.ok) {
           const data = await response.json()
-          console.log('✅ Role fetched:', data.role)
           setUserRole(data.role) // 'OWNER', 'EDITOR', or 'VIEWER'
           setIsProjectOwner(data.role === 'OWNER')
         } else {
-          const errorData = await response.json()
-          console.error('❌ Failed to fetch user role:', response.status, errorData)
           // Default to OWNER if error (for backward compatibility)
           setUserRole('OWNER')
           setIsProjectOwner(true)
         }
       } catch (error) {
-        console.error('❌ Failed to fetch user role:', error)
         // Default to OWNER if error (for backward compatibility)
         setUserRole('OWNER')
         setIsProjectOwner(true)
@@ -230,16 +232,14 @@ export default function WebsiteBuilder() {
     if (currentProjectId && user?.id) {
       const fetchRole = async () => {
         try {
-          console.log('🔄 Refreshing role for project:', currentProjectId)
           const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/projects/${currentProjectId}/role/${user.id}`)
           if (response.ok) {
             const data = await response.json()
-            console.log('✅ Role refreshed:', data.role)
             setUserRole(data.role)
             setIsProjectOwner(data.role === 'OWNER')
           }
         } catch (error) {
-          console.error('Failed to refresh role:', error)
+          // Silent error handling
         }
       }
       fetchRole()
@@ -507,6 +507,7 @@ export default function WebsiteBuilder() {
         isOwner={isProjectOwner}
         currentUserClerkId={user?.id || ""}
         onProjectChange={handleProjectChange}
+        hasUnsavedChanges={hasUnsavedChanges}
       />
 
       {/* View Only Banner for Viewers */}
@@ -555,8 +556,7 @@ export default function WebsiteBuilder() {
                     onDeleteElement={deleteElement}
                     onDuplicateElement={duplicateElement}
                     onCollaborationReady={handleCollaborationReady}
-                    onRoleChanged={(newRole) => {
-                      console.log('🔄 Role changed callback triggered:', newRole)
+                    onRoleChanged={(newRole: string) => {
                       setUserRole(newRole as 'OWNER' | 'EDITOR' | 'VIEWER')
                       setIsProjectOwner(newRole === 'OWNER')
                       

@@ -20,9 +20,16 @@ export function ActiveUsers({
   maxVisible = 5,
 }: ActiveUsersProps) {
   // Deduplicate users by clerkId (in case there are multiple socketIds for same user)
+  // and filter out current user
   const uniqueUsers = users.reduce((acc, user) => {
+    // Skip if this is the current user
+    if (user.clerkId === currentUserClerkId) {
+      return acc;
+    }
+    
+    // Check if we already have this user (by clerkId)
     const existing = acc.find(u => u.clerkId === user.clerkId);
-    if (!existing && user.clerkId !== currentUserClerkId) {
+    if (!existing) {
       acc.push(user);
     }
     return acc;

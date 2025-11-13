@@ -38,6 +38,7 @@ interface TopToolbarProps {
   isOwner?: boolean
   currentUserClerkId?: string
   onProjectChange?: (projectId: string, projectName: string) => void
+  hasUnsavedChanges?: boolean
 }
 
 export function TopToolbar({
@@ -67,6 +68,7 @@ export function TopToolbar({
   isOwner = true,
   currentUserClerkId = "",
   onProjectChange,
+  hasUnsavedChanges = false,
 }: TopToolbarProps) {
   const [showPreview, setShowPreview] = useState(false)
   const [showExport, setShowExport] = useState(false)
@@ -96,6 +98,7 @@ export function TopToolbar({
               onLoadProject={onLoadProject || (() => {})}
               currentProjectName={projectName}
               onProjectChange={onProjectChange}
+              hasUnsavedChanges={hasUnsavedChanges}
             />
           </div>
 
