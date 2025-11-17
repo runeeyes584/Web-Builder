@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import type { Breakpoint, BuilderElement, RegionsLayout } from "@/lib/builder-types"
 import { Copy, Trash2 } from "lucide-react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState, useMemo } from "react"
 import { useDrop } from "react-dnd"
 
 // Simple Markdown parser
@@ -288,6 +288,10 @@ interface CanvasProps {
   isPreviewMode?: boolean
   toggleCategoryRef?: React.MutableRefObject<((categoryName: string) => void) | null>
   onRegionsChange?: (regions: RegionsLayout) => void
+  onLayoutChange?: (layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }) => void
+  sendLayoutChange?: (layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }) => void
+  onSectionsChange?: (sections: { id: string; height: number }[], headerHeight: number, footerHeight: number) => void // Immediate callback when sections are added/removed
+  initialLayout?: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] } | null
 }
 
 export function Canvas({
@@ -310,20 +314,26 @@ export function Canvas({
   isPreviewMode = false,
   toggleCategoryRef,
   onRegionsChange,
+  onLayoutChange,
+  sendLayoutChange,
+  onSectionsChange,
+  initialLayout,
 }: CanvasProps) {
-  // Partition dynamic sizes
-  const [headerHeight, setHeaderHeight] = useState<number>(96)
-  const [footerHeight, setFooterHeight] = useState<number>(96)
+  // Partition dynamic sizes - initialize from saved layout if available
+  const [headerHeight, setHeaderHeight] = useState<number>(initialLayout?.headerHeight || 96)
+  const [footerHeight, setFooterHeight] = useState<number>(initialLayout?.footerHeight || 96)
   const MIN_HEADER = 48
   const MIN_FOOTER = 48
   const MIN_SECTION = 128
 
-  // Sections model: vertical stacks between header and footer
+  // Sections model: vertical stacks between header and footer - initialize from saved layout
   type Section = { id: string; height: number }
   const DEFAULT_SECTION = 608 // 800 - 96 - 96 (matches initial min canvas height minus header/footer)
-  const [sections, setSections] = useState<Section[]>([
-    { id: `sec-${Date.now()}`, height: Math.max(MIN_SECTION, DEFAULT_SECTION) },
-  ])
+  const [sections, setSections] = useState<Section[]>(
+    initialLayout?.sections && initialLayout.sections.length > 0
+      ? initialLayout.sections.map(s => ({ id: s.id, height: Math.max(MIN_SECTION, s.height) }))
+      : [{ id: `sec-${Date.now()}`, height: Math.max(MIN_SECTION, DEFAULT_SECTION) }]
+  )
   const totalSectionsHeight = sections.reduce((sum, s) => sum + s.height, 0)
   const contentHeight = headerHeight + totalSectionsHeight + footerHeight
 
@@ -340,6 +350,42 @@ export function Canvas({
       contentHeight,
     })
   }, [onRegionsChange, headerHeight, sections, totalSectionsHeight, footerHeight, contentHeight])
+
+  // Notify parent about layout changes for persistence
+  useEffect(() => {
+    if (!onLayoutChange) return
+    onLayoutChange({
+      headerHeight,
+      footerHeight,
+      sections: sections.map(s => ({ id: s.id, height: s.height })),
+    })
+  }, [onLayoutChange, headerHeight, footerHeight, sections])
+
+  // Broadcast layout changes to other collaborators (debounced)
+  const layoutBroadcastTimerRef = useRef<NodeJS.Timeout | null>(null)
+  useEffect(() => {
+    if (!sendLayoutChange) return
+
+    // Clear existing timer
+    if (layoutBroadcastTimerRef.current) {
+      clearTimeout(layoutBroadcastTimerRef.current)
+    }
+
+    // Debounce broadcast to avoid spamming during resize
+    layoutBroadcastTimerRef.current = setTimeout(() => {
+      sendLayoutChange({
+        headerHeight,
+        footerHeight,
+        sections: sections.map(s => ({ id: s.id, height: s.height }))
+      })
+    }, 300) // 300ms debounce
+
+    return () => {
+      if (layoutBroadcastTimerRef.current) {
+        clearTimeout(layoutBroadcastTimerRef.current)
+      }
+    }
+  }, [sendLayoutChange, headerHeight, footerHeight, sections])
 
   // Focused region for persistent controls
   const [focusedRegion, setFocusedRegion] = useState<null | "header" | "section" | "footer" >(null)
@@ -590,52 +636,61 @@ export function Canvas({
       const rect = canvasEl.getBoundingClientRect()
       const scale = zoom / 100
       
-      // Calculate position with cursor at center of dropped element
-      let x = (client.x - rect.left) / scale
-      let y = (client.y - rect.top) / scale
-
-      // Snap into dynamic partitions (header/sections/footer)
-        const headerH = headerHeight
-        const footerTop = headerHeight + totalSectionsHeight
-        const canvasHeight = Math.max(contentHeight, rect.height / scale)
-        const sectionTop = headerH
-        const sectionBottom = footerTop
-        if (y < sectionTop) {
-          y = Math.max(8, y) // keep inside header
-        } else if (y > sectionBottom) {
-          // In footer area
-          y = Math.min(canvasHeight - 8, y)
-        } else {
-          // Inside sections: if near middle of the specific section, snap to its mid
-          let acc = sectionTop
-          for (let i = 0; i < sections.length; i++) {
-            const top = acc
-            const bottom = top + sections[i].height
-            const mid = (top + bottom) / 2
-            if (y >= top && y <= bottom) {
-              if (Math.abs(y - mid) < 20) y = mid
-              break
-            }
-            acc = bottom
-          }
-        }
-      
-      console.log('Drop position:', { x, y, scale })
-      
+      // Get element size first to properly center it on cursor
       const newElement = createElementFromType(item.componentType)
-      const width = newElement.position?.width || 0
-      const height = newElement.position?.height || 0
+      const elementWidth = newElement.position?.width || 0
+      const elementHeight = newElement.position?.height || 0
+      
+      // Calculate drop position in canvas coordinates (cursor position)
+      const cursorX = (client.x - rect.left) / scale
+      const cursorY = (client.y - rect.top) / scale
       
       // Center the element on the cursor position
-      const centeredX = x - width / 2
-      const centeredY = y - height / 2
+      let x = cursorX - elementWidth / 2
+      let y = cursorY - elementHeight / 2
+      
+      // Calculate footer top position (this is the limit)
+      const footerTop = headerHeight + totalSectionsHeight
+      
+      // Enforce footer limit - element cannot be dropped beyond footer top
+      // If user tries to drop beyond footer, place element in the center of footer
+      if (y + elementHeight > footerTop) {
+        // Element exceeds footer limit
+        // Place element centered in the footer region
+        const footerCenter = footerTop + footerHeight / 2
+        y = footerCenter - elementHeight / 2
+        
+        // Ensure element is fully within footer bounds
+        if (y < footerTop) {
+          y = footerTop + 8 // Add small padding from top
+        }
+        if (y + elementHeight > footerTop + footerHeight) {
+          y = footerTop + footerHeight - elementHeight - 8 // Add small padding from bottom
+        }
+      } else {
+        // Element is within valid bounds (header or sections)
+        // Keep element position as is, but ensure it's within canvas bounds
+        y = Math.max(8, y) // Minimum padding from top
+      }
+      
+      // Ensure X position is within canvas bounds
+      x = Math.max(8, x) // Minimum padding from left
       
       // Apply grid snapping if enabled
-      const snappedX = snapSettings.enabled ? snapToGrid(centeredX, snapSettings.gridSize) : centeredX
-      const snappedY = snapSettings.enabled ? snapToGrid(centeredY, snapSettings.gridSize) : centeredY
+      const snappedX = snapSettings.enabled ? snapToGrid(x, snapSettings.gridSize) : x
+      const snappedY = snapSettings.enabled ? snapToGrid(y, snapSettings.gridSize) : y
+      
+      console.log('Drop position:', { 
+        cursor: { x: cursorX, y: cursorY },
+        centered: { x, y },
+        snapped: { x: snappedX, y: snappedY },
+        elementSize: { width: elementWidth, height: elementHeight },
+        footerTop,
+        scale 
+      })
       
       console.log('Adding element:', newElement.type)
-      onAddElement(newElement, { x: Math.max(0, snappedX), y: Math.max(0, snappedY) })
+      onAddElement(newElement, { x: snappedX, y: snappedY })
     },
   }), [canvasEl, zoom, snapSettings, snapToGrid, onAddElement, headerHeight, footerHeight, sections, totalSectionsHeight, contentHeight, canEdit])
 
@@ -2510,11 +2565,36 @@ export function Canvas({
       const dx = localX - group.mouseStart.x
       const dy = localY - group.mouseStart.y
 
+      // Calculate footer boundaries
+      const footerTop = headerHeight + totalSectionsHeight
+      const footerBottom = footerTop + footerHeight
+
       for (const id of group.ids) {
         const start = group.startPositions.get(id)
         if (!start) continue
-        const newX = start.x + dx
-        const newY = start.y + dy
+        
+        // Get element to check its height
+        const element = elements.find(el => el.id === id)
+        const elementHeight = element?.position?.height || 0
+        
+        let newX = start.x + dx
+        let newY = start.y + dy
+        
+        // Check if element exceeds footer bottom boundary
+        if (newY + elementHeight > footerBottom) {
+          // Element exceeds footer limit - place it centered in footer
+          const footerCenter = footerTop + footerHeight / 2
+          newY = footerCenter - elementHeight / 2
+          
+          // Ensure element stays within footer bounds with padding
+          if (newY < footerTop) {
+            newY = footerTop + 8 // Add padding from top
+          }
+          if (newY + elementHeight > footerBottom) {
+            newY = footerBottom - elementHeight - 8 // Add padding from bottom
+          }
+        }
+        
         const snappedX = snapSettings.enabled ? snapToGrid(newX, snapSettings.gridSize) : newX
         const snappedY = snapSettings.enabled ? snapToGrid(newY, snapSettings.gridSize) : newY
         const finalX = Math.max(0, snappedX)
@@ -2534,13 +2614,38 @@ export function Canvas({
       // Commit final position(s) once
       const group = dragGroupRef.current
       if (group) {
+        // Calculate footer boundaries for final position check
+        const footerTop = headerHeight + totalSectionsHeight
+        const footerBottom = footerTop + footerHeight
+        
         for (const id of group.ids) {
           const start = group.startPositions.get(id)
           const last = transientRef.current.get(id)
           if (start && (last?.x != null || last?.y != null)) {
+            let finalX = last?.x ?? start.x
+            let finalY = last?.y ?? start.y
+            
+            // Get element to check its height
+            const element = elements.find(el => el.id === id)
+            const elementHeight = element?.position?.height || 0
+            
+            // Double-check footer boundary on mouse up
+            if (finalY + elementHeight > footerBottom) {
+              const footerCenter = footerTop + footerHeight / 2
+              finalY = footerCenter - elementHeight / 2
+              
+              // Ensure element stays within footer bounds with padding
+              if (finalY < footerTop) {
+                finalY = footerTop + 8
+              }
+              if (finalY + elementHeight > footerBottom) {
+                finalY = footerBottom - elementHeight - 8
+              }
+            }
+            
             onUpdateElementPosition(id, {
-              x: last?.x ?? start.x,
-              y: last?.y ?? start.y,
+              x: finalX,
+              y: finalY,
             })
           }
           transientRef.current.delete(id)
@@ -2800,14 +2905,34 @@ export function Canvas({
         : nextHeight
       
       // Enforce minimum dimensions one more time after snapping
-      const finalWidth = Math.max(minWidth, snappedW)
-      const finalHeight = Math.max(minHeight, snappedH)
+      let finalWidth = Math.max(minWidth, snappedW)
+      let finalHeight = Math.max(minHeight, snappedH)
+      
+      // Calculate footer boundaries to prevent resizing beyond footer
+      const footerTop = headerHeight + totalSectionsHeight
+      const footerBottom = footerTop + footerHeight
+      
+      // Check if resized element would exceed footer bottom
+      let finalY = nextY
+      if (isN) {
+        // When resizing from north, check if new top position would place bottom beyond footer
+        if (finalY + finalHeight > footerBottom) {
+          // Clamp height to fit within footer
+          finalHeight = Math.max(minHeight, footerBottom - finalY - 8) // 8px padding
+        }
+      } else {
+        // When resizing from south or southeast, check if bottom would exceed footer
+        if (startPos.y + finalHeight > footerBottom) {
+          // Clamp height to fit within footer
+          finalHeight = Math.max(minHeight, footerBottom - startPos.y - 8) // 8px padding
+        }
+      }
       
       // Update transient size/position and render on next animation frame (no global commit yet)
       const prev = transientRef.current.get(elementId) || {}
       const payload: any = { width: finalWidth, height: finalHeight }
       if (isW) payload.x = Math.max(0, nextX)
-      if (isN) payload.y = Math.max(0, nextY)
+      if (isN) payload.y = Math.max(0, finalY)
       transientRef.current.set(elementId, { ...prev, ...payload })
       scheduleRerender()
     }
@@ -2817,11 +2942,23 @@ export function Canvas({
       // Commit final size/position once
       const last = transientRef.current.get(elementId)
       if (last?.width != null || last?.height != null || last?.x != null || last?.y != null) {
+        // Final check for footer boundary
+        const footerTop = headerHeight + totalSectionsHeight
+        const footerBottom = footerTop + footerHeight
+        
+        let finalY = last?.y ?? startPos.y
+        let finalHeight = last?.height ?? startPos.height
+        
+        // Ensure final position doesn't exceed footer
+        if (finalY + (finalHeight || 0) > footerBottom) {
+          finalHeight = Math.max(minHeight, footerBottom - finalY - 8)
+        }
+        
         onUpdateElementPosition(elementId, {
           x: last?.x ?? startPos.x,
-          y: last?.y ?? startPos.y,
+          y: finalY,
           width: last?.width ?? startPos.width,
-          height: last?.height ?? startPos.height,
+          height: finalHeight,
         })
       }
       transientRef.current.delete(elementId)
@@ -3119,6 +3256,12 @@ export function Canvas({
     if (index < 0 || index >= sections.length - 1) return
     
     const scale = zoom / 100
+    
+    // CRITICAL FIX: Calculate min heights ONCE before mouse events to avoid infinite loop
+    // If we call getMinRegionHeight inside setSections, it creates dependency cycle
+    const minTopHeight = getMinRegionHeight('section', index)
+    const minBottomHeight = getMinRegionHeight('section', index + 1)
+    
     sectionDividerDragRef.current = {
       index,
       startY: clientY,
@@ -3141,9 +3284,7 @@ export function Canvas({
         let topH = st.startTop + dy
         let bottomH = st.startBottom - dy
         
-        // Calculate minimum heights based on largest elements
-        const minTopHeight = getMinRegionHeight('section', st.index)
-        const minBottomHeight = getMinRegionHeight('section', st.index + 1)
+        // Use pre-calculated minimum heights (from closure, not recalculated)
         
         // Check if bottom section would go below minimum
         if (bottomH < minBottomHeight && dy > 0) {
@@ -8138,6 +8279,7 @@ export function Canvas({
           defaultSectionHeight={DEFAULT_SECTION}
           toggleCategoryRef={toggleCategoryRef}
           sectionHasElements={sectionHasElements}
+          onSectionsChange={onSectionsChange}
         />
       )}
       {/* Enhanced Grid overlay */}
@@ -8223,6 +8365,7 @@ function PartitionsOverlay({
   defaultSectionHeight,
   toggleCategoryRef,
   sectionHasElements,
+  onSectionsChange,
 }: {
   headerHeight: number
   footerHeight: number
@@ -8238,6 +8381,7 @@ function PartitionsOverlay({
   defaultSectionHeight: number
   toggleCategoryRef?: React.MutableRefObject<((categoryName: string) => void) | null>
   sectionHasElements: (sectionIndex: number) => boolean
+  onSectionsChange?: (sections: { id: string; height: number }[], headerHeight: number, footerHeight: number) => void
 }) {
   // Fine-grained hover states so sections act independently
   const [hoverHeader, setHoverHeader] = useState(false)
@@ -8249,59 +8393,89 @@ function PartitionsOverlay({
   const [hoverSectionTopIndex, setHoverSectionTopIndex] = useState<number | null>(null)
   const [hoverSectionBottomIndex, setHoverSectionBottomIndex] = useState<number | null>(null)
 
+  // Track if sections were just added to trigger immediate save callback
+  const sectionsJustAddedRef = useRef(false)
+  
+  // Trigger onSectionsChange after sections state update completes
+  useEffect(() => {
+    if (sectionsJustAddedRef.current && onSectionsChange) {
+      onSectionsChange(sections, headerHeight, footerHeight)
+      sectionsJustAddedRef.current = false
+    }
+  }, [sections, headerHeight, footerHeight, onSectionsChange])
+
   type BtnKind =
     | { type: "header-bottom" }
     | { type: "footer-top" }
     | { type: "sec-top"; index: number }
     | { type: "sec-bottom"; index: number }
 
-  const boundaryBtn = (
+  // Memoize button creator to prevent re-creation on every render
+  const boundaryBtn = useCallback((
     style: React.CSSProperties,
     kind: BtnKind,
   ) => {
     const isBottomAnchored = kind.type === "sec-bottom" || kind.type === "footer-top"
     const translateY = isBottomAnchored ? "translate-y-1/2" : "-translate-y-1/2"
+    
+    const handleClick = (e: React.MouseEvent) => {
+      e.stopPropagation()
+      // Insert a new section at the appropriate boundary
+      const mkSection = () => ({ id: `sec-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, height: defaultSectionHeight })
+      
+      setSections((prev) => {
+        const next = [...prev]
+        if (kind.type === "header-bottom") {
+          next.splice(0, 0, mkSection())
+        } else if (kind.type === "footer-top") {
+          next.push(mkSection())
+        } else if (kind.type === "sec-top") {
+          const insertAt = Math.max(0, Math.min(kind.index, next.length))
+          next.splice(insertAt, 0, mkSection())
+        } else if (kind.type === "sec-bottom") {
+          const insertAt = Math.max(0, Math.min(kind.index + 1, next.length))
+          next.splice(insertAt, 0, mkSection())
+        }
+        
+        // Mark that sections were just added (will trigger useEffect)
+        sectionsJustAddedRef.current = true
+        
+        return next
+      })
+      
+      // Clear all states AFTER setSections completes to avoid setState during render
+      // Use setTimeout to defer state updates to next tick
+      setTimeout(() => {
+        setFocusedRegion(null)
+        setFocusedSectionIndex(null)
+        setHoverHeaderBottom(false)
+        setHoverFooterTop(false)
+        setHoverSectionTopIndex(null)
+        setHoverSectionBottomIndex(null)
+        setHoverSectionIndex(null)
+      }, 0)
+    }
+    
+    const handleMouseEnter = () => {
+      if (kind.type === "header-bottom") setHoverHeaderBottom(true)
+      else if (kind.type === "footer-top") setHoverFooterTop(true)
+      else if (kind.type === "sec-top") setHoverSectionTopIndex(kind.index)
+      else if (kind.type === "sec-bottom") setHoverSectionBottomIndex(kind.index)
+    }
+    
     return (
       <button
         key={`${kind.type}-${'index' in kind ? kind.index : 'x'}`}
         type="button"
         className={`absolute -translate-x-1/2 ${translateY} text-xs px-2.5 py-1.5 rounded-md bg-primary text-primary-foreground border border-primary/80 shadow-md hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 transition-colors`}
         style={style}
-        onMouseEnter={() => {
-          if (kind.type === "header-bottom") setHoverHeaderBottom(true)
-          if (kind.type === "footer-top") setHoverFooterTop(true)
-          if (kind.type === "sec-top") setHoverSectionTopIndex(kind.index)
-          if (kind.type === "sec-bottom") setHoverSectionBottomIndex(kind.index)
-        }}
-        onClick={(e) => {
-          e.stopPropagation()
-          // Insert a new section at the appropriate boundary
-          const mkSection = () => ({ id: `sec-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, height: defaultSectionHeight })
-          setSections((prev) => {
-            const next = [...prev]
-            if (kind.type === "header-bottom") {
-              next.splice(0, 0, mkSection())
-            } else if (kind.type === "footer-top") {
-              next.push(mkSection())
-            } else if (kind.type === "sec-top") {
-              const insertAt = Math.max(0, Math.min(kind.index, next.length))
-              next.splice(insertAt, 0, mkSection())
-            } else if (kind.type === "sec-bottom") {
-              const insertAt = Math.max(0, Math.min(kind.index + 1, next.length))
-              next.splice(insertAt, 0, mkSection())
-            }
-            // Return to non-focus default state after adding
-            setFocusedRegion(null); setFocusedSectionIndex(null)
-            // Clear hovers
-            setHoverHeaderBottom(false); setHoverFooterTop(false); setHoverSectionTopIndex(null); setHoverSectionBottomIndex(null); setHoverSectionIndex(null)
-            return next
-          })
-        }}
+        onMouseEnter={handleMouseEnter}
+        onClick={handleClick}
       >
         + Add section
       </button>
     )
-  }
+  }, [defaultSectionHeight])
 
   // Decide which boundary button should be persistently visible based on focusedRegion
   const focusBoundaryMap: Record<"header" | "section" | "footer", "h-bottom" | "s-bottom" | "f-top"> = {
@@ -8312,14 +8486,15 @@ function PartitionsOverlay({
   const focusedBoundary = focusedRegion ? focusBoundaryMap[focusedRegion] : null
 
   // Compute top offsets for each section block (visual overlay only)
-  const sectionTops: number[] = []
-  {
+  const sectionTops = useMemo(() => {
+    const tops: number[] = []
     let acc = headerHeight
     for (const s of sections) {
-      sectionTops.push(acc)
+      tops.push(acc)
       acc += s.height
     }
-  }
+    return tops
+  }, [headerHeight, sections])
 
   return (
     <div className="absolute inset-0 z-20 select-none">
@@ -8348,7 +8523,7 @@ function PartitionsOverlay({
           className="absolute left-0 right-0"
           style={{ top: `${sectionTops[idx]}px`, height: `${sec.height}px` }}
           onMouseEnter={() => setHoverSectionIndex(idx)}
-          onMouseLeave={() => setHoverSectionIndex((v) => (v === idx ? null : v))}
+          onMouseLeave={() => setHoverSectionIndex(null)}
           onClick={(e) => { e.stopPropagation(); setFocusedRegion("section"); setFocusedSectionIndex(idx) }}
         >
           {(hoverSectionIndex === idx
@@ -8524,24 +8699,6 @@ function PartitionsOverlay({
               )}
             </div>
           )}
-          {/* Per-section top add button (behaves like s-top for the first section; otherwise insert before idx) */}
-          <div
-            className="absolute left-0 right-0 pointer-events-auto"
-            style={{ top: 0, height: 24 }}
-            onMouseEnter={() => setHoverSectionTopIndex(idx)}
-            onMouseLeave={() => setHoverSectionTopIndex((v) => (v === idx ? null : v))}
-          >
-            {(hoverSectionTopIndex === idx || (focusedRegion === 'section' && focusedSectionIndex === idx)) && boundaryBtn({ left: '50%', top: 0 }, { type: 'sec-top', index: idx })}
-          </div>
-          {/* Per-section bottom add button */}
-          <div
-            className="absolute left-0 right-0 pointer-events-auto"
-            style={{ bottom: 0, height: 24 }}
-            onMouseEnter={() => setHoverSectionBottomIndex(idx)}
-            onMouseLeave={() => setHoverSectionBottomIndex((v) => (v === idx ? null : v))}
-          >
-            {(hoverSectionBottomIndex === idx || (focusedRegion === 'section' && focusedSectionIndex === idx)) && boundaryBtn({ left: '50%', bottom: 0 }, { type: 'sec-bottom', index: idx })}
-          </div>
         </div>
       ))}
       <div
@@ -8563,26 +8720,31 @@ function PartitionsOverlay({
       </div>
 
       {/* Resizable boundary hotspots with +Add button visibility */}
-      {/* Header bottom boundary */}
+      
+      {/* Header bottom / Section 0 top boundary (MERGED - same position) */}
       <div
         className="absolute left-0 right-0 pointer-events-auto cursor-ns-resize"
         style={{ top: `${headerHeight}px`, height: 32 }}
-        onMouseEnter={() => setHoverHeaderBottom(true)}
-        onMouseLeave={() => setHoverHeaderBottom(false)}
+        onMouseEnter={() => {
+          setHoverHeaderBottom(true)
+          setHoverSectionTopIndex(0)
+        }}
+        onMouseLeave={() => {
+          setHoverHeaderBottom(false)
+          setHoverSectionTopIndex(null)
+        }}
         onMouseDown={(e) => onStartResize("header", e.clientY)}
       >
-        {(hoverHeaderBottom || focusedBoundary === "h-bottom") && boundaryBtn({ left: '50%', top: 0 }, { type: 'header-bottom' })}
-      </div>
-
-      {/* Section top (same line as header bottom) */}
-      <div
-        className="absolute left-0 right-0 pointer-events-auto cursor-ns-resize"
-        style={{ top: `${headerHeight}px`, height: 32 }}
-        onMouseEnter={() => setHoverSectionTopIndex(0)}
-        onMouseLeave={() => setHoverSectionTopIndex((v) => (v === 0 ? null : v))}
-        onMouseDown={(e) => onStartResize("header", e.clientY)}
-      >
-        {(hoverSectionTopIndex === 0) && boundaryBtn({ left: '50%', top: 0 }, { type: 'sec-top', index: 0 })}
+        {/* Show only ONE button based on focus state or hover */}
+        {(hoverHeaderBottom || hoverSectionTopIndex === 0 || focusedBoundary === "h-bottom") && (
+          <>
+            {/* Show header-bottom button if header is focused, otherwise show section-top */}
+            {focusedRegion === "header" 
+              ? boundaryBtn({ left: '50%', top: 0 }, { type: 'header-bottom' })
+              : boundaryBtn({ left: '50%', top: 0 }, { type: 'sec-top', index: 0 })
+            }
+          </>
+        )}
       </div>
 
       {/* Divider resize handles between sections */}
@@ -8598,29 +8760,61 @@ function PartitionsOverlay({
             key={`divider-${idx}`}
             className="absolute left-0 right-0 pointer-events-auto cursor-ns-resize"
             style={{ top: `${dividerTop}px`, height: 32 }}
+            onMouseEnter={() => {
+              setHoverSectionBottomIndex(idx)
+              setHoverSectionTopIndex(idx + 1)
+            }}
+            onMouseLeave={() => {
+              setHoverSectionBottomIndex(null)
+              setHoverSectionTopIndex(null)
+            }}
             onMouseDown={(e) => {
               e.stopPropagation()
               onStartSectionResize(idx, e.clientY)
             }}
           >
-            {/* Optional: Add a visual indicator on hover */}
-            <div className="absolute inset-0 hover:bg-blue-400/5 transition-colors" />
+            {/* Show button when hovering - prefer bottom of current section */}
+            {(hoverSectionBottomIndex === idx || hoverSectionTopIndex === idx + 1) && (
+              <>
+                {focusedRegion === 'section' && focusedSectionIndex === idx
+                  ? boundaryBtn({ left: '50%', bottom: 0 }, { type: 'sec-bottom', index: idx })
+                  : focusedRegion === 'section' && focusedSectionIndex === idx + 1
+                    ? boundaryBtn({ left: '50%', top: 0 }, { type: 'sec-top', index: idx + 1 })
+                    : boundaryBtn({ left: '50%', bottom: 0 }, { type: 'sec-bottom', index: idx })
+                }
+              </>
+            )}
           </div>
         )
       })}
 
-      {/* Footer top boundary */}
+      {/* Footer top / Last section bottom boundary (MERGED - same position) */}
       <div
         className="absolute left-0 right-0 pointer-events-auto cursor-ns-resize"
         style={{ bottom: `${footerHeight}px`, height: 32 }}
-        onMouseEnter={() => setHoverFooterTop(true)}
-        onMouseLeave={() => setHoverFooterTop(false)}
+        onMouseEnter={() => {
+          setHoverFooterTop(true)
+          setHoverSectionBottomIndex(sections.length - 1)
+        }}
+        onMouseLeave={() => {
+          setHoverFooterTop(false)
+          setHoverSectionBottomIndex(null)
+        }}
         onMouseDown={(e) => onStartResize("footer", e.clientY)}
       >
-        {(hoverFooterTop || focusedBoundary === "f-top") && boundaryBtn({ left: '50%', bottom: 0 }, { type: 'footer-top' })}
+        {/* Show only ONE button based on focus state or hover */}
+        {(hoverFooterTop || hoverSectionBottomIndex === sections.length - 1 || focusedBoundary === "f-top") && (
+          <>
+            {/* Show footer-top button if footer is focused, otherwise show section-bottom */}
+            {focusedRegion === "footer"
+              ? boundaryBtn({ left: '50%', bottom: 0 }, { type: 'footer-top' })
+              : boundaryBtn({ left: '50%', bottom: 0 }, { type: 'sec-bottom', index: sections.length - 1 })
+            }
+          </>
+        )}
       </div>
 
-      {/* Footer bottom boundary - NEW: Allows expanding/shrinking canvas */}
+      {/* Footer bottom boundary - Allows expanding/shrinking canvas */}
       <div
         className="absolute left-0 right-0 pointer-events-auto cursor-ns-resize"
         style={{ bottom: 0, height: 32 }}

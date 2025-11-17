@@ -175,7 +175,7 @@ export const getProjectById = async (req: Request, res: Response) => {
 // POST create new project (SAVE PROJECT)
 export const createProject = async (req: Request, res: Response) => {
   try {
-    const { clerk_id, name, description, elements } = req.body;
+    const { clerk_id, name, description, elements, layout } = req.body;
 
     // Validation
     if (!clerk_id || !name) {
@@ -183,6 +183,51 @@ export const createProject = async (req: Request, res: Response) => {
         success: false,
         message: "clerk_id and name are required",
       });
+    }
+
+    // Validate layout structure if provided
+    if (layout) {
+      if (typeof layout.headerHeight !== 'number' || layout.headerHeight < 48) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid layout: headerHeight must be a number >= 48",
+        });
+      }
+      if (typeof layout.footerHeight !== 'number' || layout.footerHeight < 48) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid layout: footerHeight must be a number >= 48",
+        });
+      }
+      if (!Array.isArray(layout.sections) || layout.sections.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid layout: sections must be a non-empty array",
+        });
+      }
+      // Validate each section
+      const sectionIds = new Set<string>();
+      for (const section of layout.sections) {
+        if (!section.id || typeof section.id !== 'string') {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid layout: each section must have a string id",
+          });
+        }
+        if (sectionIds.has(section.id)) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid layout: duplicate section id "${section.id}"`,
+          });
+        }
+        sectionIds.add(section.id);
+        if (typeof section.height !== 'number' || section.height < 128) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid layout: section "${section.id}" height must be a number >= 128`,
+          });
+        }
+      }
     }
 
     // Check if user exists
@@ -197,6 +242,22 @@ export const createProject = async (req: Request, res: Response) => {
       });
     }
 
+    // Build json_structure with layout if provided
+    const jsonStructure: any = {
+      elements: elements || [],
+      version: "1.0.0",
+      createdAt: new Date().toISOString(),
+    };
+    
+    // Include layout if provided and valid
+    if (layout) {
+      jsonStructure.layout = {
+        headerHeight: layout.headerHeight,
+        footerHeight: layout.footerHeight,
+        sections: layout.sections.map((s: any) => ({ id: s.id, height: s.height })),
+      };
+    }
+
     // Create project with default page
     const project = await prisma.project.create({
       data: {
@@ -206,11 +267,7 @@ export const createProject = async (req: Request, res: Response) => {
         pages: {
           create: {
             name: "Main Page",
-            json_structure: {
-              elements: elements || [],
-              version: "1.0.0",
-              createdAt: new Date().toISOString(),
-            },
+            json_structure: jsonStructure,
           },
         },
       },
@@ -246,7 +303,52 @@ export const createProject = async (req: Request, res: Response) => {
 export const updateProject = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, elements } = req.body;
+    const { name, description, elements, layout } = req.body;
+
+    // Validate layout structure if provided
+    if (layout) {
+      if (typeof layout.headerHeight !== 'number' || layout.headerHeight < 48) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid layout: headerHeight must be a number >= 48",
+        });
+      }
+      if (typeof layout.footerHeight !== 'number' || layout.footerHeight < 48) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid layout: footerHeight must be a number >= 48",
+        });
+      }
+      if (!Array.isArray(layout.sections) || layout.sections.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid layout: sections must be a non-empty array",
+        });
+      }
+      // Validate each section
+      const sectionIds = new Set<string>();
+      for (const section of layout.sections) {
+        if (!section.id || typeof section.id !== 'string') {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid layout: each section must have a string id",
+          });
+        }
+        if (sectionIds.has(section.id)) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid layout: duplicate section id "${section.id}"`,
+          });
+        }
+        sectionIds.add(section.id);
+        if (typeof section.height !== 'number' || section.height < 128) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid layout: section "${section.id}" height must be a number >= 128`,
+          });
+        }
+      }
+    }
 
     // Check if project exists
     const projectExists = await prisma.project.findUnique({
@@ -284,17 +386,36 @@ export const updateProject = async (req: Request, res: Response) => {
       },
     });
 
-    // Update page elements if provided
-    if (elements && projectExists.pages.length > 0) {
+    // Update page elements and layout if provided
+    if ((elements !== undefined || layout !== undefined) && projectExists.pages.length > 0) {
       const mainPage = projectExists.pages[0];
+      const currentStructure = mainPage.json_structure as any;
+      
+      // Build updated json_structure
+      const updatedStructure: any = {
+        elements: elements !== undefined ? elements : (currentStructure.elements || []),
+        version: "1.0.0",
+        updatedAt: new Date().toISOString(),
+      };
+      
+      // Handle layout: use provided layout, or preserve existing, or omit if neither exists
+      if (layout !== undefined) {
+        // New layout provided - use it
+        updatedStructure.layout = {
+          headerHeight: layout.headerHeight,
+          footerHeight: layout.footerHeight,
+          sections: layout.sections.map((s: any) => ({ id: s.id, height: s.height })),
+        };
+      } else if (currentStructure.layout) {
+        // No new layout, but preserve existing layout
+        updatedStructure.layout = currentStructure.layout;
+      }
+      // If neither layout provided nor existing layout, don't include layout field
+      
       await prisma.page.update({
         where: { id: mainPage.id },
         data: {
-          json_structure: {
-            elements: elements,
-            version: "1.0.0",
-            updatedAt: new Date().toISOString(),
-          },
+          json_structure: updatedStructure,
         },
       });
     }
@@ -321,6 +442,11 @@ export const deleteProject = async (req: Request, res: Response) => {
     // Check if project exists
     const projectExists = await prisma.project.findUnique({
       where: { id },
+      include: {
+        pages: {
+          select: { id: true }
+        }
+      }
     });
 
     if (!projectExists) {
@@ -330,12 +456,51 @@ export const deleteProject = async (req: Request, res: Response) => {
       });
     }
 
-    // Delete all pages first (cascade)
+    // Get all page IDs for this project
+    const pageIds = projectExists.pages.map(page => page.id);
+
+    // Delete in correct order to avoid foreign key constraints:
+    
+    // 1. Delete edit histories for all pages
+    if (pageIds.length > 0) {
+      await prisma.editHistory.deleteMany({
+        where: { page_id: { in: pageIds } },
+      });
+    }
+
+    // 2. Delete components for all pages
+    if (pageIds.length > 0) {
+      await prisma.component.deleteMany({
+        where: { page_id: { in: pageIds } },
+      });
+    }
+
+    // 3. Delete all pages
     await prisma.page.deleteMany({
       where: { project_id: id },
     });
 
-    // Delete project
+    // 4. Delete exports for this project
+    await prisma.export.deleteMany({
+      where: { project_id: id },
+    });
+
+    // 5. Delete active sessions for this project
+    await prisma.activeSession.deleteMany({
+      where: { project_id: id },
+    });
+
+    // 6. Delete project collaborators (has cascade in schema, but delete explicitly for safety)
+    await prisma.projectCollaborator.deleteMany({
+      where: { project_id: id },
+    });
+
+    // 7. Delete project invitations (has cascade in schema, but delete explicitly for safety)
+    await prisma.projectInvitation.deleteMany({
+      where: { project_id: id },
+    });
+
+    // 8. Finally, delete the project itself
     await prisma.project.delete({
       where: { id },
     });
@@ -349,6 +514,7 @@ export const deleteProject = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to delete project",
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };

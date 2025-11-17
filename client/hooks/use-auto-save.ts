@@ -6,6 +6,11 @@ interface UseAutoSaveOptions {
   projectId: string | null;
   projectName: string;
   elements: any[];
+  layout?: {
+    headerHeight: number;
+    footerHeight: number;
+    sections: { id: string; height: number }[];
+  } | null;
   enabled?: boolean;
   interval?: number; // Auto-save interval in milliseconds (default: 30 seconds)
   onSaveSuccess?: () => void;
@@ -16,13 +21,14 @@ export function useAutoSave({
   projectId,
   projectName,
   elements,
+  layout,
   enabled = true,
   interval = 30000, // 30 seconds
   onSaveSuccess,
   onSaveError,
 }: UseAutoSaveOptions) {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedElementsRef = useRef<string>('');
+  const lastSavedDataRef = useRef<string>('');
   const isSavingRef = useRef(false);
   const lastSaveTimeRef = useRef<number>(0);
   const isInitializedRef = useRef(false);
@@ -33,9 +39,9 @@ export function useAutoSave({
       return;
     }
 
-    // Check if elements have actually changed
-    const currentElementsStr = JSON.stringify(elements);
-    if (currentElementsStr === lastSavedElementsRef.current) {
+    // Check if elements or layout have actually changed
+    const currentDataStr = JSON.stringify({ elements, layout });
+    if (currentDataStr === lastSavedDataRef.current) {
       return; // No changes, skip save
     }
 
@@ -46,10 +52,11 @@ export function useAutoSave({
         name: projectName,
         description: '',
         elements: elements,
+        layout: layout || undefined,
       });
 
       if (response.success) {
-        lastSavedElementsRef.current = currentElementsStr;
+        lastSavedDataRef.current = currentDataStr;
         lastSaveTimeRef.current = Date.now();
         setSaveCounter(prev => prev + 1); // Trigger re-render
         onSaveSuccess?.();
@@ -70,24 +77,24 @@ export function useAutoSave({
     } finally {
       isSavingRef.current = false;
     }
-  }, [projectId, projectName, elements, enabled, onSaveSuccess, onSaveError]);
+  }, [projectId, projectName, elements, layout, enabled, onSaveSuccess, onSaveError]);
 
   // Initialize only when project changes (NOT when elements change)
   useEffect(() => {
     if (projectId) {
       // Use setTimeout to ensure elements are fully loaded before marking as initialized
       setTimeout(() => {
-        lastSavedElementsRef.current = JSON.stringify(elements);
+        lastSavedDataRef.current = JSON.stringify({ elements, layout });
         isInitializedRef.current = true;
       }, 100); // Small delay to ensure elements are loaded
     } else {
       // Reset when no project is open
       isInitializedRef.current = false;
-      lastSavedElementsRef.current = '';
+      lastSavedDataRef.current = '';
     }
-  }, [projectId]); // Only depend on projectId, NOT elements!
+  }, [projectId]); // Only depend on projectId, NOT elements or layout!
 
-  // Trigger auto-save when elements change (with debounce)
+  // Trigger auto-save when elements or layout change (with debounce)
   useEffect(() => {
     if (!projectId || !enabled || !isInitializedRef.current) {
       return;
@@ -108,7 +115,7 @@ export function useAutoSave({
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [elements, projectId, enabled, interval, saveProject]);
+  }, [elements, layout, projectId, enabled, interval, saveProject]);
 
   // Manual save function (can be called on blur or before closing)
   const manualSave = useCallback(() => {
@@ -126,10 +133,10 @@ export function useAutoSave({
   // Check if there are unsaved changes (only after initialization)
   const hasUnsavedChanges = useMemo(() => {
     if (!projectId || !isInitializedRef.current) return false;
-    const currentElementsStr = JSON.stringify(elements);
-    const hasChanges = currentElementsStr !== lastSavedElementsRef.current;
+    const currentDataStr = JSON.stringify({ elements, layout });
+    const hasChanges = currentDataStr !== lastSavedDataRef.current;
     return hasChanges;
-  }, [projectId, elements, saveCounter]); // saveCounter triggers recalculation after save
+  }, [projectId, elements, layout, saveCounter]); // saveCounter triggers recalculation after save
 
   return {
     manualSave,

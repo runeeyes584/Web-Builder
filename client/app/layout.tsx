@@ -24,8 +24,8 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className="dark">
-        <body className={`font-sans ${inter.variable} antialiased`}>
+      <html lang="en" className="dark" suppressHydrationWarning>
+        <body className={`font-sans ${inter.variable} antialiased`} suppressHydrationWarning>
           <Suspense fallback={null}>{children}</Suspense>
           <Toaster />
         </body>

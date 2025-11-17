@@ -22,6 +22,11 @@ export interface Project {
     json_structure: {
       elements: any[];
       version: string;
+      layout?: {
+        headerHeight: number;
+        footerHeight: number;
+        sections: { id: string; height: number }[];
+      };
     };
     updated_at: string;
   }[];
@@ -32,12 +37,22 @@ export interface CreateProjectRequest {
   name: string;
   description?: string;
   elements?: any[];
+  layout?: {
+    headerHeight: number;
+    footerHeight: number;
+    sections: { id: string; height: number }[];
+  };
 }
 
 export interface UpdateProjectRequest {
   name?: string;
   description?: string;
   elements?: any[];
+  layout?: {
+    headerHeight: number;
+    footerHeight: number;
+    sections: { id: string; height: number }[];
+  };
 }
 
 // API Client Helper

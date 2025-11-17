@@ -22,9 +22,19 @@ interface ElementChange {
   timestamp: number;
 }
 
+interface LayoutChange {
+  headerHeight: number;
+  footerHeight: number;
+  sections: { id: string; height: number }[];
+  userId: string;
+  username: string;
+  timestamp: number;
+}
+
 export class CollaborationSocket {
   private io: Server;
   private userSessions: Map<string, UserSession> = new Map();
+  private layoutSaveTimers: Map<string, NodeJS.Timeout> = new Map();
 
   constructor(io: Server) {
     this.io = io;
@@ -143,6 +153,34 @@ export class CollaborationSocket {
         }
       });
 
+      // Layout changes
+      socket.on('layout-change', async (data: LayoutChange) => {
+        const session = this.userSessions.get(socket.id);
+        if (!session) return;
+
+        // Verify user has edit permission (OWNER or EDITOR)
+        const hasEditPermission = await this.verifyEditPermission(session.projectId, session.clerkId);
+        if (!hasEditPermission) {
+          console.log(`User ${session.clerkId} does not have permission to change layout`);
+          return;
+        }
+
+        // Broadcast to others in the room
+        socket.to(`project:${session.projectId}`).emit('layout-changed', {
+          ...data,
+          socketId: socket.id,
+          username: session.username,
+        });
+
+        // Auto-persist layout changes to database (Option C - Real-time persistence)
+        // Debounced to prevent excessive writes during rapid changes (e.g., resize dragging)
+        this.debouncedSaveLayout(session.projectId, {
+          headerHeight: data.headerHeight,
+          footerHeight: data.footerHeight,
+          sections: data.sections,
+        });
+      });
+
       // Typing indicator
       socket.on('start-typing', (data: { elementId: string }) => {
         const session = this.userSessions.get(socket.id);
@@ -231,6 +269,34 @@ export class CollaborationSocket {
       return !!collaborator;
     } catch (error) {
       console.error('Error verifying project access:', error);
+      return false;
+    }
+  }
+
+  private async verifyEditPermission(projectId: string, clerkId: string): Promise<boolean> {
+    try {
+      // Check if user owns the project (OWNER has edit permission)
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+      });
+
+      if (project?.clerk_id === clerkId) {
+        return true;
+      }
+
+      // Check if user is a collaborator with EDITOR role
+      const collaborator = await prisma.projectCollaborator.findUnique({
+        where: {
+          project_id_clerk_id: {
+            project_id: projectId,
+            clerk_id: clerkId,
+          },
+        },
+      });
+
+      return collaborator?.role === 'EDITOR';
+    } catch (error) {
+      console.error('Error verifying edit permission:', error);
       return false;
     }
   }
@@ -337,6 +403,118 @@ export class CollaborationSocket {
       '#F8B739', '#52B788', '#E63946', '#457B9D',
     ];
     return colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  /**
+   * Save layout changes directly to database (Option C - Real-time persistence)
+   * This method is called when users change layout via WebSocket events
+   */
+  private async saveLayoutToDatabase(
+    projectId: string,
+    layout: {
+      headerHeight: number;
+      footerHeight: number;
+      sections: { id: string; height: number }[];
+    }
+  ) {
+    try {
+      // Validate layout structure
+      if (!layout || typeof layout.headerHeight !== 'number' || typeof layout.footerHeight !== 'number') {
+        console.error('Invalid layout structure:', layout);
+        return;
+      }
+
+      if (layout.headerHeight < 48 || layout.footerHeight < 48) {
+        console.error('Invalid layout dimensions: header/footer must be >= 48px');
+        return;
+      }
+
+      if (!Array.isArray(layout.sections)) {
+        console.error('Invalid layout: sections must be an array');
+        return;
+      }
+
+      // Validate section structure and uniqueness
+      const sectionIds = new Set<string>();
+      for (const section of layout.sections) {
+        if (!section.id || typeof section.height !== 'number') {
+          console.error('Invalid section structure:', section);
+          return;
+        }
+        if (section.height < 128) {
+          console.error('Invalid section height: must be >= 128px');
+          return;
+        }
+        if (sectionIds.has(section.id)) {
+          console.error('Duplicate section ID:', section.id);
+          return;
+        }
+        sectionIds.add(section.id);
+      }
+
+      // Get project's first page
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        include: { pages: true },
+      });
+
+      if (!project || project.pages.length === 0) {
+        console.error('Project or page not found:', projectId);
+        return;
+      }
+
+      const pageId = project.pages[0].id;
+      const currentPage = project.pages[0];
+
+      // Merge layout into existing json_structure
+      const currentStructure = currentPage.json_structure as any;
+      const updatedStructure = {
+        ...currentStructure,
+        layout: {
+          headerHeight: layout.headerHeight,
+          footerHeight: layout.footerHeight,
+          sections: layout.sections.map(s => ({ id: s.id, height: s.height })),
+        },
+      };
+
+      // Update page with new layout
+      await prisma.page.update({
+        where: { id: pageId },
+        data: {
+          json_structure: updatedStructure,
+        },
+      });
+
+      console.log(`Layout auto-saved for project ${projectId} via WebSocket`);
+    } catch (error) {
+      console.error('Error saving layout to database:', error);
+    }
+  }
+
+  /**
+   * Debounced layout save - prevents excessive DB writes during rapid changes
+   */
+  private debouncedSaveLayout(
+    projectId: string,
+    layout: {
+      headerHeight: number;
+      footerHeight: number;
+      sections: { id: string; height: number }[];
+    }
+  ) {
+    // Clear existing timer for this project
+    const existingTimer = this.layoutSaveTimers.get(projectId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    // Set new timer (1 second debounce)
+    const timer = setTimeout(() => {
+      this.saveLayoutToDatabase(projectId, layout);
+      this.layoutSaveTimers.delete(projectId);
+    }, 1000);
+
+    this.layoutSaveTimers.set(projectId, timer);
   }
 
   public getIO(): Server {

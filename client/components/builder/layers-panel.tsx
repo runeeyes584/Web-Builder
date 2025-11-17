@@ -28,9 +28,8 @@ export const LayersPanel = React.memo(function LayersPanel({
   onClose,
   regions,
 }: LayersPanelProps) {
+  // All hooks must be called before any conditional returns
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(["header", "footer", "section-0"]))
-
-  if (!isOpen) return null
 
   const toggleGroup = useCallback((groupName: string) => {
     setExpandedGroups((prev) => {
@@ -112,6 +111,9 @@ export const LayersPanel = React.memo(function LayersPanel({
 
     return { header: headerEls, sections: sectionGroups, footer: footerEls }
   }, [elements, regions])
+
+  // Early return AFTER all hooks are called
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose}>

@@ -18,6 +18,15 @@ export interface ElementChange {
   timestamp: number;
 }
 
+export interface LayoutChange {
+  headerHeight: number;
+  footerHeight: number;
+  sections: { id: string; height: number }[];
+  userId: string;
+  username: string;
+  timestamp: number;
+}
+
 interface UseCollaborationProps {
   projectId: string | null;
   clerkId: string;
@@ -34,6 +43,7 @@ export function useCollaboration({
   const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [elementChanges, setElementChanges] = useState<ElementChange[]>([]);
+  const [layoutChanges, setLayoutChanges] = useState<LayoutChange[]>([]);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -105,12 +115,24 @@ export function useCollaboration({
     }) => {
       setActiveUsers((prev) => {
         // Only update cursor position if user exists, don't add new users here
-        const updated = prev.map((u) =>
-          u.socketId === data.socketId
-            ? { ...u, cursorPosition: data.position }
-            : u
-        );
+        const userIndex = prev.findIndex((u) => u.socketId === data.socketId);
         
+        // If user not found, return previous state without creating new array
+        if (userIndex === -1) {
+          return prev;
+        }
+        
+        // Only create new array if position actually changed
+        const user = prev[userIndex];
+        if (user.cursorPosition?.x === data.position.x && 
+            user.cursorPosition?.y === data.position.y &&
+            user.cursorPosition?.elementId === data.position.elementId) {
+          return prev;
+        }
+        
+        // Create new array with updated user
+        const updated = [...prev];
+        updated[userIndex] = { ...user, cursorPosition: data.position };
         return updated;
       });
     });
@@ -118,6 +140,11 @@ export function useCollaboration({
     // Element changes
     socket.on('element-changed', (change: ElementChange) => {
       setElementChanges((prev) => [...prev, change]);
+    });
+
+    // Layout changes
+    socket.on('layout-changed', (change: LayoutChange) => {
+      setLayoutChanges((prev) => [...prev, change]);
     });
 
     // Selection changes
@@ -173,6 +200,18 @@ export function useCollaboration({
     }
   };
 
+  // Send layout change
+  const sendLayoutChange = (layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('layout-change', {
+        ...layout,
+        userId: clerkId,
+        username,
+        timestamp: Date.now(),
+      });
+    }
+  };
+
   // Send selection change
   const sendSelectionChange = (elementIds: string[]) => {
     if (socketRef.current?.connected) {
@@ -198,15 +237,23 @@ export function useCollaboration({
     setElementChanges([]);
   };
 
+  // Clear consumed layout changes
+  const clearLayoutChanges = () => {
+    setLayoutChanges([]);
+  };
+
   return {
     isConnected,
     activeUsers,
     elementChanges,
+    layoutChanges,
     sendCursorPosition,
     sendElementChange,
+    sendLayoutChange,
     sendSelectionChange,
     sendTypingStart,
     sendTypingStop,
     clearElementChanges,
+    clearLayoutChanges,
   };
 }

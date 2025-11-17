@@ -1,5 +1,5 @@
 import { ActiveUser } from '@/hooks/use-collaboration';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface CollaborativeCursorProps {
   users: ActiveUser[];
@@ -9,14 +9,17 @@ interface CollaborativeCursorProps {
 export function CollaborativeCursor({ users, containerRef }: CollaborativeCursorProps) {
   const [cursors, setCursors] = useState<Map<string, { x: number; y: number }>>(new Map());
 
-  // Deduplicate users by clerkId to prevent duplicate cursors
-  const uniqueUsers = users.reduce((acc, user) => {
-    const existing = acc.find(u => u.clerkId === user.clerkId);
-    if (!existing) {
-      acc.push(user);
-    }
-    return acc;
-  }, [] as ActiveUser[]);
+  // Deduplicate users by clerkId to prevent duplicate cursors - use useMemo for stable reference
+  const uniqueUsers = useMemo(() => {
+    const seen = new Set<string>();
+    return users.filter(user => {
+      if (seen.has(user.clerkId)) {
+        return false;
+      }
+      seen.add(user.clerkId);
+      return true;
+    });
+  }, [users]);
 
   useEffect(() => {
     const newCursors = new Map<string, { x: number; y: number }>();

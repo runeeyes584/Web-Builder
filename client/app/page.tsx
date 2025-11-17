@@ -11,7 +11,7 @@ import { useBuilderState } from "@/hooks/use-builder-state"
 import type { BuilderElement, RegionsLayout } from "@/lib/builder-types"
 import { componentCategories } from "@/lib/component-categories"
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { DndProvider, useDragLayer } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 
@@ -46,6 +46,7 @@ export default function WebsiteBuilder() {
   const [showGrid, setShowGrid] = useState(true)
   const [showLayers, setShowLayers] = useState(false)
   const [regionsLayout, setRegionsLayout] = useState<RegionsLayout | null>(null)
+  const [canvasLayout, setCanvasLayout] = useState<{ headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] } | null>(null)
   
   // Project and collaboration state
   const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(undefined)
@@ -64,12 +65,16 @@ export default function WebsiteBuilder() {
     projectId: currentProjectId || null,
     projectName: currentProjectName,
     elements: elements,
+    layout: canvasLayout,
     enabled: canEdit && !!currentProjectId, // Only auto-save if can edit and project is open
     interval: 30000, // Auto-save every 30 seconds after last change
   })
   
   // Ref to store sendElementChange function from CollaborativeCanvas
   const sendElementChangeRef = useRef<((change: any) => void) | null>(null)
+  
+  // Ref to store sendLayoutChange function from CollaborativeCanvas
+  const sendLayoutChangeRef = useRef<((layout: any) => void) | null>(null)
   
   // Track undo/redo operations
   const undoRedoRef = useRef<{ isActive: boolean; beforeElements: BuilderElement[] }>({
@@ -78,12 +83,50 @@ export default function WebsiteBuilder() {
   })
   
   // Callback when CollaborativeCanvas is ready
-  const handleCollaborationReady = (sendElementChange: (change: any) => void) => {
+  const handleCollaborationReady = useCallback((sendElementChange: (change: any) => void) => {
     sendElementChangeRef.current = sendElementChange
-  }
+  }, [])
+  
+  // Callback when layout collaboration is ready
+  const handleLayoutChangeReady = useCallback((sendLayoutChange: (layout: any) => void) => {
+    sendLayoutChangeRef.current = sendLayoutChange
+  }, [])
+  
+  // Handle layout updates from other collaborators
+  const handleLayoutUpdate = useCallback((layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }) => {
+    // Update local canvas layout state when receiving layout changes from other users
+    setCanvasLayout(layout)
+  }, [])
+  
+  // Handle immediate save when sections are added/removed (not debounced)
+  const handleSectionsChange = useCallback(async (sections: { id: string; height: number }[], headerHeight: number, footerHeight: number) => {
+    if (!currentProjectId || !canEdit) return
+    
+    const newLayout = { headerHeight, footerHeight, sections }
+    
+    // Update local state immediately
+    setCanvasLayout(newLayout)
+    
+    // Broadcast to collaborators via WebSocket immediately
+    if (sendLayoutChangeRef.current) {
+      sendLayoutChangeRef.current(newLayout)
+    }
+    
+    // Save to database immediately (no debounce for add/remove operations)
+    try {
+      const { projectsApi } = await import('@/api/projects.api')
+      await projectsApi.update(currentProjectId, {
+        name: currentProjectName,
+        elements: elements,
+        layout: newLayout,
+      })
+    } catch (error) {
+      console.error('Failed to save layout after section change:', error)
+    }
+  }, [currentProjectId, canEdit, currentProjectName, elements])
   
   // Detect and broadcast changes between two element states
-  const broadcastElementsDiff = (oldElements: BuilderElement[], newElements: BuilderElement[]) => {
+  const broadcastElementsDiff = useCallback((oldElements: BuilderElement[], newElements: BuilderElement[]) => {
     if (!currentProjectId || !sendElementChangeRef.current) return
     
     const oldIds = new Set(oldElements.map(el => el.id))
@@ -121,7 +164,7 @@ export default function WebsiteBuilder() {
         }
       }
     })
-  }
+  }, [currentProjectId])
   
   // Watch for elements changes after undo/redo
   useEffect(() => {
@@ -130,10 +173,10 @@ export default function WebsiteBuilder() {
       undoRedoRef.current.isActive = false
       undoRedoRef.current.beforeElements = []
     }
-  }, [elements])
+  }, [elements, broadcastElementsDiff])
   
   // Wrapped undo that broadcasts changes
-  const collaborativeUndo = () => {
+  const collaborativeUndo = useCallback(() => {
     if (!canEdit || !canUndo) return // Block if viewer
     
     undoRedoRef.current = {
@@ -141,10 +184,10 @@ export default function WebsiteBuilder() {
       beforeElements: [...elements],
     }
     undo()
-  }
+  }, [canEdit, canUndo, elements, undo])
   
   // Wrapped redo that broadcasts changes
-  const collaborativeRedo = () => {
+  const collaborativeRedo = useCallback(() => {
     if (!canEdit || !canRedo) return // Block if viewer
     
     undoRedoRef.current = {
@@ -152,10 +195,10 @@ export default function WebsiteBuilder() {
       beforeElements: [...elements],
     }
     redo()
-  }
+  }, [canEdit, canRedo, elements, redo])
   
   // Wrapped callbacks that broadcast changes (with permission check)
-  const collaborativeUpdateElement = (id: string, updates: Partial<BuilderElement>) => {
+  const collaborativeUpdateElement = useCallback((id: string, updates: Partial<BuilderElement>) => {
     if (!canEdit) return // Block if viewer
     
     // Apply locally first
@@ -168,9 +211,9 @@ export default function WebsiteBuilder() {
         element: { id, ...updates },
       })
     }
-  }
+  }, [canEdit, currentProjectId, updateElement])
   
-  const collaborativeUpdateElementPosition = (id: string, position: { x: number; y: number; width?: number; height?: number }) => {
+  const collaborativeUpdateElementPosition = useCallback((id: string, position: { x: number; y: number; width?: number; height?: number }) => {
     if (!canEdit) return // Block if viewer
     
     // Apply locally first
@@ -183,9 +226,9 @@ export default function WebsiteBuilder() {
         element: { id, ...position },
       })
     }
-  }
+  }, [canEdit, currentProjectId, updateElementPosition])
   
-  const collaborativeDeleteElement = (id: string) => {
+  const collaborativeDeleteElement = useCallback((id: string) => {
     if (!canEdit) return // Block if viewer
     
     // Apply locally first
@@ -198,7 +241,7 @@ export default function WebsiteBuilder() {
         element: { id },
       })
     }
-  }
+  }, [canEdit, currentProjectId, deleteElement])
   
   // Handle project change from ProjectManager
   const handleProjectChange = async (projectId: string, projectName: string) => {
@@ -226,6 +269,22 @@ export default function WebsiteBuilder() {
       }
     }
   }
+
+  // Wrapper for loadProject that also handles layout
+  const handleLoadProject = useCallback((
+    elements: BuilderElement[], 
+    pageId?: string,
+    layout?: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }
+  ) => {
+    loadProject(elements, pageId)
+    
+    // Set canvas layout if available
+    if (layout) {
+      setCanvasLayout(layout)
+    } else {
+      setCanvasLayout(null) // Reset to default
+    }
+  }, [loadProject])
 
   // Fetch role when project changes (important for refreshing role after owner changes it)
   useEffect(() => {
@@ -491,7 +550,8 @@ export default function WebsiteBuilder() {
           selectedElements.forEach((id) => duplicateElement(id))
         }}
         elements={elements}
-        onLoadProject={loadProject}
+        layout={canvasLayout}
+        onLoadProject={handleLoadProject}
         zoom={zoom}
         onZoomChange={setZoom}
         showGrid={showGrid}
@@ -556,6 +616,8 @@ export default function WebsiteBuilder() {
                     onDeleteElement={deleteElement}
                     onDuplicateElement={duplicateElement}
                     onCollaborationReady={handleCollaborationReady}
+                    onLayoutChangeReady={handleLayoutChangeReady}
+                    onLayoutUpdate={handleLayoutUpdate}
                     onRoleChanged={(newRole: string) => {
                       setUserRole(newRole as 'OWNER' | 'EDITOR' | 'VIEWER')
                       setIsProjectOwner(newRole === 'OWNER')
@@ -575,6 +637,9 @@ export default function WebsiteBuilder() {
                     isPreviewMode={isPreviewMode}
                     toggleCategoryRef={toggleCategoryRef}
                     onRegionsChange={setRegionsLayout}
+                    onLayoutChange={setCanvasLayout}
+                    onSectionsChange={handleSectionsChange}
+                    initialLayout={canvasLayout}
                   />
                 </div>
               </div>

@@ -70,3 +70,11 @@ export interface RegionsLayout {
   footer: RegionInfo
   contentHeight: number
 }
+
+// Canvas layout metadata for persistence
+export interface CanvasLayout {
+  headerHeight: number
+  footerHeight: number
+  sections: { id: string; height: number }[]
+  version?: string
+}

@@ -15,13 +15,14 @@ import { useEffect, useState } from "react"
 
 interface ProjectManagerProps {
   elements: any[]
-  onLoadProject: (elements: any[], pageId?: string) => void
-  currentProjectName?: string
+  layout?: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }
+  onLoadProject: (elements: any[], pageId?: string, layout?: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }) => void
+  currentProjectName: string
   onProjectChange?: (projectId: string, projectName: string) => void
   hasUnsavedChanges?: boolean
 }
 
-export function ProjectManagerComponent({ elements, onLoadProject, currentProjectName, onProjectChange, hasUnsavedChanges = false }: ProjectManagerProps) {
+export function ProjectManagerComponent({ elements, layout, onLoadProject, currentProjectName, onProjectChange, hasUnsavedChanges = false }: ProjectManagerProps) {
   const [projects, setProjects] = useState<Project[]>([])
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [loadDialogOpen, setLoadDialogOpen] = useState(false)
@@ -88,6 +89,11 @@ export function ProjectManagerComponent({ elements, onLoadProject, currentProjec
           name: projectName.trim(),
           description: "",
           elements: elements,
+          layout: layout ? {
+            headerHeight: layout.headerHeight,
+            footerHeight: layout.footerHeight,
+            sections: layout.sections.map(s => ({ id: s.id, height: s.height })),
+          } : undefined,
         })
 
         if (response.success) {
@@ -105,6 +111,11 @@ export function ProjectManagerComponent({ elements, onLoadProject, currentProjec
           name: projectName.trim(),
           description: "",
           elements: elements,
+          layout: layout ? {
+            headerHeight: layout.headerHeight,
+            footerHeight: layout.footerHeight,
+            sections: layout.sections.map(s => ({ id: s.id, height: s.height })),
+          } : undefined,
         })
 
         if (response.success && response.data) {
@@ -137,8 +148,9 @@ export function ProjectManagerComponent({ elements, onLoadProject, currentProjec
     // Get elements from first page
     const projectElements = project.pages?.[0]?.json_structure?.elements || []
     const pageId = project.pages?.[0]?.id // Get pageId để track history
+    const layout = project.pages?.[0]?.json_structure?.layout // Get saved layout
     
-    onLoadProject(projectElements, pageId) // Pass pageId
+    onLoadProject(projectElements, pageId, layout) // Pass pageId and layout
     setCurrentProjectId(project.id) // Set current project ID
     setProjectName(project.name)    // Set project name
     
@@ -184,6 +196,7 @@ export function ProjectManagerComponent({ elements, onLoadProject, currentProjec
       id: project.id,
       name: project.name,
       elements: projectElements,
+      layout: project.pages?.[0]?.json_structure?.layout || null,
       createdAt: project.created_at,
       updatedAt: project.updated_at,
       version: project.pages?.[0]?.json_structure?.version || "1.0.0",
@@ -225,10 +238,11 @@ export function ProjectManagerComponent({ elements, onLoadProject, currentProjec
         name: importedData.name,
         description: "",
         elements: importedData.elements,
+        layout: importedData.layout || undefined,
       })
 
       if (response.success) {
-        onLoadProject(importedData.elements)
+        onLoadProject(importedData.elements, undefined, importedData.layout)
         toast({
           title: "Success",
           description: `Project "${importedData.name}" imported successfully`,
