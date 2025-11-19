@@ -102,7 +102,7 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] h-[90vh] p-0">
+      <DialogContent className="max-w-[95vw] h-[90vh] p-0 z-[200]">
         <DialogHeader className="p-6 pb-4 border-b">
           <div className="flex items-center justify-between">
             <DialogTitle>Website Preview</DialogTitle>

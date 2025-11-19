@@ -116,20 +116,23 @@ export const LayersPanel = React.memo(function LayersPanel({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div 
-        className="absolute right-0 top-0 h-full w-80 bg-sidebar border-l border-sidebar-border shadow-2xl"
+        className="absolute right-0 top-0 h-full w-80 bg-sidebar border-l border-sidebar-border shadow-2xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 border-b border-sidebar-border bg-gradient-to-r from-sidebar-accent/30 to-transparent">
+        <div className="p-4 border-b border-sidebar-border bg-gradient-to-r from-sidebar-accent/30 to-transparent shrink-0">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-sidebar-foreground">Layers</h2>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-sidebar-accent/50 rounded-md transition-colors"
+              className="w-8 h-8 flex items-center justify-center hover:bg-destructive/20 hover:text-destructive rounded-md transition-all duration-200 text-muted-foreground"
+              title="Close Layers"
             >
-              ×
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
             </button>
           </div>
         </div>

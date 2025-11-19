@@ -146,24 +146,8 @@ export const ComponentLibrary = React.memo(function ComponentLibrary({ onAddTemp
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5"></div>
       </div>
 
-      {/* Compact Header */}
-      <div className="relative p-4 border-b border-sidebar-border/20 bg-gradient-to-r from-sidebar-accent/30 to-transparent backdrop-blur-sm">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="relative">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary via-primary/90 to-primary/80 rounded-lg flex items-center justify-center shadow-lg ring-1 ring-primary/20">
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gradient-to-br from-green-400 to-green-600 rounded-full animate-pulse"></div>
-          </div>
-          <div className="flex-1">
-            <h2 className="font-bold text-lg text-sidebar-foreground">
-              Components
-            </h2>
-            <p className="text-xs text-muted-foreground">Drag to build</p>
-          </div>
-        </div>
-        
-        {/* Compact Search */}
+      {/* Compact Search Bar */}
+      <div className="relative p-3 border-b border-sidebar-border/20 bg-gradient-to-r from-sidebar-accent/30 to-transparent backdrop-blur-sm">
         <div className="relative group">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors duration-200" />
           <input

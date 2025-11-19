@@ -33,6 +33,8 @@ interface CollaborativeCanvasProps {
   isPreviewMode?: boolean
   toggleCategoryRef?: any
   onRegionsChange?: any
+  onShowLeftSidebar?: () => void
+  onSetActiveLeftPanel?: (panel: 'components' | 'pages' | 'siteStyle') => void
   [key: string]: any
 }
 
@@ -52,6 +54,8 @@ export function CollaborativeCanvas({
   onCollaborationReady,
   onLayoutChangeReady,
   onLayoutUpdate,
+  onShowLeftSidebar,
+  onSetActiveLeftPanel,
   ...canvasProps 
 }: CollaborativeCanvasProps) {
   const { user } = useUser()
@@ -345,6 +349,8 @@ export function CollaborativeCanvas({
         onDeleteElement={handleDeleteElement}
         onDuplicateElement={handleDuplicateElement}
         sendLayoutChange={sendLayoutChange}
+        onShowLeftSidebar={onShowLeftSidebar}
+        onSetActiveLeftPanel={onSetActiveLeftPanel}
         {...canvasProps}
       />
     </div>

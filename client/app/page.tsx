@@ -12,7 +12,7 @@ import { useBuilderState } from "@/hooks/use-builder-state"
 import type { BuilderElement, BuilderPage, RegionsLayout } from "@/lib/builder-types"
 import { componentCategories } from "@/lib/component-categories"
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs"
-import { useCallback, useEffect, useRef, useState } from "react"
+import React, { useCallback, useEffect, useRef, useState } from "react"
 import { DndProvider, useDragLayer } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 
@@ -58,6 +58,8 @@ export default function WebsiteBuilder() {
   const [showPageManager, setShowPageManager] = useState(true) // Show page manager by default
   const [showLeftSidebar, setShowLeftSidebar] = useState(true)
   const [showRightSidebar, setShowRightSidebar] = useState(true)
+  // Active left panel: components | pages | siteStyle
+  const [activeLeftPanel, setActiveLeftPanel] = useState<'components' | 'pages' | 'siteStyle'>('pages')
   const [regionsLayout, setRegionsLayout] = useState<RegionsLayout | null>(null)
   const [canvasLayout, setCanvasLayout] = useState<{ headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] } | null>(null)
   
@@ -337,6 +339,22 @@ export default function WebsiteBuilder() {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode))
   }, [isDarkMode])
 
+  // Auto-hide right sidebar when preview mode is opened
+  const rightSidebarStateRef = useRef(true)
+  
+  useEffect(() => {
+    if (isPreviewMode) {
+      // Save current state and hide right sidebar
+      rightSidebarStateRef.current = showRightSidebar
+      setShowRightSidebar(false)
+    } else {
+      // Restore right sidebar state when preview is closed
+      if (rightSidebarStateRef.current) {
+        setShowRightSidebar(true)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPreviewMode])
 
   // Custom drag layer for smoother preview
   const DragLayer: React.FC = () => {
@@ -601,19 +619,7 @@ export default function WebsiteBuilder() {
 
       {/* Main Layout */}
       <div className="flex-1 overflow-hidden relative">
-        {/* Floating Toggle Buttons - Show when sidebars are hidden */}
-        {!showLeftSidebar && (
-          <button
-            onClick={() => setShowLeftSidebar(true)}
-            className="absolute top-4 left-0 z-50 w-4 h-20 flex items-center justify-center bg-[#27408B] hover:bg-[#1e3270] border border-l-0 border-primary/30 shadow-xl hover:shadow-2xl hover:w-8 text-primary-foreground hover:text-white transition-all duration-300 rounded-r-md"
-            title="Show Sidebar"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-80 hover:opacity-100">
-              <path d="m9 18 6-6-6-6"/>
-            </svg>
-          </button>
-        )}
-        
+        {/* Floating Toggle Button - Show when right sidebar is hidden */}
         {!showRightSidebar && (
           <button
             onClick={() => setShowRightSidebar(true)}
@@ -627,73 +633,150 @@ export default function WebsiteBuilder() {
         )}
 
         <ResizablePanelGroup direction="horizontal">
-          {/* Left Sidebar - resizable */}
-          {showLeftSidebar && (
-            <>
-              <ResizablePanel defaultSize={20} minSize={12} maxSize={35} className="min-w-[200px] relative group">
-                {/* Collapse Button - Outside Edge */}
-                <button
-                  onClick={() => setShowLeftSidebar(false)}
-                  className="absolute top-4 -right-1 z-50 w-4 h-20 flex items-center justify-center bg-[#27408B] hover:bg-[#1e3270] border border-primary/30 shadow-lg hover:shadow-xl text-primary-foreground hover:text-white transition-all duration-300 hover:w-8 hover:-right-3 rounded-md"
-                  title="Hide Sidebar"
+          {/* Left Sidebar with always-visible icon rail */}
+          <>
+            <ResizablePanel
+              defaultSize={showLeftSidebar ? 20 : 3.5}
+              minSize={showLeftSidebar ? 15 : 3.5}
+              maxSize={showLeftSidebar ? 35 : 3.5}
+              className={`relative ${showLeftSidebar ? 'min-w-[280px]' : 'min-w-[56px] max-w-[56px]'} transition-all`}
+            >
+              <div className="h-full flex">
+                {/* Icon Rail - Always Visible */}
+                <div className="flex flex-col items-center gap-3 py-4 w-14 bg-sidebar border-r border-sidebar-border relative z-10">
+                  {/* Components Icon */}
+                  <button
+                    onClick={() => { 
+                      if (activeLeftPanel === 'components' && showLeftSidebar) {
+                        setShowLeftSidebar(false)
+                      } else {
+                        setActiveLeftPanel('components')
+                        setShowLeftSidebar(true)
+                      }
+                    }}
+                    className={`group/icon relative w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-200 ${
+                      activeLeftPanel === 'components' && showLeftSidebar
+                        ? 'bg-primary text-primary-foreground shadow-lg scale-110' 
+                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:scale-125 hover:shadow-md'
+                    }`}
+                    title="Components"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 transition-transform duration-200 group-hover/icon:scale-110" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2l7 4-7 4-7-4 7-4z"/>
+                      <path d="M5 10l7 4 7-4"/>
+                      <path d="M5 18l7 4 7-4"/>
+                    </svg>
+                  </button>
+
+                  {/* Pages Icon */}
+                  <button
+                    onClick={() => { 
+                      if (activeLeftPanel === 'pages' && showLeftSidebar) {
+                        setShowLeftSidebar(false)
+                      } else {
+                        setActiveLeftPanel('pages')
+                        setShowLeftSidebar(true)
+                      }
+                    }}
+                    className={`group/icon relative w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-200 ${
+                      activeLeftPanel === 'pages' && showLeftSidebar
+                        ? 'bg-primary text-primary-foreground shadow-lg scale-110' 
+                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:scale-125 hover:shadow-md'
+                    }`}
+                    title="Pages"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 transition-transform duration-200 group-hover/icon:scale-110" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 4h7v7H4z"/>
+                      <path d="M13 4h7v7h-7z"/>
+                      <path d="M4 13h7v7H4z"/>
+                      <path d="M13 13h7v7h-7z"/>
+                    </svg>
+                  </button>
+
+                  {/* Site Style Icon */}
+                  <button
+                    onClick={() => { 
+                      if (activeLeftPanel === 'siteStyle' && showLeftSidebar) {
+                        setShowLeftSidebar(false)
+                      } else {
+                        setActiveLeftPanel('siteStyle')
+                        setShowLeftSidebar(true)
+                      }
+                    }}
+                    className={`group/icon relative w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-200 ${
+                      activeLeftPanel === 'siteStyle' && showLeftSidebar
+                        ? 'bg-primary text-primary-foreground shadow-lg scale-110' 
+                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:scale-125 hover:shadow-md'
+                    }`}
+                    title="Site Style"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 transition-transform duration-200 group-hover/icon:scale-110" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2l3 7h7l-5.5 4.5L18 22l-6-4-6 4 1.5-8.5L2 9h7z"/>
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Content Area - Slides in/out */}
+                <div 
+                  className={`flex-1 h-full bg-sidebar overflow-hidden transition-all duration-300 ${
+                    showLeftSidebar ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-full absolute pointer-events-none'
+                  }`}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-80 hover:opacity-100">
-                    <path d="m15 18-6-6 6-6"/>
-                  </svg>
-                </button>
-                <div className="h-full bg-sidebar border-r border-sidebar-border flex flex-col">
-
-                  {/* Toggle between Pages and Components */}
-                  <div className="flex border-b border-sidebar-border">
-                    <button
-                      onClick={() => setShowPageManager(true)}
-                      className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-                        showPageManager 
-                          ? 'bg-accent text-accent-foreground border-b-2 border-primary' 
-                          : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-                      }`}
-                    >
-                      Pages
-                    </button>
-                    <button
-                      onClick={() => setShowPageManager(false)}
-                      className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-                        !showPageManager 
-                          ? 'bg-accent text-accent-foreground border-b-2 border-primary' 
-                          : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-                      }`}
-                    >
-                      Components
-                    </button>
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 overflow-hidden">
-                    {showPageManager ? (
-                      <PageManager
-                        pages={pages}
-                        activePageId={activePageId}
-                        onPageSelect={switchPage}
-                        onPageCreate={addPage}
-                        onPageDelete={deletePage}
-                        onPageDuplicate={duplicatePage}
-                        onPageRename={renamePage}
-                        onPageUpdateMetadata={updatePageMetadata}
-                        canEdit={canEdit}
-                      />
-                    ) : (
-                      <ComponentLibrary 
-                        onAddTemplate={handleAddTemplate} 
-                        onToggleCategoryRef={toggleCategoryRef}
-                      />
+                  <div className="h-full flex flex-col">
+                    {/* Header with Close Button */}
+                    {showLeftSidebar && (
+                      <div className="flex items-center justify-between px-3 py-2 border-b border-sidebar-border bg-sidebar">
+                        <h3 className="text-sm font-semibold text-sidebar-foreground">
+                          {activeLeftPanel === 'pages' && 'Pages'}
+                          {activeLeftPanel === 'components' && 'Components'}
+                          {activeLeftPanel === 'siteStyle' && 'Site Style'}
+                        </h3>
+                        <button
+                          onClick={() => setShowLeftSidebar(false)}
+                          className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-all duration-200 hover:scale-110 hover:shadow-md"
+                          title="Close Panel"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                          </svg>
+                        </button>
+                      </div>
                     )}
+
+                    {/* Panel Content */}
+                    <div className="flex-1 overflow-hidden">
+                      {activeLeftPanel === 'pages' && (
+                        <PageManager
+                          pages={pages}
+                          activePageId={activePageId}
+                          onPageSelect={switchPage}
+                          onPageCreate={addPage}
+                          onPageDelete={deletePage}
+                          onPageDuplicate={duplicatePage}
+                          onPageRename={renamePage}
+                          onPageUpdateMetadata={updatePageMetadata}
+                          canEdit={canEdit}
+                        />
+                      )}
+                      {activeLeftPanel === 'components' && (
+                        <ComponentLibrary
+                          onAddTemplate={handleAddTemplate}
+                          onToggleCategoryRef={toggleCategoryRef}
+                        />
+                      )}
+                      {activeLeftPanel === 'siteStyle' && (
+                        <div className="h-full">
+                          {/* Direct import; small placeholder component */}
+                          {React.createElement((require('@/components/builder/site-style-panel') as any).SiteStylePanel, { canEdit })}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </ResizablePanel>
-
-              <ResizableHandle withHandle className="bg-sidebar-border" />
-            </>
-          )}
+              </div>
+            </ResizablePanel>
+            <ResizableHandle withHandle className="bg-sidebar-border" />
+          </>
 
           {/* Center Canvas */}
           <ResizablePanel defaultSize={60} minSize={30}>
@@ -740,6 +823,8 @@ export default function WebsiteBuilder() {
                     onLayoutChange={setCanvasLayout}
                     onSectionsChange={handleSectionsChange}
                     initialLayout={canvasLayout}
+                    onShowLeftSidebar={() => setShowLeftSidebar(true)}
+                    onSetActiveLeftPanel={(panel) => setActiveLeftPanel(panel)}
                   />
                 </div>
               </div>

@@ -125,16 +125,16 @@ export function PageManager({
   const activePage = pages.find(p => p.id === activePageId)
 
   return (
-    <div className="flex flex-col h-full border-r border-border bg-card">
-      {/* Header */}
+    <div className="flex flex-col h-full bg-card">
+      {/* Create Page Button and Active Page Indicator */}
       <div className="p-3 border-b border-border">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold">Pages</h3>
           {canEdit && (
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                <Button size="sm" variant="outline" className="h-8 gap-2">
                   <Plus className="h-4 w-4" />
+                  New Page
                 </Button>
               </DialogTrigger>
               <DialogContent>

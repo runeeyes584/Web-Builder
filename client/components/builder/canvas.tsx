@@ -292,6 +292,8 @@ interface CanvasProps {
   sendLayoutChange?: (layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }) => void
   onSectionsChange?: (sections: { id: string; height: number }[], headerHeight: number, footerHeight: number) => void // Immediate callback when sections are added/removed
   initialLayout?: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] } | null
+  onShowLeftSidebar?: () => void // Callback to show the left sidebar
+  onSetActiveLeftPanel?: (panel: 'components' | 'pages' | 'siteStyle') => void // Callback to set active left panel
 }
 
 export function Canvas({
@@ -318,6 +320,8 @@ export function Canvas({
   sendLayoutChange,
   onSectionsChange,
   initialLayout,
+  onShowLeftSidebar,
+  onSetActiveLeftPanel,
 }: CanvasProps) {
   // Partition dynamic sizes - initialize from saved layout if available
   const [headerHeight, setHeaderHeight] = useState<number>(initialLayout?.headerHeight || 96)
@@ -390,6 +394,11 @@ export function Canvas({
   // Focused region for persistent controls
   const [focusedRegion, setFocusedRegion] = useState<null | "header" | "section" | "footer" >(null)
   const [focusedSectionIndex, setFocusedSectionIndex] = useState<number | null>(null)
+  
+  // Submerged states (interactive mode)
+  const [submergedSectionIndex, setSubmergedSectionIndex] = useState<number | null>(null)
+  const [isHeaderSubmerged, setIsHeaderSubmerged] = useState(false)
+  const [isFooterSubmerged, setIsFooterSubmerged] = useState(false)
 
   // Helper function to determine which region an element belongs to based on its Y position
   const getElementRegion = useCallback((elementY: number): { type: 'header' | 'section' | 'footer', sectionIndex?: number, regionTop: number, regionHeight: number } => {
@@ -3033,6 +3042,10 @@ export function Canvas({
     onElementSelect("")
     setFocusedRegion(null)
     setFocusedSectionIndex(null)
+    // Also exit interactive mode
+    setSubmergedSectionIndex(null)
+    setIsHeaderSubmerged(false)
+    setIsFooterSubmerged(false)
   }
 
   // Resize partitions by dragging top/bottom boundaries
@@ -8259,6 +8272,12 @@ export function Canvas({
           focusedSectionIndex={focusedSectionIndex}
           setFocusedRegion={setFocusedRegion}
           setFocusedSectionIndex={setFocusedSectionIndex}
+          submergedSectionIndex={submergedSectionIndex}
+          setSubmergedSectionIndex={setSubmergedSectionIndex}
+          isHeaderSubmerged={isHeaderSubmerged}
+          setIsHeaderSubmerged={setIsHeaderSubmerged}
+          isFooterSubmerged={isFooterSubmerged}
+          setIsFooterSubmerged={setIsFooterSubmerged}
           onStartResize={startBoundaryResize}
           onStartSectionResize={startSectionDividerResize}
           onStartFooterBottomResize={startFooterBottomResize}
@@ -8266,6 +8285,8 @@ export function Canvas({
           toggleCategoryRef={toggleCategoryRef}
           sectionHasElements={sectionHasElements}
           onSectionsChange={onSectionsChange}
+          onShowLeftSidebar={onShowLeftSidebar}
+          onSetActiveLeftPanel={onSetActiveLeftPanel}
         />
       )}
       {/* Enhanced Grid overlay */}
@@ -8345,6 +8366,12 @@ function PartitionsOverlay({
   focusedSectionIndex,
   setFocusedRegion,
   setFocusedSectionIndex,
+  submergedSectionIndex,
+  setSubmergedSectionIndex,
+  isHeaderSubmerged,
+  setIsHeaderSubmerged,
+  isFooterSubmerged,
+  setIsFooterSubmerged,
   onStartResize,
   onStartSectionResize,
   onStartFooterBottomResize,
@@ -8352,6 +8379,8 @@ function PartitionsOverlay({
   toggleCategoryRef,
   sectionHasElements,
   onSectionsChange,
+  onShowLeftSidebar,
+  onSetActiveLeftPanel,
 }: {
   headerHeight: number
   footerHeight: number
@@ -8361,6 +8390,12 @@ function PartitionsOverlay({
   focusedSectionIndex: number | null
   setFocusedRegion: (r: null | "header" | "section" | "footer") => void
   setFocusedSectionIndex: (i: number | null) => void
+  submergedSectionIndex: number | null
+  setSubmergedSectionIndex: (i: number | null) => void
+  isHeaderSubmerged: boolean
+  setIsHeaderSubmerged: (v: boolean) => void
+  isFooterSubmerged: boolean
+  setIsFooterSubmerged: (v: boolean) => void
   onStartResize: (which: "header" | "footer", clientY: number) => void
   onStartSectionResize: (index: number, clientY: number) => void
   onStartFooterBottomResize: (clientY: number) => void
@@ -8368,6 +8403,8 @@ function PartitionsOverlay({
   toggleCategoryRef?: React.MutableRefObject<((categoryName: string) => void) | null>
   sectionHasElements: (sectionIndex: number) => boolean
   onSectionsChange?: (sections: { id: string; height: number }[], headerHeight: number, footerHeight: number) => void
+  onShowLeftSidebar?: () => void
+  onSetActiveLeftPanel?: (panel: 'components' | 'pages' | 'siteStyle') => void
 }) {
   // Fine-grained hover states so sections act independently
   const [hoverHeader, setHoverHeader] = useState(false)
@@ -8378,6 +8415,8 @@ function PartitionsOverlay({
   const [hoverSectionIndex, setHoverSectionIndex] = useState<number | null>(null)
   const [hoverSectionTopIndex, setHoverSectionTopIndex] = useState<number | null>(null)
   const [hoverSectionBottomIndex, setHoverSectionBottomIndex] = useState<number | null>(null)
+  
+  // Note: submerged states now come from parent Canvas component via props
 
   // Track if sections were just added to trigger immediate save callback
   const sectionsJustAddedRef = useRef(false)
@@ -8482,23 +8521,69 @@ function PartitionsOverlay({
     return tops
   }, [headerHeight, sections])
 
+  // Calculate total sections height
+  const totalSectionsHeight = useMemo(() => sections.reduce((sum, s) => sum + s.height, 0), [sections])
+
+  // Determine if ANY region is in interactive mode (submerged)
+  const isAnyRegionInteractive = isHeaderSubmerged || isFooterSubmerged || submergedSectionIndex !== null
+
   return (
-    <div className="absolute inset-0 z-20 select-none">
+    <div 
+      className="absolute inset-0 z-20 select-none"
+      style={{ pointerEvents: isAnyRegionInteractive ? 'none' : 'auto' }}
+      onClick={() => {
+        // Click on empty space -> reset all focus and submerged states
+        setFocusedRegion(null)
+        setFocusedSectionIndex(null)
+        setSubmergedSectionIndex(null)
+        setIsHeaderSubmerged(false)
+        setIsFooterSubmerged(false)
+      }}
+    >
       {/* Regions */}
       <div
         className="absolute left-0 right-0"
-        style={{ top: 0, height: `${headerHeight}px` }}
+        style={{ top: 0, height: `${headerHeight}px`, pointerEvents: isHeaderSubmerged ? 'none' : 'auto' }}
         onMouseEnter={() => setHoverHeader(true)}
         onMouseLeave={() => setHoverHeader(false)}
         onClick={(e) => {
           e.stopPropagation()
-          setFocusedRegion("header")
-          setFocusedSectionIndex(null)
+          // Toggle logic for header
+          if (focusedRegion === "header") {
+            if (isHeaderSubmerged) {
+              // Currently submerged -> unfocus completely
+              setFocusedRegion(null)
+              setIsHeaderSubmerged(false)
+            } else {
+              // Currently focused but not submerged -> submerge it
+              setIsHeaderSubmerged(true)
+            }
+          } else {
+            // Not focused -> focus it
+            setFocusedRegion("header")
+            setFocusedSectionIndex(null)
+            setIsHeaderSubmerged(false)
+            setIsFooterSubmerged(false)
+            setSubmergedSectionIndex(null)
+          }
         }}
       >
-        {(hoverHeader || hoverHeaderBottom || focusedRegion === "header") && (
-          <div className={`absolute inset-0 ${focusedRegion === "header" ? "ring-1 ring-emerald-400/50" : ""} bg-emerald-400/10 border border-emerald-400/30 pointer-events-none`}>
-            <div className="absolute top-1 left-2 text-[11px] text-emerald-400">Header</div>
+        {/* Show subtle border when submerged to indicate interactive mode */}
+        {isHeaderSubmerged && (
+          <div className="absolute inset-0 border-2 border-dashed border-emerald-400/40 pointer-events-none animate-pulse">
+            <div className="absolute top-1 left-2 text-[11px] text-emerald-400 bg-background/80 px-1 rounded">
+              Header <span className="text-[10px] opacity-70">(interactive mode - click to exit)</span>
+            </div>
+          </div>
+        )}
+        {!isHeaderSubmerged && (hoverHeader || hoverHeaderBottom || focusedRegion === "header") && (
+          <div className={`absolute inset-0 ${focusedRegion === "header" ? "ring-1 ring-emerald-400/50" : ""} bg-emerald-400/10 border border-emerald-400/30 pointer-events-auto`}>
+            <div className="absolute top-1 left-2 text-[11px] text-emerald-400 pointer-events-none">
+              Header
+              {focusedRegion === "header" && !isHeaderSubmerged && (
+                <span className="ml-2 text-[10px] opacity-70">(click again to interact)</span>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -8507,26 +8592,66 @@ function PartitionsOverlay({
         <div
           key={sec.id}
           className="absolute left-0 right-0"
-          style={{ top: `${sectionTops[idx]}px`, height: `${sec.height}px` }}
+          style={{ 
+            top: `${sectionTops[idx]}px`, 
+            height: `${sec.height}px`,
+            pointerEvents: submergedSectionIndex === idx ? 'none' : 'auto'
+          }}
           onMouseEnter={() => setHoverSectionIndex(idx)}
           onMouseLeave={() => setHoverSectionIndex(null)}
-          onClick={(e) => { e.stopPropagation(); setFocusedRegion("section"); setFocusedSectionIndex(idx) }}
+          onClick={(e) => { 
+            e.stopPropagation()
+            // Toggle logic: if already focused on this section, submerge it (hide overlay)
+            // If submerged, unfocus it. Otherwise, focus it.
+            if (focusedSectionIndex === idx) {
+              if (submergedSectionIndex === idx) {
+                // Currently submerged -> unfocus completely
+                setFocusedRegion(null)
+                setFocusedSectionIndex(null)
+                setSubmergedSectionIndex(null)
+              } else {
+                // Currently focused but not submerged -> submerge it
+                setSubmergedSectionIndex(idx)
+              }
+            } else {
+              // Not focused -> focus it (but don't submerge yet)
+              setFocusedRegion("section")
+              setFocusedSectionIndex(idx)
+              setSubmergedSectionIndex(null)
+              setIsHeaderSubmerged(false)
+              setIsFooterSubmerged(false)
+            }
+          }}
         >
-          {(hoverSectionIndex === idx
+          {/* Show subtle border when submerged to indicate interactive mode */}
+          {submergedSectionIndex === idx && (
+            <div className="absolute inset-0 border-2 border-dashed border-blue-400/40 pointer-events-none animate-pulse">
+              <div className="absolute top-1 left-2 text-[11px] text-blue-400 bg-background/80 px-1 rounded">
+                Section {idx + 1} <span className="text-[10px] opacity-70">(interactive mode - click to exit)</span>
+              </div>
+            </div>
+          )}
+          {/* Show overlay only if section is not submerged */}
+          {submergedSectionIndex !== idx && (hoverSectionIndex === idx
             || focusedSectionIndex === idx
             || hoverSectionTopIndex === idx
             || hoverSectionBottomIndex === idx
             || (hoverHeaderBottom && idx === 0)
             || (hoverFooterTop && idx === sections.length - 1)
           ) && (
-            <div className={`absolute inset-0 ${focusedSectionIndex === idx ? "ring-1 ring-blue-400/50" : ""} bg-blue-400/10 border border-blue-400/30 pointer-events-none`}>
-              <div className="absolute top-1 left-2 text-[11px] text-blue-400">Section {idx + 1}</div>
+            <div className={`absolute inset-0 ${focusedSectionIndex === idx ? "ring-1 ring-blue-400/50" : ""} bg-blue-400/10 border border-blue-400/30 pointer-events-auto`}>
+              <div className="absolute top-1 left-2 text-[11px] text-blue-400 pointer-events-none">
+                Section {idx + 1}
+                {focusedSectionIndex === idx && submergedSectionIndex !== idx && (
+                  <span className="ml-2 text-[10px] opacity-70">(click again to interact)</span>
+                )}
+              </div>
               
               {/* Display buttons only if section is empty (no elements) */}
               {!sectionHasElements(idx) && (
                 <>
                   {/* Choose your starting point - Smooth transitioning UI */}
-                  {sec.height > 160 ? (
+                  {sec.height > 200 ? (
                 /* Full size - show all elements with text */
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto transition-all duration-300 ease-in-out">
                   <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-300">
@@ -8538,6 +8663,10 @@ function PartitionsOverlay({
                         className="flex flex-col items-center gap-3 px-6 py-5 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg border-2 border-border hover:border-blue-400 w-32"
                         onClick={(e) => {
                           e.stopPropagation()
+                          // Expand left sidebar and switch to components panel
+                          onShowLeftSidebar?.()
+                          onSetActiveLeftPanel?.('components')
+                          // Then expand the Layout category
                           if (toggleCategoryRef?.current) {
                             toggleCategoryRef.current("Layout")
                           }
@@ -8558,6 +8687,10 @@ function PartitionsOverlay({
                         className="flex flex-col items-center gap-3 px-6 py-5 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg border-2 border-border hover:border-blue-400 w-32"
                         onClick={(e) => {
                           e.stopPropagation()
+                          // Expand left sidebar and switch to components panel
+                          onShowLeftSidebar?.()
+                          onSetActiveLeftPanel?.('components')
+                          // Then expand the Layout category
                           if (toggleCategoryRef?.current) {
                             toggleCategoryRef.current("Layout")
                           }
@@ -8578,6 +8711,10 @@ function PartitionsOverlay({
                         className="flex flex-col items-center gap-3 px-6 py-5 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg border-2 border-border hover:border-blue-400 w-32"
                         onClick={(e) => {
                           e.stopPropagation()
+                          // Expand left sidebar and switch to components panel
+                          onShowLeftSidebar?.()
+                          onSetActiveLeftPanel?.('components')
+                          // Then expand the Basic Elements category
                           if (toggleCategoryRef?.current) {
                             toggleCategoryRef.current("Basic Elements")
                           }
@@ -8598,7 +8735,7 @@ function PartitionsOverlay({
                     </p>
                   </div>
                 </div>
-              ) : sec.height > 128 ? (
+              ) : (
                 /* Compact size - show 3 icon buttons without labels (smooth transition) */
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto transition-all duration-300 ease-in-out">
                   <div className="flex gap-3 animate-in fade-in zoom-in-95 duration-300">
@@ -8608,6 +8745,10 @@ function PartitionsOverlay({
                       className="flex items-center justify-center p-3 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 border-2 border-border hover:border-blue-400"
                       onClick={(e) => {
                         e.stopPropagation()
+                        // Expand left sidebar and switch to components panel
+                        onShowLeftSidebar?.()
+                        onSetActiveLeftPanel?.('components')
+                        // Then expand the Layout category
                         if (toggleCategoryRef?.current) {
                           toggleCategoryRef.current("Layout")
                         }
@@ -8627,6 +8768,10 @@ function PartitionsOverlay({
                       className="flex items-center justify-center p-3 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 border-2 border-border hover:border-blue-400"
                       onClick={(e) => {
                         e.stopPropagation()
+                        // Expand left sidebar and switch to components panel
+                        onShowLeftSidebar?.()
+                        onSetActiveLeftPanel?.('components')
+                        // Then expand the Layout category
                         if (toggleCategoryRef?.current) {
                           toggleCategoryRef.current("Layout")
                         }
@@ -8646,6 +8791,10 @@ function PartitionsOverlay({
                       className="flex items-center justify-center p-3 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 border-2 border-border hover:border-blue-400"
                       onClick={(e) => {
                         e.stopPropagation()
+                        // Expand left sidebar and switch to components panel
+                        onShowLeftSidebar?.()
+                        onSetActiveLeftPanel?.('components')
+                        // Then expand the Basic Elements category
                         if (toggleCategoryRef?.current) {
                           toggleCategoryRef.current("Basic Elements")
                         }
@@ -8660,26 +8809,6 @@ function PartitionsOverlay({
                     </button>
                   </div>
                 </div>
-              ) : (
-                /* Minimal size - show single centered button with smooth fade-in */
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto transition-all duration-300 ease-in-out">
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-500/90 hover:bg-blue-600 text-white text-xs rounded-lg shadow-md transition-all duration-200 hover:shadow-lg hover:scale-105 border border-blue-400/50 animate-in fade-in zoom-in-95 duration-300"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (toggleCategoryRef?.current) {
-                        toggleCategoryRef.current("Basic Elements")
-                      }
-                    }}
-                    title="Add Element - Expand section for more options"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span className="font-medium">Add Element</span>
-                  </button>
-                </div>
               )}
                 </>
               )}
@@ -8689,18 +8818,51 @@ function PartitionsOverlay({
       ))}
       <div
         className="absolute left-0 right-0"
-        style={{ bottom: 0, height: `${footerHeight}px` }}
+        style={{ 
+          top: `${headerHeight + totalSectionsHeight}px`, 
+          height: `${footerHeight}px`,
+          pointerEvents: isFooterSubmerged ? 'none' : 'auto'
+        }}
         onMouseEnter={() => setHoverFooter(true)}
         onMouseLeave={() => setHoverFooter(false)}
         onClick={(e) => {
           e.stopPropagation()
-          setFocusedRegion("footer")
-          setFocusedSectionIndex(null)
+          // Toggle logic for footer
+          if (focusedRegion === "footer") {
+            if (isFooterSubmerged) {
+              // Currently submerged -> unfocus completely
+              setFocusedRegion(null)
+              setIsFooterSubmerged(false)
+            } else {
+              // Currently focused but not submerged -> submerge it
+              setIsFooterSubmerged(true)
+            }
+          } else {
+            // Not focused -> focus it
+            setFocusedRegion("footer")
+            setFocusedSectionIndex(null)
+            setIsFooterSubmerged(false)
+            setIsHeaderSubmerged(false)
+            setSubmergedSectionIndex(null)
+          }
         }}
       >
-        {(hoverFooter || hoverFooterTop || focusedRegion === "footer") && (
-          <div className={`absolute inset-0 ${focusedRegion === "footer" ? "ring-1 ring-emerald-400/50" : ""} bg-emerald-400/10 border border-emerald-400/30 pointer-events-none`}>
-            <div className="absolute top-1 left-2 text-[11px] text-emerald-400">Footer</div>
+        {/* Show subtle border when submerged to indicate interactive mode */}
+        {isFooterSubmerged && (
+          <div className="absolute inset-0 border-2 border-dashed border-emerald-400/40 pointer-events-none animate-pulse">
+            <div className="absolute top-1 left-2 text-[11px] text-emerald-400 bg-background/80 px-1 rounded">
+              Footer <span className="text-[10px] opacity-70">(interactive mode - click to exit)</span>
+            </div>
+          </div>
+        )}
+        {!isFooterSubmerged && (hoverFooter || hoverFooterTop || focusedRegion === "footer") && (
+          <div className={`absolute inset-0 ${focusedRegion === "footer" ? "ring-1 ring-emerald-400/50" : ""} bg-emerald-400/10 border border-emerald-400/30 pointer-events-auto`}>
+            <div className="absolute top-1 left-2 text-[11px] text-emerald-400 pointer-events-none">
+              Footer
+              {focusedRegion === "footer" && !isFooterSubmerged && (
+                <span className="ml-2 text-[10px] opacity-70">(click again to interact)</span>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -8708,21 +8870,22 @@ function PartitionsOverlay({
       {/* Resizable boundary hotspots with +Add button visibility */}
       
       {/* Header bottom / Section 0 top boundary (MERGED - same position) */}
-      <div
-        className="absolute left-0 right-0 pointer-events-auto cursor-ns-resize"
-        style={{ top: `${headerHeight}px`, height: 32 }}
-        onMouseEnter={() => {
-          setHoverHeaderBottom(true)
-          setHoverSectionTopIndex(0)
-        }}
-        onMouseLeave={() => {
-          setHoverHeaderBottom(false)
-          setHoverSectionTopIndex(null)
-        }}
-        onMouseDown={(e) => onStartResize("header", e.clientY)}
-      >
-        {/* Show only ONE button based on focus state or hover */}
-        {(hoverHeaderBottom || hoverSectionTopIndex === 0 || focusedBoundary === "h-bottom") && (
+      {!isHeaderSubmerged && submergedSectionIndex !== 0 && (
+        <div
+          className="absolute left-0 right-0 cursor-ns-resize"
+          style={{ top: `${headerHeight}px`, height: 32, pointerEvents: 'auto' }}
+          onMouseEnter={() => {
+            setHoverHeaderBottom(true)
+            setHoverSectionTopIndex(0)
+          }}
+          onMouseLeave={() => {
+            setHoverHeaderBottom(false)
+            setHoverSectionTopIndex(null)
+          }}
+          onMouseDown={(e) => onStartResize("header", e.clientY)}
+        >
+          {/* Show only ONE button based on focus state or hover */}
+          {(hoverHeaderBottom || hoverSectionTopIndex === 0 || focusedBoundary === "h-bottom") && (
           <>
             {/* Show header-bottom button if header is focused, otherwise show section-top */}
             {focusedRegion === "header" 
@@ -8731,12 +8894,16 @@ function PartitionsOverlay({
             }
           </>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Divider resize handles between sections */}
       {sections.map((_, idx) => {
         // Only render divider if there's a next section
         if (idx >= sections.length - 1) return null
+        
+        // Don't show divider if either adjacent section is in interactive mode
+        if (submergedSectionIndex === idx || submergedSectionIndex === idx + 1) return null
         
         // Calculate the position of this divider (bottom of current section / top of next section)
         const dividerTop = sectionTops[idx] + sections[idx].height
@@ -8744,8 +8911,8 @@ function PartitionsOverlay({
         return (
           <div
             key={`divider-${idx}`}
-            className="absolute left-0 right-0 pointer-events-auto cursor-ns-resize"
-            style={{ top: `${dividerTop}px`, height: 32 }}
+            className="absolute left-0 right-0 cursor-ns-resize"
+            style={{ top: `${dividerTop}px`, height: 32, pointerEvents: 'auto' }}
             onMouseEnter={() => {
               setHoverSectionBottomIndex(idx)
               setHoverSectionTopIndex(idx + 1)
@@ -8775,21 +8942,22 @@ function PartitionsOverlay({
       })}
 
       {/* Footer top / Last section bottom boundary (MERGED - same position) */}
-      <div
-        className="absolute left-0 right-0 pointer-events-auto cursor-ns-resize"
-        style={{ bottom: `${footerHeight}px`, height: 32 }}
-        onMouseEnter={() => {
-          setHoverFooterTop(true)
-          setHoverSectionBottomIndex(sections.length - 1)
-        }}
-        onMouseLeave={() => {
-          setHoverFooterTop(false)
-          setHoverSectionBottomIndex(null)
-        }}
-        onMouseDown={(e) => onStartResize("footer", e.clientY)}
-      >
-        {/* Show only ONE button based on focus state or hover */}
-        {(hoverFooterTop || hoverSectionBottomIndex === sections.length - 1 || focusedBoundary === "f-top") && (
+      {!isFooterSubmerged && submergedSectionIndex !== sections.length - 1 && (
+        <div
+          className="absolute left-0 right-0 cursor-ns-resize"
+          style={{ bottom: `${footerHeight}px`, height: 32, pointerEvents: 'auto' }}
+          onMouseEnter={() => {
+            setHoverFooterTop(true)
+            setHoverSectionBottomIndex(sections.length - 1)
+          }}
+          onMouseLeave={() => {
+            setHoverFooterTop(false)
+            setHoverSectionBottomIndex(null)
+          }}
+          onMouseDown={(e) => onStartResize("footer", e.clientY)}
+        >
+          {/* Show only ONE button based on focus state or hover */}
+          {(hoverFooterTop || hoverSectionBottomIndex === sections.length - 1 || focusedBoundary === "f-top") && (
           <>
             {/* Show footer-top button if footer is focused, otherwise show section-bottom */}
             {focusedRegion === "footer"
@@ -8798,19 +8966,21 @@ function PartitionsOverlay({
             }
           </>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Footer bottom boundary - Allows expanding/shrinking canvas */}
-      <div
-        className="absolute left-0 right-0 pointer-events-auto cursor-ns-resize"
-        style={{ bottom: 0, height: 32 }}
-        onMouseEnter={() => setHoverFooterBottom(true)}
-        onMouseLeave={() => setHoverFooterBottom(false)}
-        onMouseDown={(e) => {
-          e.stopPropagation()
-          onStartFooterBottomResize(e.clientY)
-        }}
-      >
+      {!isFooterSubmerged && (
+        <div
+          className="absolute left-0 right-0 cursor-ns-resize"
+          style={{ bottom: 0, height: 32, pointerEvents: 'auto' }}
+          onMouseEnter={() => setHoverFooterBottom(true)}
+          onMouseLeave={() => setHoverFooterBottom(false)}
+          onMouseDown={(e) => {
+            e.stopPropagation()
+            onStartFooterBottomResize(e.clientY)
+          }}
+        >
         {/* Visual indicator on hover */}
         {hoverFooterBottom && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-400/30 transition-colors">
@@ -8819,7 +8989,8 @@ function PartitionsOverlay({
             </div>
           </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
