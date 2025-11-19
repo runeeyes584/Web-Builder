@@ -8,6 +8,7 @@ export interface ActiveUser {
   color: string;
   cursorPosition?: { x: number; y: number; elementId?: string };
   selectedElements?: string[];
+  pageId?: string;
 }
 
 export interface ElementChange {
@@ -31,6 +32,7 @@ interface UseCollaborationProps {
   projectId: string | null;
   clerkId: string;
   username: string;
+  pageId?: string;
   enabled?: boolean;
 }
 
@@ -112,6 +114,7 @@ export function useCollaboration({
       username: string;
       color: string;
       position: { x: number; y: number; elementId?: string };
+      pageId?: string;
     }) => {
       setActiveUsers((prev) => {
         // Only update cursor position if user exists, don't add new users here
@@ -126,13 +129,14 @@ export function useCollaboration({
         const user = prev[userIndex];
         if (user.cursorPosition?.x === data.position.x && 
             user.cursorPosition?.y === data.position.y &&
-            user.cursorPosition?.elementId === data.position.elementId) {
+            user.cursorPosition?.elementId === data.position.elementId &&
+            user.pageId === data.pageId) {
           return prev;
         }
         
-        // Create new array with updated user
+        // Create new array with updated user and pageId
         const updated = [...prev];
-        updated[userIndex] = { ...user, cursorPosition: data.position };
+        updated[userIndex] = { ...user, cursorPosition: data.position, pageId: data.pageId };
         return updated;
       });
     });
@@ -180,10 +184,11 @@ export function useCollaboration({
   }, [projectId, clerkId, username, enabled]);
 
   // Send cursor position
-  const sendCursorPosition = (x: number, y: number, elementId?: string) => {
+  const sendCursorPosition = (x: number, y: number, elementId?: string, pageId?: string) => {
     if (socketRef.current?.connected) {
       socketRef.current.emit('cursor-move', {
         position: { x, y, elementId },
+        pageId,
       });
     }
   };

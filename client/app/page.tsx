@@ -3,12 +3,13 @@
 import { CollaborativeCanvas } from "@/components/builder/collaborative-canvas"
 import { ComponentLibrary } from "@/components/builder/component-library"
 import { LayersPanel } from "@/components/builder/layers-panel"
+import { PageManager } from "@/components/builder/page-manager"
 import { PropertiesPanel } from "@/components/builder/properties-panel"
 import { TopToolbar } from "@/components/builder/top-toolbar"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { useAutoSave } from "@/hooks/use-auto-save"
 import { useBuilderState } from "@/hooks/use-builder-state"
-import type { BuilderElement, RegionsLayout } from "@/lib/builder-types"
+import type { BuilderElement, BuilderPage, RegionsLayout } from "@/lib/builder-types"
 import { componentCategories } from "@/lib/component-categories"
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -39,12 +40,24 @@ export default function WebsiteBuilder() {
     canUndo,
     canRedo,
     loadProject,
+    // Multi-page state and functions
+    pages,
+    activePageId,
+    addPage,
+    deletePage,
+    duplicatePage,
+    renamePage,
+    switchPage,
+    updatePageMetadata,
   } = useBuilderState()
 
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [zoom, setZoom] = useState(100)
   const [showGrid, setShowGrid] = useState(true)
   const [showLayers, setShowLayers] = useState(false)
+  const [showPageManager, setShowPageManager] = useState(true) // Show page manager by default
+  const [showLeftSidebar, setShowLeftSidebar] = useState(true)
+  const [showRightSidebar, setShowRightSidebar] = useState(true)
   const [regionsLayout, setRegionsLayout] = useState<RegionsLayout | null>(null)
   const [canvasLayout, setCanvasLayout] = useState<{ headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] } | null>(null)
   
@@ -52,6 +65,7 @@ export default function WebsiteBuilder() {
   const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(undefined)
   const [currentProjectName, setCurrentProjectName] = useState("Untitled Project")
   const [isProjectOwner, setIsProjectOwner] = useState(true)
+  const [isProjectPublic, setIsProjectPublic] = useState(false)
   const [userRole, setUserRole] = useState<'OWNER' | 'EDITOR' | 'VIEWER'>('OWNER')
   
   // Get current user info from Clerk
@@ -244,9 +258,10 @@ export default function WebsiteBuilder() {
   }, [canEdit, currentProjectId, deleteElement])
   
   // Handle project change from ProjectManager
-  const handleProjectChange = async (projectId: string, projectName: string) => {
+  const handleProjectChange = async (projectId: string, projectName: string, isPublic?: boolean) => {
     setCurrentProjectId(projectId)
     setCurrentProjectName(projectName)
+    setIsProjectPublic(isPublic ?? false)
     
     // Check user role in this project
     if (user?.id) {
@@ -270,17 +285,13 @@ export default function WebsiteBuilder() {
     }
   }
 
-  // Wrapper for loadProject that also handles layout
-  const handleLoadProject = useCallback((
-    elements: BuilderElement[], 
-    pageId?: string,
-    layout?: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }
-  ) => {
-    loadProject(elements, pageId)
+  // Wrapper for loadProject that handles multi-page format
+  const handleLoadProject = useCallback((loadedPages: BuilderPage[]) => {
+    loadProject(loadedPages)
     
-    // Set canvas layout if available
-    if (layout) {
-      setCanvasLayout(layout)
+    // Set canvas layout from first page if available
+    if (loadedPages.length > 0 && loadedPages[0].layout) {
+      setCanvasLayout(loadedPages[0].layout)
     } else {
       setCanvasLayout(null) // Reset to default
     }
@@ -550,6 +561,7 @@ export default function WebsiteBuilder() {
           selectedElements.forEach((id) => duplicateElement(id))
         }}
         elements={elements}
+        pages={pages}
         layout={canvasLayout}
         onLoadProject={handleLoadProject}
         zoom={zoom}
@@ -561,12 +573,18 @@ export default function WebsiteBuilder() {
         onRotateSelected={handleRotateSelected}
         showSections={showSections}
         onSectionsToggle={setShowSections}
+        showLeftSidebar={showLeftSidebar}
+        onLeftSidebarToggle={setShowLeftSidebar}
+        showRightSidebar={showRightSidebar}
+        onRightSidebarToggle={setShowRightSidebar}
         // Share props
         projectId={currentProjectId}
         projectName={currentProjectName}
         isOwner={isProjectOwner}
+        isPublic={isProjectPublic}
         currentUserClerkId={user?.id || ""}
         onProjectChange={handleProjectChange}
+        onPublicChange={setIsProjectPublic}
         hasUnsavedChanges={hasUnsavedChanges}
       />
 
@@ -582,19 +600,100 @@ export default function WebsiteBuilder() {
       )}
 
       {/* Main Layout */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden relative">
+        {/* Floating Toggle Buttons - Show when sidebars are hidden */}
+        {!showLeftSidebar && (
+          <button
+            onClick={() => setShowLeftSidebar(true)}
+            className="absolute top-4 left-0 z-50 w-7 h-14 flex items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary hover:to-primary/90 border border-l-0 border-primary/30 shadow-xl hover:shadow-2xl hover:scale-110 text-primary-foreground hover:text-white transition-all duration-300"
+            title="Show Sidebar"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m9 18 6-6-6-6"/>
+            </svg>
+          </button>
+        )}
+        
+        {!showRightSidebar && (
+          <button
+            onClick={() => setShowRightSidebar(true)}
+            className="absolute top-4 right-0 z-50 w-7 h-14 flex items-center justify-center rounded-full bg-gradient-to-l from-primary to-primary/80 hover:from-primary hover:to-primary/90 border border-r-0 border-primary/30 shadow-xl hover:shadow-2xl hover:scale-110 text-primary-foreground hover:text-white transition-all duration-300"
+            title="Show Properties"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+          </button>
+        )}
+
         <ResizablePanelGroup direction="horizontal">
           {/* Left Sidebar - resizable */}
-          <ResizablePanel defaultSize={20} minSize={12} maxSize={35} className="min-w-[200px]">
-            <div className="h-full bg-sidebar border-r border-sidebar-border">
-              <ComponentLibrary 
-                onAddTemplate={handleAddTemplate} 
-                onToggleCategoryRef={toggleCategoryRef}
-              />
-            </div>
-          </ResizablePanel>
+          {showLeftSidebar && (
+            <>
+              <ResizablePanel defaultSize={20} minSize={12} maxSize={35} className="min-w-[200px] relative group">
+                {/* Collapse Button - Outside Edge */}
+                <button
+                  onClick={() => setShowLeftSidebar(false)}
+                  className="absolute top-4 -right-3 z-50 w-6 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/80 hover:from-primary hover:to-primary/90 border border-l-0 border-primary/30 shadow-lg hover:shadow-xl text-primary-foreground hover:text-white transition-all duration-300 hover:scale-110 hover:-right-2.5"
+                  title="Hide Sidebar"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m15 18-6-6 6-6"/>
+                  </svg>
+                </button>
+                <div className="h-full bg-sidebar border-r border-sidebar-border flex flex-col">
 
-          <ResizableHandle withHandle className="bg-sidebar-border" />
+                  {/* Toggle between Pages and Components */}
+                  <div className="flex border-b border-sidebar-border">
+                    <button
+                      onClick={() => setShowPageManager(true)}
+                      className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+                        showPageManager 
+                          ? 'bg-accent text-accent-foreground border-b-2 border-primary' 
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                      }`}
+                    >
+                      Pages
+                    </button>
+                    <button
+                      onClick={() => setShowPageManager(false)}
+                      className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+                        !showPageManager 
+                          ? 'bg-accent text-accent-foreground border-b-2 border-primary' 
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                      }`}
+                    >
+                      Components
+                    </button>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 overflow-hidden">
+                    {showPageManager ? (
+                      <PageManager
+                        pages={pages}
+                        activePageId={activePageId}
+                        onPageSelect={switchPage}
+                        onPageCreate={addPage}
+                        onPageDelete={deletePage}
+                        onPageDuplicate={duplicatePage}
+                        onPageRename={renamePage}
+                        onPageUpdateMetadata={updatePageMetadata}
+                        canEdit={canEdit}
+                      />
+                    ) : (
+                      <ComponentLibrary 
+                        onAddTemplate={handleAddTemplate} 
+                        onToggleCategoryRef={toggleCategoryRef}
+                      />
+                    )}
+                  </div>
+                </div>
+              </ResizablePanel>
+
+              <ResizableHandle withHandle className="bg-sidebar-border" />
+            </>
+          )}
 
           {/* Center Canvas */}
           <ResizablePanel defaultSize={60} minSize={30}>
@@ -605,6 +704,7 @@ export default function WebsiteBuilder() {
                 >
                   <CollaborativeCanvas
                     projectId={currentProjectId || null}
+                    pageId={activePageId}
                     canEdit={canEdit}
                     elements={elements}
                     selectedElements={selectedElements}
@@ -646,23 +746,38 @@ export default function WebsiteBuilder() {
             </div>
           </ResizablePanel>
 
-          <ResizableHandle withHandle className="bg-sidebar-border" />
+          {showRightSidebar && (
+            <>
+              <ResizableHandle withHandle className="bg-sidebar-border" />
 
-          {/* Right Sidebar - resizable */}
-          <ResizablePanel defaultSize={20} minSize={12} maxSize={35} className="min-w-[240px]">
-            <div className="h-full bg-sidebar border-l border-sidebar-border">
-              <PropertiesPanel
-                selectedElements={selectedElements}
-                elements={elements}
-                currentBreakpoint={currentBreakpoint}
-                onUpdateElement={collaborativeUpdateElement}
-                onUpdateElementResponsiveStyle={updateElementResponsiveStyle}
-                onUpdateElementPosition={collaborativeUpdateElementPosition}
-                isPreviewMode={isPreviewMode}
-                onPreviewModeToggle={setIsPreviewMode}
-              />
-            </div>
-          </ResizablePanel>
+              {/* Right Sidebar - resizable */}
+              <ResizablePanel defaultSize={20} minSize={12} maxSize={35} className="min-w-[240px] relative group">
+                {/* Collapse Button - Outside Edge */}
+                <button
+                  onClick={() => setShowRightSidebar(false)}
+                  className="absolute top-4 -left-3 z-50 w-6 h-10 flex items-center justify-center rounded-full bg-gradient-to-bl from-primary to-primary/80 hover:from-primary hover:to-primary/90 border border-r-0 border-primary/30 shadow-lg hover:shadow-xl text-primary-foreground hover:text-white transition-all duration-300 hover:scale-110 hover:-left-2.5"
+                  title="Hide Properties"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                </button>
+                <div className="h-full bg-sidebar border-l border-sidebar-border">
+
+                  <PropertiesPanel
+                    selectedElements={selectedElements}
+                    elements={elements}
+                    currentBreakpoint={currentBreakpoint}
+                    onUpdateElement={collaborativeUpdateElement}
+                    onUpdateElementResponsiveStyle={updateElementResponsiveStyle}
+                    onUpdateElementPosition={collaborativeUpdateElementPosition}
+                    isPreviewMode={isPreviewMode}
+                    onPreviewModeToggle={setIsPreviewMode}
+                  />
+                </div>
+              </ResizablePanel>
+            </>
+          )}
         </ResizablePanelGroup>
       </div>
 

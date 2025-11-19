@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import type { Breakpoint, BuilderElement } from "@/lib/builder-types"
+import type { Breakpoint, BuilderElement, BuilderPage } from "@/lib/builder-types"
 import { Monitor, Smartphone, Tablet, X } from "lucide-react"
 import { useState } from "react"
 
@@ -11,10 +11,15 @@ interface PreviewModalProps {
   isOpen: boolean
   onClose: () => void
   elements: BuilderElement[]
+  pages?: BuilderPage[]
 }
 
-export function PreviewModal({ isOpen, onClose, elements }: PreviewModalProps) {
+export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewModalProps) {
   const [currentBreakpoint, setCurrentBreakpoint] = useState<Breakpoint>("desktop")
+  const [activePageIndex, setActivePageIndex] = useState(0)
+
+  const isMultiPage = pages && pages.length > 0
+  const currentElements = isMultiPage ? (pages[activePageIndex]?.elements || []) : elements
 
   const breakpointWidths = {
     desktop: "w-full",
@@ -124,6 +129,21 @@ export function PreviewModal({ isOpen, onClose, elements }: PreviewModalProps) {
               </Badge>
             </div>
           </div>
+          {isMultiPage && (
+            <div className="flex items-center gap-2 mt-3 overflow-x-auto">
+              {pages.map((page, index) => (
+                <Button
+                  key={page.id}
+                  variant={activePageIndex === index ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setActivePageIndex(index)}
+                  className="shrink-0"
+                >
+                  {page.name}
+                </Button>
+              ))}
+            </div>
+          )}
         </DialogHeader>
 
         <div className="flex-1 overflow-auto bg-muted/30 p-6">
@@ -131,7 +151,7 @@ export function PreviewModal({ isOpen, onClose, elements }: PreviewModalProps) {
             <div
               className={`${breakpointWidths[currentBreakpoint]} transition-all duration-300 bg-background border border-border rounded-lg shadow-lg min-h-[600px] overflow-hidden`}
             >
-              <div className="p-0">{elements.map(renderElement)}</div>
+              <div className="p-0">{currentElements.map(renderElement)}</div>
             </div>
           </div>
         </div>

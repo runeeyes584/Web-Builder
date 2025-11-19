@@ -78,3 +78,24 @@ export interface CanvasLayout {
   sections: { id: string; height: number }[]
   version?: string
 }
+
+// Page metadata for multi-page support
+export interface PageMetadata {
+  title?: string
+  description?: string
+  favicon?: string
+  route?: string // /home, /about, /contact (optional - for export)
+  keywords?: string[]
+}
+
+// Page interface for multi-page builder
+export interface BuilderPage {
+  id: string
+  name: string
+  elements: BuilderElement[]
+  layout?: CanvasLayout
+  metadata?: PageMetadata
+  order: number
+  createdAt?: string
+  updatedAt?: string
+}

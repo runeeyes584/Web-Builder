@@ -122,16 +122,17 @@ export class CollaborationSocket {
       });
 
       // Cursor movement
-      socket.on('cursor-move', (data: { position: CursorPosition }) => {
+      socket.on('cursor-move', (data: { position: CursorPosition; pageId?: string }) => {
         const session = this.userSessions.get(socket.id);
         if (!session) return;
 
-        // Broadcast cursor position to all other users in the room
+        // Broadcast cursor position to all other users in the room with pageId
         socket.to(`project:${session.projectId}`).emit('cursor-update', {
           socketId: socket.id,
           username: session.username,
           color: session.color,
           position: data.position,
+          pageId: data.pageId,
         });
       });
 

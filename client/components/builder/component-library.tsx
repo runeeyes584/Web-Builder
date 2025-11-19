@@ -46,7 +46,6 @@ export const ComponentLibrary = React.memo(function ComponentLibrary({ onAddTemp
       },
       end: (item, monitor) => {
         const dropResult = monitor.getDropResult()
-        console.log('Drag ended:', { item, dropResult, didDrop: monitor.didDrop() })
       },
     }), [component.type, component.name])
 
@@ -62,7 +61,7 @@ export const ComponentLibrary = React.memo(function ComponentLibrary({ onAddTemp
     return (
       <Card
         ref={dragRef as unknown as React.Ref<HTMLDivElement>}
-        className={`group relative p-3 cursor-grab transition-all duration-200 border-sidebar-border/30 bg-gradient-to-r from-sidebar-accent/30 to-sidebar-accent/15 backdrop-blur-sm active:cursor-grabbing ${
+        className={`group/card relative p-3 cursor-grab transition-all duration-200 border-sidebar-border/30 bg-gradient-to-r from-sidebar-accent/30 to-sidebar-accent/15 backdrop-blur-sm active:cursor-grabbing ${
           isDragging 
             ? "opacity-30 scale-95 shadow-xl border-primary/50 bg-gradient-to-r from-primary/20 to-primary/10" 
             : "hover:bg-gradient-to-r hover:from-sidebar-accent/80 hover:to-sidebar-accent/50 hover:shadow-lg hover:scale-[1.02] hover:border-primary/40 hover:ring-1 hover:ring-primary/20"
@@ -76,24 +75,24 @@ export const ComponentLibrary = React.memo(function ComponentLibrary({ onAddTemp
           <div className={`w-8 h-8 bg-gradient-to-br rounded-lg flex items-center justify-center transition-all duration-300 shadow-sm ${
             isDragging
               ? "from-primary/40 via-primary/30 to-primary/20 scale-110 rotate-12"
-              : "from-primary/20 via-primary/15 to-primary/10 group-hover:from-primary/30 group-hover:via-primary/25 group-hover:to-primary/20 group-hover:scale-110 group-hover:rotate-3"
+              : "from-primary/20 via-primary/15 to-primary/10 group-hover/card:from-primary/30 group-hover/card:via-primary/25 group-hover/card:to-primary/20 group-hover/card:scale-110 group-hover/card:rotate-3"
           }`}>
             <component.icon className={`w-4 h-4 text-primary transition-transform duration-300 ${
-              isDragging ? "scale-125" : "group-hover:scale-110"
+              isDragging ? "scale-125" : "group-hover/card:scale-110"
             }`} />
           </div>
           <div className="flex-1 min-w-0">
             <p className={`text-sm font-semibold transition-colors duration-300 mb-1 ${
               isDragging 
                 ? "text-primary font-bold" 
-                : "text-sidebar-foreground group-hover:text-primary"
+                : "text-sidebar-foreground group-hover/card:text-primary"
             }`}>
               {component.name}
             </p>
             <p className={`text-xs line-clamp-1 leading-relaxed transition-colors duration-300 ${
               isDragging 
                 ? "text-primary/70" 
-                : "text-muted-foreground group-hover:text-muted-foreground/80"
+                : "text-muted-foreground group-hover/card:text-muted-foreground/80"
             }`}>
               {component.description}
             </p>
@@ -101,7 +100,7 @@ export const ComponentLibrary = React.memo(function ComponentLibrary({ onAddTemp
           <div className={`transition-all duration-300 ${
             isDragging 
               ? "opacity-100 scale-125 rotate-12" 
-              : "opacity-0 group-hover:opacity-100 group-hover:scale-110"
+              : "opacity-0 group-hover/card:opacity-100 group-hover/card:scale-110"
           }`}>
             <div className={`w-6 h-6 rounded-md flex items-center justify-center ${
               isDragging 
@@ -179,7 +178,7 @@ export const ComponentLibrary = React.memo(function ComponentLibrary({ onAddTemp
 
       {/* Compact Categories */}
       <div className="flex-1 overflow-y-auto custom-scrollbar relative">
-        <div className="p-3 space-y-2">
+        <div className="p-3 space-y-2 isolate">
           {filteredCategories.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
               <div className="w-16 h-16 bg-muted/20 rounded-full flex items-center justify-center mb-4">
@@ -192,27 +191,27 @@ export const ComponentLibrary = React.memo(function ComponentLibrary({ onAddTemp
             filteredCategories.map((category, categoryIndex) => {
             const isExpanded = expandedCategories.has(category.name)
             return (
-              <div key={category.name} className="animate-in slide-in-from-left duration-300" style={{ animationDelay: `${categoryIndex * 50}ms` }}>
+              <div key={category.name} className="isolate" style={{ animationDelay: `${categoryIndex * 50}ms` }}>
                 {/* Compact Category Header */}
                 <button
                   onClick={() => toggleCategory(category.name)}
-                  className={`relative flex items-center justify-between w-full p-3 rounded-lg transition-all duration-300 group ${
+                  className={`relative flex items-center justify-between w-full p-3 rounded-lg transition-all duration-200 group/item ${
                     isExpanded 
-                      ? "bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 shadow-lg backdrop-blur-sm" 
-                      : "hover:bg-gradient-to-r hover:from-sidebar-accent/50 hover:to-sidebar-accent/30 border border-transparent hover:border-sidebar-border/30 hover:shadow-md backdrop-blur-sm"
+                      ? "bg-primary/10 border border-primary/20 shadow-sm" 
+                      : "hover:bg-primary/15 hover:border-primary/30 border border-transparent hover:shadow-sm"
                   }`}
                 >
                   <div className="relative flex items-center gap-3">
-                    <div className={`w-2 h-6 rounded-full transition-all duration-300 ${
+                    <div className={`w-2 h-6 rounded-full transition-all duration-200 ${
                       isExpanded 
-                        ? "bg-gradient-to-b from-primary to-primary/80 shadow-sm" 
-                        : "bg-gradient-to-b from-muted-foreground/50 to-muted-foreground/30 group-hover:from-primary/60 group-hover:to-primary/40"
+                        ? "bg-primary" 
+                        : "bg-muted-foreground/30 group-hover/item:bg-primary"
                     }`}></div>
                     <div className="text-left">
-                      <h3 className={`text-sm font-semibold transition-colors duration-300 ${
+                      <h3 className={`text-sm font-semibold transition-colors duration-200 ${
                         isExpanded 
                           ? "text-primary" 
-                          : "text-sidebar-foreground group-hover:text-primary"
+                          : "text-sidebar-foreground group-hover/item:text-primary"
                       }`}>
                         {category.name}
                       </h3>
@@ -223,15 +222,15 @@ export const ComponentLibrary = React.memo(function ComponentLibrary({ onAddTemp
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium transition-all duration-300 ${
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium transition-all duration-200 ${
                       isExpanded 
                         ? "bg-primary/20 text-primary" 
-                        : "bg-muted/60 text-muted-foreground group-hover:bg-primary/15 group-hover:text-primary"
+                        : "bg-muted/50 text-muted-foreground"
                     }`}>
                       {category.components.length}
                     </span>
-                    <div className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}>
-                      <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-sidebar-foreground" />
+                    <div className={`transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
                     </div>
                   </div>
                 </button>

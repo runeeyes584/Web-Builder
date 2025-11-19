@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import type { Breakpoint, BuilderElement, RegionsLayout } from "@/lib/builder-types"
 import { Copy, Trash2 } from "lucide-react"
-import { useCallback, useEffect, useRef, useState, useMemo } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDrop } from "react-dnd"
 
 // Simple Markdown parser
@@ -621,15 +621,12 @@ export function Canvas({
     drop: (item, monitor) => {
       if (!canEdit) return;
       
-      console.log('Drop event triggered:', item)
       if (!canvasEl) {
-        console.warn('Canvas element not found')
         return
       }
       
       const client = monitor.getClientOffset()
       if (!client) {
-        console.warn('Client offset not found')
         return
       }
       
@@ -680,22 +677,11 @@ export function Canvas({
       const snappedX = snapSettings.enabled ? snapToGrid(x, snapSettings.gridSize) : x
       const snappedY = snapSettings.enabled ? snapToGrid(y, snapSettings.gridSize) : y
       
-      console.log('Drop position:', { 
-        cursor: { x: cursorX, y: cursorY },
-        centered: { x, y },
-        snapped: { x: snappedX, y: snappedY },
-        elementSize: { width: elementWidth, height: elementHeight },
-        footerTop,
-        scale 
-      })
-      
-      console.log('Adding element:', newElement.type)
       onAddElement(newElement, { x: snappedX, y: snappedY })
     },
   }), [canvasEl, zoom, snapSettings, snapToGrid, onAddElement, headerHeight, footerHeight, sections, totalSectionsHeight, contentHeight, canEdit])
 
   const setCanvasNode = useCallback((node: HTMLDivElement | null) => {
-    console.log('Setting canvas node:', !!node)
     setCanvasEl(node)
     dropRef(node)
   }, [dropRef])

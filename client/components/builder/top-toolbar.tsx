@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import type { Breakpoint, BuilderElement } from "@/lib/builder-types"
+import type { Breakpoint, BuilderElement, BuilderPage } from "@/lib/builder-types"
 import { UserButton } from "@clerk/nextjs"
 import { Copy, Download, Eye, Grid, Layers, Layout, Monitor, Moon, Redo, RotateCcw, Share2, Smartphone, Sun, Tablet, Undo, ZoomIn, ZoomOut } from "lucide-react"
 import { useState } from "react"
@@ -22,7 +22,8 @@ interface TopToolbarProps {
   selectedElements: string[]
   onDuplicateSelected: () => void
   elements?: BuilderElement[]
-  onLoadProject?: (elements: BuilderElement[], pageId?: string, layout?: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }) => void
+  pages?: BuilderPage[]
+  onLoadProject?: (pages: BuilderPage[]) => void
   layout?: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] } | null
   zoom?: number
   onZoomChange?: (zoom: number) => void
@@ -33,12 +34,18 @@ interface TopToolbarProps {
   onRotateSelected?: () => void
   showSections?: boolean
   onSectionsToggle?: (show: boolean) => void
+  showLeftSidebar?: boolean
+  onLeftSidebarToggle?: (show: boolean) => void
+  showRightSidebar?: boolean
+  onRightSidebarToggle?: (show: boolean) => void
   // Share props
   projectId?: string
   projectName?: string
   isOwner?: boolean
+  isPublic?: boolean
   currentUserClerkId?: string
-  onProjectChange?: (projectId: string, projectName: string) => void
+  onProjectChange?: (projectId: string, projectName: string, isPublic?: boolean) => void
+  onPublicChange?: (isPublic: boolean) => void
   hasUnsavedChanges?: boolean
 }
 
@@ -54,6 +61,7 @@ export function TopToolbar({
   selectedElements,
   onDuplicateSelected,
   elements = [],
+  pages = [],
   onLoadProject,
   layout = null,
   zoom = 100,
@@ -65,11 +73,17 @@ export function TopToolbar({
   onRotateSelected,
   showSections = true,
   onSectionsToggle,
+  showLeftSidebar = true,
+  onLeftSidebarToggle,
+  showRightSidebar = true,
+  onRightSidebarToggle,
   projectId,
   projectName = "Untitled Project",
   isOwner = true,
+  isPublic = false,
   currentUserClerkId = "",
   onProjectChange,
+  onPublicChange,
   hasUnsavedChanges = false,
 }: TopToolbarProps) {
   const [showPreview, setShowPreview] = useState(false)
@@ -78,36 +92,32 @@ export function TopToolbar({
 
   return (
     <>
-      <div className="h-14 bg-gradient-to-r from-card via-card to-card/95 border-b border-border flex items-center justify-between gap-2 px-3 backdrop-blur-sm overflow-hidden">
-        {/* Left Section - All Controls */}
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          {/* Logo & Project - Compact */}
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg shrink-0">
+      <div className="h-14 bg-gradient-to-r from-card via-card to-card/95 border-b border-border flex items-center gap-4 px-4 backdrop-blur-sm">
+        {/* Left Section - Logo & Project */}
+        <div className="flex items-center gap-3 min-w-0 shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg">
               <span className="text-primary-foreground font-bold text-sm">WB</span>
             </div>
-            <div className="min-w-0 hidden lg:block">
-              <span className="font-semibold text-foreground text-sm whitespace-nowrap truncate block max-w-[120px]">Website Builder</span>
+            <div className="hidden lg:block">
+              <span className="font-semibold text-foreground text-sm whitespace-nowrap">Website Builder</span>
             </div>
           </div>
 
           <div className="h-6 w-px bg-border" />
 
-          {/* Project Manager */}
-          <div className="shrink-0">
-            <ProjectManagerComponent 
-              elements={elements} 
-              layout={layout || undefined}
-              onLoadProject={onLoadProject || (() => {})}
-              currentProjectName={projectName}
-              onProjectChange={onProjectChange}
-              hasUnsavedChanges={hasUnsavedChanges}
-            />
-          </div>
+          <ProjectManagerComponent 
+            pages={pages}
+            onLoadProject={onLoadProject || (() => {})}
+            currentProjectName={projectName}
+            onProjectChange={onProjectChange}
+            hasUnsavedChanges={hasUnsavedChanges}
+          />
+        </div>
 
-          <div className="h-6 w-px bg-border hidden xl:block" />
-
-          {/* Breakpoint Controls - Icon only with tooltip */}
+        {/* Center Section - Main Controls */}
+        <div className="flex items-center gap-3 flex-1 min-w-0 justify-center">
+          {/* Breakpoint Controls */}
           <div className="flex items-center gap-0.5 bg-gradient-to-r from-muted to-muted/80 rounded-lg p-0.5 shadow-sm">
             <Button
               variant={currentBreakpoint === "desktop" ? "default" : "ghost"}
@@ -239,45 +249,46 @@ export function TopToolbar({
               <RotateCcw className="w-3.5 h-3.5" />
             </Button>
           </div>
+        </div>
 
-          <div className="h-6 w-px bg-border hidden sm:block" />
-
-          {/* Main Actions - Icon only with compact text on larger screens */}
-          <div className="flex items-center gap-1">
+        {/* Right Section - Actions & User */}
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Main Actions */}
+          <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
               size="sm" 
               onClick={() => setShowShare(true)} 
-              className="h-8 px-2 bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20"
+              className="h-8 px-3 bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20"
               disabled={!projectId}
               title="Share Project"
             >
               <Share2 className="w-3.5 h-3.5" />
-              <span className="ml-1.5 hidden xl:inline text-xs">Share</span>
+              <span className="ml-1.5 hidden lg:inline text-xs">Share</span>
             </Button>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={() => setShowPreview(true)} 
-              className="h-8 px-2 bg-primary/5 hover:bg-primary/10"
+              className="h-8 px-3 bg-primary/5 hover:bg-primary/10"
               title="Preview Window"
             >
               <Eye className="w-3.5 h-3.5" />
-              <span className="ml-1.5 hidden xl:inline text-xs">Preview</span>
+              <span className="ml-1.5 hidden lg:inline text-xs">Preview</span>
             </Button>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={() => setShowExport(true)} 
-              className="h-8 px-2 bg-primary/5 hover:bg-primary/10"
+              className="h-8 px-3 bg-primary/5 hover:bg-primary/10"
               title="Export Project"
             >
               <Download className="w-3.5 h-3.5" />
-              <span className="ml-1.5 hidden xl:inline text-xs">Export</span>
+              <span className="ml-1.5 hidden lg:inline text-xs">Export</span>
             </Button>
           </div>
 
-          <div className="h-6 w-px bg-border hidden sm:block" />
+          <div className="h-6 w-px bg-border" />
 
           {/* Theme Toggle */}
           <Button 
@@ -289,10 +300,8 @@ export function TopToolbar({
           >
             {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </Button>
-        </div>
 
-        {/* Right Section - User Profile */}
-        <div className="flex items-center shrink-0">
+          <div className="h-6 w-px bg-border" />
           <UserButton 
             appearance={{
               elements: {
@@ -310,8 +319,8 @@ export function TopToolbar({
       </div>
 
       {/* Modals */}
-      <PreviewModal isOpen={showPreview} onClose={() => setShowPreview(false)} elements={elements} />
-      <ExportModal isOpen={showExport} onClose={() => setShowExport(false)} elements={elements} />
+      <PreviewModal isOpen={showPreview} onClose={() => setShowPreview(false)} elements={elements} pages={pages} />
+      <ExportModal isOpen={showExport} onClose={() => setShowExport(false)} elements={elements} pages={pages} />
       {projectId && (
         <ShareDialog
           open={showShare}
@@ -319,7 +328,9 @@ export function TopToolbar({
           projectId={projectId}
           projectName={projectName}
           isOwner={isOwner}
+          isPublic={isPublic}
           currentUserClerkId={currentUserClerkId}
+          onPublicChange={onPublicChange}
         />
       )}
     </>

@@ -175,7 +175,7 @@ export const getProjectById = async (req: Request, res: Response) => {
 // POST create new project (SAVE PROJECT)
 export const createProject = async (req: Request, res: Response) => {
   try {
-    const { clerk_id, name, description, elements, layout } = req.body;
+    const { clerk_id, name, description, elements, layout, pages } = req.body;
 
     // Validation
     if (!clerk_id || !name) {
@@ -242,33 +242,64 @@ export const createProject = async (req: Request, res: Response) => {
       });
     }
 
-    // Build json_structure with layout if provided
-    const jsonStructure: any = {
-      elements: elements || [],
-      version: "1.0.0",
-      createdAt: new Date().toISOString(),
-    };
+    // Prepare pages data - support both multi-page and legacy single-page format
+    let pagesData: any[] = [];
     
-    // Include layout if provided and valid
-    if (layout) {
-      jsonStructure.layout = {
-        headerHeight: layout.headerHeight,
-        footerHeight: layout.footerHeight,
-        sections: layout.sections.map((s: any) => ({ id: s.id, height: s.height })),
+    if (pages && Array.isArray(pages) && pages.length > 0) {
+      // Multi-page format: use provided pages array
+      pagesData = pages.map((page: any, index: number) => {
+        const jsonStructure: any = {
+          elements: page.elements || [],
+          version: "1.0.0",
+          createdAt: new Date().toISOString(),
+        };
+        
+        // Include layout if provided
+        if (page.layout) {
+          jsonStructure.layout = page.layout;
+        }
+        
+        // Include metadata if provided
+        if (page.metadata) {
+          jsonStructure.metadata = page.metadata;
+        }
+        
+        return {
+          name: page.name || `Page ${index + 1}`,
+          json_structure: jsonStructure,
+        };
+      });
+    } else {
+      // Legacy single-page format: create one page with provided elements/layout
+      const jsonStructure: any = {
+        elements: elements || [],
+        version: "1.0.0",
+        createdAt: new Date().toISOString(),
       };
+      
+      // Include layout if provided and valid
+      if (layout) {
+        jsonStructure.layout = {
+          headerHeight: layout.headerHeight,
+          footerHeight: layout.footerHeight,
+          sections: layout.sections.map((s: any) => ({ id: s.id, height: s.height })),
+        };
+      }
+      
+      pagesData = [{
+        name: "Main Page",
+        json_structure: jsonStructure,
+      }];
     }
 
-    // Create project with default page
+    // Create project with pages
     const project = await prisma.project.create({
       data: {
         clerk_id,
         name,
         description: description || "",
         pages: {
-          create: {
-            name: "Main Page",
-            json_structure: jsonStructure,
-          },
+          create: pagesData,
         },
       },
       include: {
@@ -303,7 +334,7 @@ export const createProject = async (req: Request, res: Response) => {
 export const updateProject = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, elements, layout } = req.body;
+    const { name, description, elements, layout, pages, is_public } = req.body;
 
     // Validate layout structure if provided
     if (layout) {
@@ -365,12 +396,13 @@ export const updateProject = async (req: Request, res: Response) => {
       });
     }
 
-    // Update project
+    // Update project basic info
     const project = await prisma.project.update({
       where: { id },
       data: {
         name: name || projectExists.name,
         description: description !== undefined ? description : projectExists.description,
+        is_public: is_public !== undefined ? is_public : projectExists.is_public,
       },
       include: {
         user: {
@@ -386,8 +418,65 @@ export const updateProject = async (req: Request, res: Response) => {
       },
     });
 
-    // Update page elements and layout if provided
-    if ((elements !== undefined || layout !== undefined) && projectExists.pages.length > 0) {
+    // Handle pages update - support both multi-page and legacy single-page format
+    if (pages && Array.isArray(pages) && pages.length > 0) {
+      // Multi-page update: update/create/delete pages as needed
+      
+      // Get existing page IDs
+      const existingPageIds = projectExists.pages.map(p => p.id);
+      const incomingPageIds = pages.map((p: any) => p.id).filter(Boolean);
+      
+      // Delete pages that are no longer in the incoming data
+      const pagesToDelete = existingPageIds.filter(id => !incomingPageIds.includes(id));
+      if (pagesToDelete.length > 0) {
+        await prisma.page.deleteMany({
+          where: {
+            id: { in: pagesToDelete },
+            project_id: id,
+          },
+        });
+      }
+      
+      // Update or create pages
+      for (const pageData of pages) {
+        const jsonStructure: any = {
+          elements: pageData.elements || [],
+          version: "1.0.0",
+          updatedAt: new Date().toISOString(),
+        };
+        
+        // Include layout if provided
+        if (pageData.layout) {
+          jsonStructure.layout = pageData.layout;
+        }
+        
+        // Include metadata if provided
+        if (pageData.metadata) {
+          jsonStructure.metadata = pageData.metadata;
+        }
+        
+        if (pageData.id && existingPageIds.includes(pageData.id)) {
+          // Update existing page
+          await prisma.page.update({
+            where: { id: pageData.id },
+            data: {
+              name: pageData.name,
+              json_structure: jsonStructure,
+            },
+          });
+        } else {
+          // Create new page
+          await prisma.page.create({
+            data: {
+              project_id: id,
+              name: pageData.name || "New Page",
+              json_structure: jsonStructure,
+            },
+          });
+        }
+      }
+    } else if ((elements !== undefined || layout !== undefined) && projectExists.pages.length > 0) {
+      // Legacy single-page update: update the first page only
       const mainPage = projectExists.pages[0];
       const currentStructure = mainPage.json_structure as any;
       

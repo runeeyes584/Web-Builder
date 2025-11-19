@@ -14,6 +14,7 @@ export interface Project {
   clerk_id: string;
   name: string;
   description?: string;
+  is_public?: boolean;
   created_at: string;
   updated_at: string;
   pages?: {
@@ -26,6 +27,11 @@ export interface Project {
         headerHeight: number;
         footerHeight: number;
         sections: { id: string; height: number }[];
+      };
+      metadata?: {
+        title?: string;
+        description?: string;
+        keywords?: string[];
       };
     };
     updated_at: string;
@@ -42,17 +48,49 @@ export interface CreateProjectRequest {
     footerHeight: number;
     sections: { id: string; height: number }[];
   };
+  pages?: {
+    name: string;
+    elements: any[];
+    layout?: {
+      headerHeight: number;
+      footerHeight: number;
+      sections: { id: string; height: number }[];
+    };
+    metadata?: {
+      title?: string;
+      description?: string;
+      keywords?: string[];
+    };
+    order: number;
+  }[];
 }
 
 export interface UpdateProjectRequest {
   name?: string;
   description?: string;
+  is_public?: boolean;
   elements?: any[];
   layout?: {
     headerHeight: number;
     footerHeight: number;
     sections: { id: string; height: number }[];
   };
+  pages?: {
+    id?: string;
+    name: string;
+    elements: any[];
+    layout?: {
+      headerHeight: number;
+      footerHeight: number;
+      sections: { id: string; height: number }[];
+    };
+    metadata?: {
+      title?: string;
+      description?: string;
+      keywords?: string[];
+    };
+    order: number;
+  }[];
 }
 
 // API Client Helper

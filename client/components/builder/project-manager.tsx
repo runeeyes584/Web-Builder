@@ -13,16 +13,17 @@ import { useUser } from "@clerk/nextjs"
 import { Calendar, Download, FolderOpen, Save, Trash2, Upload } from "lucide-react"
 import { useEffect, useState } from "react"
 
+import type { BuilderPage } from "@/lib/builder-types"
+
 interface ProjectManagerProps {
-  elements: any[]
-  layout?: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }
-  onLoadProject: (elements: any[], pageId?: string, layout?: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }) => void
+  pages: BuilderPage[]
+  onLoadProject: (pages: BuilderPage[]) => void
   currentProjectName: string
-  onProjectChange?: (projectId: string, projectName: string) => void
+  onProjectChange?: (projectId: string, projectName: string, isPublic?: boolean) => void
   hasUnsavedChanges?: boolean
 }
 
-export function ProjectManagerComponent({ elements, layout, onLoadProject, currentProjectName, onProjectChange, hasUnsavedChanges = false }: ProjectManagerProps) {
+export function ProjectManagerComponent({ pages, onLoadProject, currentProjectName, onProjectChange, hasUnsavedChanges = false }: ProjectManagerProps) {
   const [projects, setProjects] = useState<Project[]>([])
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [loadDialogOpen, setLoadDialogOpen] = useState(false)
@@ -84,19 +85,34 @@ export function ProjectManagerComponent({ elements, layout, onLoadProject, curre
       
       // Check if updating existing project or creating new one
       if (currentProjectId) {
-        // UPDATE existing project
+        // UPDATE existing project - save all pages
         const response = await projectsApi.update(currentProjectId, {
           name: projectName.trim(),
           description: "",
-          elements: elements,
-          layout: layout ? {
-            headerHeight: layout.headerHeight,
-            footerHeight: layout.footerHeight,
-            sections: layout.sections.map(s => ({ id: s.id, height: s.height })),
-          } : undefined,
+          pages: (pages || []).map(page => ({
+            id: page.id,
+            name: page.name,
+            elements: page.elements,
+            layout: page.layout,
+            metadata: page.metadata,
+            order: page.order,
+          })),
         })
 
         if (response.success) {
+          // Update pages with real database IDs if returned
+          if (response.data?.pages && response.data.pages.length > 0) {
+            const updatedPages: BuilderPage[] = response.data.pages.map((dbPage: any, index: number) => ({
+              id: dbPage.id,  // Use real database ID
+              name: dbPage.name,
+              elements: dbPage.json_structure?.elements || pages[index]?.elements || [],
+              layout: dbPage.json_structure?.layout || pages[index]?.layout,
+              metadata: dbPage.json_structure?.metadata || pages[index]?.metadata,
+              order: index,
+            }))
+            onLoadProject(updatedPages) // Reload with database IDs
+          }
+          
           setSaveDialogOpen(false)
           toast({
             title: "Success",
@@ -105,25 +121,40 @@ export function ProjectManagerComponent({ elements, layout, onLoadProject, curre
           await loadProjects()
         }
       } else {
-        // CREATE new project
+        // CREATE new project with all pages
         const response = await projectsApi.create({
           clerk_id: user.id,
           name: projectName.trim(),
           description: "",
-          elements: elements,
-          layout: layout ? {
-            headerHeight: layout.headerHeight,
-            footerHeight: layout.footerHeight,
-            sections: layout.sections.map(s => ({ id: s.id, height: s.height })),
-          } : undefined,
+          pages: (pages || []).map(page => ({
+            name: page.name,
+            elements: page.elements,
+            layout: page.layout,
+            metadata: page.metadata,
+            order: page.order,
+          })),
         })
 
         if (response.success && response.data) {
           setCurrentProjectId(response.data.id) // Save project ID for future updates
+          
+          // Update pages with real database IDs
+          if (response.data.pages && response.data.pages.length > 0) {
+            const updatedPages: BuilderPage[] = response.data.pages.map((dbPage: any, index: number) => ({
+              id: dbPage.id,  // Use real database ID
+              name: dbPage.name,
+              elements: dbPage.json_structure?.elements || pages[index]?.elements || [],
+              layout: dbPage.json_structure?.layout || pages[index]?.layout,
+              metadata: dbPage.json_structure?.metadata || pages[index]?.metadata,
+              order: index,
+            }))
+            onLoadProject(updatedPages) // Reload with database IDs
+          }
+          
           setSaveDialogOpen(false)
           
           // Notify parent component about project change
-          onProjectChange?.(response.data.id, projectName.trim())
+          onProjectChange?.(response.data.id, projectName.trim(), response.data.is_public)
           
           toast({
             title: "Success",
@@ -145,17 +176,33 @@ export function ProjectManagerComponent({ elements, layout, onLoadProject, curre
   }
 
   const handleLoad = (project: Project) => {
-    // Get elements from first page
-    const projectElements = project.pages?.[0]?.json_structure?.elements || []
-    const pageId = project.pages?.[0]?.id // Get pageId để track history
-    const layout = project.pages?.[0]?.json_structure?.layout // Get saved layout
+    // Convert project pages to BuilderPage format
+    const loadedPages: BuilderPage[] = (project.pages || []).map((page, index) => ({
+      id: page.id,
+      name: page.name,
+      elements: page.json_structure?.elements || [],
+      layout: page.json_structure?.layout,
+      metadata: page.json_structure?.metadata || { title: page.name },
+      order: index,
+    }))
     
-    onLoadProject(projectElements, pageId, layout) // Pass pageId and layout
+    // Ensure at least one page exists
+    if (loadedPages.length === 0) {
+      loadedPages.push({
+        id: `page-${Date.now()}`,
+        name: "Main Page",
+        elements: [],
+        order: 0,
+        metadata: { title: "Main Page" },
+      })
+    }
+    
+    onLoadProject(loadedPages)
     setCurrentProjectId(project.id) // Set current project ID
     setProjectName(project.name)    // Set project name
     
     // Notify parent component about project change
-    onProjectChange?.(project.id, project.name)
+    onProjectChange?.(project.id, project.name, project.is_public)
     
     setLoadDialogOpen(false)
     toast({
@@ -191,15 +238,22 @@ export function ProjectManagerComponent({ elements, layout, onLoadProject, curre
   }
 
   const handleExport = (project: Project) => {
-    const projectElements = project.pages?.[0]?.json_structure?.elements || []
+    const pages = (project.pages || []).map((page, index) => ({
+      id: page.id,
+      name: page.name,
+      elements: page.json_structure?.elements || [],
+      layout: page.json_structure?.layout,
+      metadata: page.json_structure?.metadata || { title: page.name },
+      order: index,
+    }))
+    
     const exportData = {
       id: project.id,
       name: project.name,
-      elements: projectElements,
-      layout: project.pages?.[0]?.json_structure?.layout || null,
+      pages: pages,
       createdAt: project.created_at,
       updatedAt: project.updated_at,
-      version: project.pages?.[0]?.json_structure?.version || "1.0.0",
+      version: "2.0.0", // Multi-page version
     }
 
     const dataStr = JSON.stringify(exportData, null, 2)
@@ -228,7 +282,27 @@ export function ProjectManagerComponent({ elements, layout, onLoadProject, curre
       const text = await file.text()
       const importedData = JSON.parse(text)
 
-      if (!importedData.name || !importedData.elements || !Array.isArray(importedData.elements)) {
+      // Support both old format (single page) and new format (multi-page)
+      let importedPages: BuilderPage[] = []
+      
+      if (importedData.pages && Array.isArray(importedData.pages)) {
+        // New multi-page format
+        importedPages = importedData.pages
+      } else if (importedData.elements && Array.isArray(importedData.elements)) {
+        // Old single-page format - convert to multi-page
+        importedPages = [{
+          id: `page-${Date.now()}`,
+          name: "Main Page",
+          elements: importedData.elements,
+          layout: importedData.layout,
+          metadata: { title: importedData.name || "Main Page" },
+          order: 0,
+        }]
+      } else {
+        throw new Error("Invalid project file format")
+      }
+
+      if (!importedData.name || importedPages.length === 0) {
         throw new Error("Invalid project file format")
       }
 
@@ -237,12 +311,17 @@ export function ProjectManagerComponent({ elements, layout, onLoadProject, curre
         clerk_id: user.id,
         name: importedData.name,
         description: "",
-        elements: importedData.elements,
-        layout: importedData.layout || undefined,
+        pages: importedPages.map(page => ({
+          name: page.name,
+          elements: page.elements,
+          layout: page.layout,
+          metadata: page.metadata,
+          order: page.order,
+        })),
       })
 
       if (response.success) {
-        onLoadProject(importedData.elements, undefined, importedData.layout)
+        onLoadProject(importedPages)
         toast({
           title: "Success",
           description: `Project "${importedData.name}" imported successfully`,
@@ -270,7 +349,8 @@ export function ProjectManagerComponent({ elements, layout, onLoadProject, curre
           <Button 
             variant="outline" 
             size="sm"
-            className={!hasUnsavedChanges ? "opacity-50" : ""}
+            className={(!currentProjectId || hasUnsavedChanges) ? "" : "opacity-50"}
+            title={!currentProjectId ? "Save new project" : hasUnsavedChanges ? "Save changes" : "No changes to save"}
           >
             <Save className="h-4 w-4 mr-2" />
             Save
@@ -345,7 +425,10 @@ export function ProjectManagerComponent({ elements, layout, onLoadProject, curre
                         <CardTitle className="text-base">{project.name}</CardTitle>
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary" className="text-xs">
-                            {project.pages?.[0]?.json_structure?.elements?.length || 0} elements
+                            {project.pages?.length || 0} pages
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {project.pages?.reduce((sum, p) => sum + (p.json_structure?.elements?.length || 0), 0) || 0} elements
                           </Badge>
                           <Button
                             variant="ghost"

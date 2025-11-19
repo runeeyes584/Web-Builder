@@ -174,7 +174,7 @@ export const createPage = async (req: Request, res: Response) => {
 export const updatePage = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, json_structure } = req.body;
+    const { name, json_structure, order } = req.body;
 
     // Check if page exists
     const pageExists = await prisma.page.findUnique({
@@ -215,6 +215,42 @@ export const updatePage = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to update page",
+    });
+  }
+};
+
+// POST reorder pages
+export const reorderPages = async (req: Request, res: Response) => {
+  try {
+    const { project_id, page_orders } = req.body;
+
+    // Validation
+    if (!project_id || !Array.isArray(page_orders)) {
+      return res.status(400).json({
+        success: false,
+        message: "project_id and page_orders (array) are required",
+      });
+    }
+
+    // Update each page's order
+    const updatePromises = page_orders.map(({ page_id, order }) =>
+      prisma.page.update({
+        where: { id: page_id },
+        data: { json_structure: { order } },
+      })
+    );
+
+    await Promise.all(updatePromises);
+
+    return res.status(200).json({
+      success: true,
+      message: "Pages reordered successfully",
+    });
+  } catch (error) {
+    console.error("Error reordering pages:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to reorder pages",
     });
   }
 };

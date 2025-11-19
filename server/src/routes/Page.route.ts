@@ -5,6 +5,7 @@ import {
     getAllPages,
     getPageById,
     getPagesByProject,
+    reorderPages,
     updatePage,
 } from "../controllers/Page.controller";
 
@@ -17,6 +18,7 @@ router.get("/:id", getPageById);                     // Get single page
 
 // POST routes
 router.post("/", createPage);                        // Create new page
+router.post("/reorder", reorderPages);               // Reorder pages
 
 // PUT routes
 router.put("/:id", updatePage);                      // Update page

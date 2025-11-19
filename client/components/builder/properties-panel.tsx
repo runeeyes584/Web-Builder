@@ -6248,22 +6248,14 @@ export function PropertiesPanel({
                           key={selectedElement.props?.images?.length || 0}
                           onChange={(e) => {
                             const files = Array.from(e.target.files || [])
-                            console.log('Files selected:', files.length, files)
                             if (files.length > 0) {
-                              const imageUrls = files.map(file => {
-                                const url = URL.createObjectURL(file)
-                                console.log('Created blob URL:', url, 'for file:', file.name)
-                                return url
-                              })
+                              const imageUrls = files.map(file => URL.createObjectURL(file))
                               const imageNames = files.map(file => file.name)
-                              console.log('Updating element props with:', { imageUrls, imageNames })
                               updateElementProps({ 
                                 images: imageUrls,
                                 imageNames: imageNames,
                                 imageCount: files.length
                               })
-                            } else {
-                              console.log('No files selected')
                             }
                           }}
                           className="hidden"

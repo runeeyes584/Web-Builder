@@ -10,6 +10,7 @@ import { CollaborativeCursor } from "./collaborative-cursor"
 
 interface CollaborativeCanvasProps {
   projectId: string | null
+  pageId?: string
   canEdit?: boolean
   elements: any[]
   selectedElements: string[]
@@ -37,6 +38,7 @@ interface CollaborativeCanvasProps {
 
 export function CollaborativeCanvas({ 
   projectId,
+  pageId,
   canEdit = true,
   elements,
   selectedElements,
@@ -97,6 +99,7 @@ export function CollaborativeCanvas({
     projectId,
     clerkId: user?.id || "",
     username: username.current,
+    pageId,
     enabled: !!projectId && !!user,
   })
 
@@ -298,12 +301,12 @@ export function CollaborativeCanvas({
       const x = e.clientX - rect.left
       const y = e.clientY - rect.top
 
-      sendCursorPosition(x, y)
+      sendCursorPosition(x, y, undefined, pageId)
     }
 
     document.addEventListener("mousemove", handleMouseMove)
     return () => document.removeEventListener("mousemove", handleMouseMove)
-  }, [projectId, sendCursorPosition])
+  }, [projectId, pageId, sendCursorPosition])
 
   if (!mounted) {
     return null
@@ -321,9 +324,9 @@ export function CollaborativeCanvas({
         </div>
       )}
 
-      {/* Collaborative cursors - filter out current user */}
+      {/* Collaborative cursors - filter out current user and users on different pages */}
       <CollaborativeCursor 
-        users={activeUsers.filter(u => u.clerkId !== user?.id)} 
+        users={activeUsers.filter(u => u.clerkId !== user?.id && u.pageId === pageId)} 
         containerRef={canvasRef} 
       />
 

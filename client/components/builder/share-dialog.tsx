@@ -17,7 +17,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Copy, Crown, Edit3, Eye, Mail, Users, X } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Copy, Crown, Edit3, Eye, Globe, Mail, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -40,6 +41,8 @@ interface ShareDialogProps {
   projectName: string;
   isOwner: boolean;
   currentUserClerkId: string;
+  isPublic?: boolean;
+  onPublicChange?: (isPublic: boolean) => void;
 }
 
 export function ShareDialog({
@@ -49,12 +52,20 @@ export function ShareDialog({
   projectName,
   isOwner,
   currentUserClerkId,
+  isPublic = false,
+  onPublicChange,
 }: ShareDialogProps) {
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor');
   const [isLoading, setIsLoading] = useState(false);
   const [shareLink, setShareLink] = useState('');
+  const [localIsPublic, setLocalIsPublic] = useState(isPublic);
+
+  // Sync local state with prop
+  useEffect(() => {
+    setLocalIsPublic(isPublic);
+  }, [isPublic]);
 
   // Load collaborators when dialog opens
   useEffect(() => {
@@ -108,14 +119,17 @@ export function ShareDialog({
       }
 
       const data = await response.json();
-      console.log('✅ Response data:', data);
 
       if (data.success) {
         toast.success(`Invitation sent to ${inviteEmail}`);
         setInviteEmail('');
         const link = `${window.location.origin}/invite/${data.data.token}`;
         setShareLink(link);
-        console.log('🔗 Share link generated:', link);
+        
+        // Auto-enable public sharing when first invitation is sent
+        if (!localIsPublic) {
+          await handleTogglePublic(true);
+        }
       } else {
         toast.error(data.message || 'Failed to send invitation');
       }
@@ -132,6 +146,28 @@ export function ShareDialog({
     if (shareLink) {
       navigator.clipboard.writeText(shareLink);
       toast.success('Link copied to clipboard');
+    }
+  };
+
+  // Toggle public visibility
+  const handleTogglePublic = async (checked: boolean) => {
+    try {
+      const { projectsApi } = await import('@/api/projects.api');
+      
+      const response = await projectsApi.update(projectId, {
+        is_public: checked,
+      });
+
+      if (response.success) {
+        setLocalIsPublic(checked);
+        onPublicChange?.(checked);
+        toast.success(checked ? 'Project is now public' : 'Project is now private');
+      } else {
+        toast.error('Failed to update project visibility');
+      }
+    } catch (error) {
+      console.error('Error updating project visibility:', error);
+      toast.error('Failed to update project visibility');
     }
   };
 
@@ -233,6 +269,25 @@ export function ShareDialog({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Public Sharing Toggle - ONLY for owners */}
+          {isOwner && (
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center gap-3">
+                <Globe className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Public Project</p>
+                  <p className="text-xs text-muted-foreground">
+                    Anyone with the link can view this project
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={localIsPublic}
+                onCheckedChange={handleTogglePublic}
+              />
+            </div>
+          )}
+
           {/* Invite Section - ONLY for owners */}
           {isOwner && (
             <div className="space-y-3">
