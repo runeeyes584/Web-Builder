@@ -605,10 +605,10 @@ export default function WebsiteBuilder() {
         {!showLeftSidebar && (
           <button
             onClick={() => setShowLeftSidebar(true)}
-            className="absolute top-4 left-0 z-50 w-7 h-14 flex items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary hover:to-primary/90 border border-l-0 border-primary/30 shadow-xl hover:shadow-2xl hover:scale-110 text-primary-foreground hover:text-white transition-all duration-300"
+            className="absolute top-4 left-0 z-50 w-4 h-20 flex items-center justify-center bg-[#27408B] hover:bg-[#1e3270] border border-l-0 border-primary/30 shadow-xl hover:shadow-2xl hover:w-8 text-primary-foreground hover:text-white transition-all duration-300 rounded-r-md"
             title="Show Sidebar"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-80 hover:opacity-100">
               <path d="m9 18 6-6-6-6"/>
             </svg>
           </button>
@@ -617,10 +617,10 @@ export default function WebsiteBuilder() {
         {!showRightSidebar && (
           <button
             onClick={() => setShowRightSidebar(true)}
-            className="absolute top-4 right-0 z-50 w-7 h-14 flex items-center justify-center rounded-full bg-gradient-to-l from-primary to-primary/80 hover:from-primary hover:to-primary/90 border border-r-0 border-primary/30 shadow-xl hover:shadow-2xl hover:scale-110 text-primary-foreground hover:text-white transition-all duration-300"
+            className="absolute top-4 right-0 z-40 w-4 h-20 flex items-center justify-center bg-[#27408B] hover:bg-[#1e3270] border border-r-0 border-primary/30 shadow-xl hover:shadow-2xl hover:w-8 text-primary-foreground hover:text-white transition-all duration-300 rounded-l-md"
             title="Show Properties"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-80 hover:opacity-100">
               <path d="m15 18-6-6 6-6"/>
             </svg>
           </button>
@@ -634,10 +634,10 @@ export default function WebsiteBuilder() {
                 {/* Collapse Button - Outside Edge */}
                 <button
                   onClick={() => setShowLeftSidebar(false)}
-                  className="absolute top-4 -right-3 z-50 w-6 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/80 hover:from-primary hover:to-primary/90 border border-l-0 border-primary/30 shadow-lg hover:shadow-xl text-primary-foreground hover:text-white transition-all duration-300 hover:scale-110 hover:-right-2.5"
+                  className="absolute top-4 -right-1 z-50 w-4 h-20 flex items-center justify-center bg-[#27408B] hover:bg-[#1e3270] border border-primary/30 shadow-lg hover:shadow-xl text-primary-foreground hover:text-white transition-all duration-300 hover:w-8 hover:-right-3 rounded-md"
                   title="Hide Sidebar"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-80 hover:opacity-100">
                     <path d="m15 18-6-6 6-6"/>
                   </svg>
                 </button>
@@ -697,10 +697,10 @@ export default function WebsiteBuilder() {
 
           {/* Center Canvas */}
           <ResizablePanel defaultSize={60} minSize={30}>
-            <div className="h-full bg-canvas canvas-grid overflow-auto custom-scrollbar">
-              <div className="min-h-full flex items-start justify-center p-8">
+            <div className="h-full bg-canvas canvas-grid overflow-hidden relative">
+              <div className="h-full flex items-start justify-center p-8">
                 <div
-                  className={`${breakpointWidths[currentBreakpoint]} transition-all duration-300 bg-card border border-border rounded-lg shadow-lg min-h-[600px]`}
+                  className={`${breakpointWidths[currentBreakpoint]} transition-all duration-300 bg-card border border-border rounded-lg shadow-lg min-h-[600px] h-full max-h-full overflow-auto custom-scrollbar`}
                 >
                   <CollaborativeCanvas
                     projectId={currentProjectId || null}
@@ -751,18 +751,18 @@ export default function WebsiteBuilder() {
               <ResizableHandle withHandle className="bg-sidebar-border" />
 
               {/* Right Sidebar - resizable */}
-              <ResizablePanel defaultSize={20} minSize={12} maxSize={35} className="min-w-[240px] relative group">
+              <ResizablePanel defaultSize={20} minSize={12} maxSize={35} className="min-w-[240px] relative group -ml-2 z-[60]">
                 {/* Collapse Button - Outside Edge */}
                 <button
                   onClick={() => setShowRightSidebar(false)}
-                  className="absolute top-4 -left-3 z-50 w-6 h-10 flex items-center justify-center rounded-full bg-gradient-to-bl from-primary to-primary/80 hover:from-primary hover:to-primary/90 border border-r-0 border-primary/30 shadow-lg hover:shadow-xl text-primary-foreground hover:text-white transition-all duration-300 hover:scale-110 hover:-left-2.5"
+                  className="absolute top-4 -left-1 z-[65] w-4 h-20 flex items-center justify-center bg-[#27408B] hover:bg-[#1e3270] border border-primary/30 shadow-lg hover:shadow-xl text-primary-foreground hover:text-white transition-all duration-300 hover:w-8 rounded-md"
                   title="Hide Properties"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-80 hover:opacity-100">
                     <path d="m9 18 6-6-6-6"/>
                   </svg>
                 </button>
-                <div className="h-full bg-sidebar border-l border-sidebar-border">
+                <div className="h-full bg-sidebar border-l border-sidebar-border pl-7">
 
                   <PropertiesPanel
                     selectedElements={selectedElements}
