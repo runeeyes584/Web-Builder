@@ -398,6 +398,9 @@ export function Canvas({
   const [submergedSectionIndex, setSubmergedSectionIndex] = useState<number | null>(null)
   const [isHeaderSubmerged, setIsHeaderSubmerged] = useState(false)
   const [isFooterSubmerged, setIsFooterSubmerged] = useState(false)
+  
+  // Track if context menu is currently open to prevent exiting interactive mode
+  const contextMenuOpenRef = useRef(false)
 
   // Helper function to determine which region an element belongs to based on its Y position
   const getElementRegion = useCallback((elementY: number): { type: 'header' | 'section' | 'footer', sectionIndex?: number, regionTop: number, regionHeight: number } => {
@@ -3082,6 +3085,12 @@ export function Canvas({
   }
 
   const handleCanvasClick = () => {
+    // Don't exit interactive mode if context menu was just open
+    if (contextMenuOpenRef.current) {
+      contextMenuOpenRef.current = false
+      return
+    }
+    
     onElementSelect("")
     setFocusedRegion(null)
     setFocusedSectionIndex(null)
@@ -8420,6 +8429,7 @@ export function Canvas({
               footer: { top: headerHeight + totalSectionsHeight, height: footerHeight }
             } : undefined}
             disabled={isPreviewMode || !canEdit}
+            contextMenuOpenRef={contextMenuOpenRef}
           >
             {renderElement(element)}
           </ElementContextMenu>

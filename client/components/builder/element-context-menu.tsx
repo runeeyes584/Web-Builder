@@ -51,8 +51,8 @@ interface ElementContextMenuProps {
     sections: { id: string; index: number; top: number; height: number }[]
     footer: { top: number; height: number }
   }
-  onStartRename?: (elementId: string) => void
   disabled?: boolean
+  contextMenuOpenRef?: React.MutableRefObject<boolean>
 }
 
 export function ElementContextMenu({
@@ -65,8 +65,8 @@ export function ElementContextMenu({
   onDeleteElement,
   onDuplicateElement,
   regions,
-  onStartRename,
   disabled = false,
+  contextMenuOpenRef,
 }: ElementContextMenuProps) {
   const [scrollIndicators, setScrollIndicators] = useState<{
     showTop: boolean
@@ -333,6 +333,15 @@ export function ElementContextMenu({
           if (!selectedElements.includes(element.id)) {
             onElementSelect(element.id)
           }
+          // Mark that context menu is open
+          if (contextMenuOpenRef) {
+            contextMenuOpenRef.current = true
+          }
+        } else {
+          // Mark that context menu is closing
+          if (contextMenuOpenRef) {
+            contextMenuOpenRef.current = true
+          }
         }
       }}
     >
@@ -340,22 +349,22 @@ export function ElementContextMenu({
         {children}
       </ContextMenuTrigger>
       <ContextMenuContent 
-        className="w-56 max-h-[400px] overflow-hidden relative z-[200]"
+        className="w-56 max-h-[400px] overflow-hidden overflow-x-hidden relative z-[200]"
       >
-        {/* Scroll Indicator - Top */}
+        {/* Scroll Button - Top */}
         {scrollIndicators.showTop && (
-          <div 
-            className="sticky top-0 z-10 flex items-center justify-center bg-gradient-to-b from-popover to-transparent h-8 cursor-pointer hover:bg-accent/50 transition-colors"
-            onMouseEnter={scrollUp}
+          <button 
+            className="sticky top-0 z-10 w-full flex items-center justify-center bg-gradient-to-b from-popover to-transparent h-8 hover:bg-accent/50 transition-colors"
+            onClick={scrollUp}
           >
-            <ChevronUp className="w-4 h-4 text-muted-foreground animate-bounce" />
-          </div>
+            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+          </button>
         )}
 
         {/* Scrollable Content */}
         <div
           ref={setContentRef}
-          className="max-h-[336px] overflow-y-auto"
+          className="max-h-[336px] overflow-y-auto overflow-x-hidden"
           onScroll={checkScrollPosition}
         >
           {/* Arrange Submenu */}
@@ -428,35 +437,24 @@ export function ElementContextMenu({
             <ContextMenuSubContent className="w-48 z-[250]">
               <ContextMenuItem onClick={() => rotateElement(90)}>
                 <RotateCw className="w-4 h-4 mr-2" />
-                Rotate 90° CW
+                Rotate +90° 
               </ContextMenuItem>
               <ContextMenuItem onClick={() => rotateElement(-90)}>
                 <RotateCcw className="w-4 h-4 mr-2" />
-                Rotate 90° CCW
+                Rotate 90° 
               </ContextMenuItem>
               <ContextMenuItem onClick={() => rotateElement(45)}>
                 <RotateCw className="w-4 h-4 mr-2" />
-                Rotate 45° CW
+                Rotate +45° 
               </ContextMenuItem>
               <ContextMenuItem onClick={() => rotateElement(-45)}>
                 <RotateCcw className="w-4 h-4 mr-2" />
-                Rotate 45° CCW
+                Rotate -45° 
               </ContextMenuItem>
             </ContextMenuSubContent>
           </ContextMenuSub>
 
           <ContextMenuSeparator />
-
-          {/* Rename */}
-          {onStartRename && (
-            <>
-              <ContextMenuItem onClick={() => onStartRename(element.id)}>
-                <Type className="w-4 h-4 mr-2" />
-                Rename
-              </ContextMenuItem>
-              <ContextMenuSeparator />
-            </>
-          )}
 
           {/* Visibility Toggle */}
           <ContextMenuItem onClick={toggleElementVisibility}>
@@ -508,14 +506,14 @@ export function ElementContextMenu({
           </ContextMenuItem>
         </div>
 
-        {/* Scroll Indicator - Bottom */}
+        {/* Scroll Button - Bottom */}
         {scrollIndicators.showBottom && (
-          <div 
-            className="sticky bottom-0 z-10 flex items-center justify-center bg-gradient-to-t from-popover to-transparent h-8 cursor-pointer hover:bg-accent/50 transition-colors"
-            onMouseEnter={scrollDown}
+          <button 
+            className="sticky bottom-0 z-10 w-full flex items-center justify-center bg-gradient-to-t from-popover to-transparent h-8 hover:bg-accent/50 transition-colors"
+            onClick={scrollDown}
           >
-            <ChevronDown className="w-4 h-4 text-muted-foreground animate-bounce" />
-          </div>
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          </button>
         )}
       </ContextMenuContent>
     </ContextMenu>

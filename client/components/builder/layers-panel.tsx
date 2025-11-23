@@ -92,40 +92,11 @@ export const LayersPanel = React.memo(function LayersPanel({
     })
   }, [])
 
-  // Rename function
-  const [renamingElementId, setRenamingElementId] = useState<string | null>(null)
-  const [renameValue, setRenameValue] = useState('')
-
-  const startRename = useCallback((elementId: string) => {
-    const element = elements.find(el => el.id === elementId)
-    if (element) {
-      setRenamingElementId(elementId)
-      setRenameValue(element.props?.name || element.type)
-    }
-  }, [elements])
-
-  const finishRename = useCallback((elementId: string) => {
-    if (renameValue.trim()) {
-      const element = elements.find(el => el.id === elementId)
-      if (element) {
-        onUpdateElement(elementId, {
-          props: {
-            ...element.props,
-            name: renameValue.trim(),
-          }
-        })
-      }
-    }
-    setRenamingElementId(null)
-    setRenameValue('')
-  }, [renameValue, elements, onUpdateElement])
-
   // Reusable LayerElementCard component with all actions
   const LayerElementCard = useCallback(({ element }: { element: BuilderElement }) => {
     const isSelected = selectedElements.includes(element.id)
     const isHidden = element.styles.display === "none"
     const isLocked = element.props?.locked || false
-    const isRenaming = renamingElementId === element.id
     const displayName = element.props?.name || element.type
 
     return (
@@ -136,7 +107,7 @@ export const LayersPanel = React.memo(function LayersPanel({
             ? "bg-primary/20 border-primary/50 ring-1 ring-primary/30"
             : "hover:bg-sidebar-accent/50 border-sidebar-border/50"
         }`}
-        onClick={() => !isRenaming && onElementSelect(element.id)}
+        onClick={() => onElementSelect(element.id)}
       >
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 bg-primary/20 rounded flex items-center justify-center">
@@ -146,40 +117,19 @@ export const LayersPanel = React.memo(function LayersPanel({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              {isRenaming ? (
-                <Input
-                  value={renameValue}
-                  onChange={(e) => setRenameValue(e.target.value)}
-                  onBlur={() => finishRename(element.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') finishRename(element.id)
-                    if (e.key === 'Escape') {
-                      setRenamingElementId(null)
-                      setRenameValue('')
-                    }
-                    e.stopPropagation()
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="h-6 text-sm px-2"
-                  autoFocus
-                />
-              ) : (
-                <span
-                  className={`text-sm font-medium ${
-                    isHidden ? "text-muted-foreground line-through" : "text-sidebar-foreground"
-                  }`}
-                >
-                  {displayName}
-                </span>
-              )}
+              <span
+                className={`text-sm font-medium ${
+                  isHidden ? "text-muted-foreground line-through" : "text-sidebar-foreground"
+                }`}
+              >
+                {displayName}
+              </span>
               {isHidden && <EyeOff className="w-3 h-3 text-muted-foreground" />}
               {isLocked && <Lock className="w-3 h-3 text-muted-foreground" />}
             </div>
-            {!isRenaming && (
-              <p className="text-xs text-muted-foreground truncate">
-                {element.content || "Empty element"}
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground truncate">
+              {element.content || "Empty element"}
+            </p>
           </div>
           <div className="flex items-center gap-1">
             {/* Quick action buttons with enhanced hover effects */}
@@ -377,19 +327,6 @@ export const LayersPanel = React.memo(function LayersPanel({
 
                 <DropdownMenuSeparator />
 
-                {/* Rename */}
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    startRename(element.id)
-                  }}
-                >
-                  <Type className="w-4 h-4 mr-2" />
-                  Rename
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-
                 {/* Existing actions */}
                 <DropdownMenuItem
                   onClick={(e) => {
@@ -454,7 +391,7 @@ export const LayersPanel = React.memo(function LayersPanel({
         </div>
       </Card>
     )
-  }, [selectedElements, onElementSelect, toggleElementVisibility, toggleElementLock, onDuplicateElement, onDeleteElement, renamingElementId, renameValue, setRenameValue, finishRename, startRename, bringToFront, moveElementForward, moveElementBackward, sendToBack, alignElement, rotateElement])
+  }, [selectedElements, onElementSelect, toggleElementVisibility, toggleElementLock, onDuplicateElement, onDeleteElement, bringToFront, moveElementForward, moveElementBackward, sendToBack, alignElement, rotateElement])
 
   // Helper to group elements by region using the passed layout - memoized để tránh tính toán lại
   const grouped = useMemo(() => {
