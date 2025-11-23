@@ -27,7 +27,7 @@ const deepCloneElement = (el: BuilderElement): BuilderElement => {
 
 export function useBuilderState() {
   const { user } = useUser()
-  
+
   // Multi-page state
   const [pages, setPages] = useState<BuilderPage[]>([
     {
@@ -67,14 +67,14 @@ export function useBuilderState() {
   ])
   const [activePageId, setActivePageId] = useState<string>(pages[0].id)
   const [currentPageId, setCurrentPageId] = useState<string | null>(null)
-  
+
   // Track last action to prevent duplicates
   const lastActionRef = useRef<{ action: string; elementId: string; timestamp: number } | null>(null)
-  
+
   // Get current active page
   const activePage = pages.find(p => p.id === activePageId)
   const elements = activePage?.elements || []
-  
+
   // Debounce timers
   const moveDebounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   const updateDebounceTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -129,11 +129,17 @@ export function useBuilderState() {
       return
     }
 
+    // Skip saving for temporary pages (not yet saved to database)
+    // Temporary page IDs start with 'page-', database IDs are ObjectId format
+    if (currentPageId.startsWith('page-')) {
+      return
+    }
+
     // Prevent duplicate saves within 1 second
     const now = Date.now()
     const lastAction = lastActionRef.current
     const elementId = componentSnapshot?.id || 'unknown'
-    
+
     if (
       lastAction &&
       lastAction.action === action &&
@@ -162,7 +168,7 @@ export function useBuilderState() {
     setPages((prevPages) => {
       return prevPages.map(page => {
         if (page.id !== activePageId) return page
-        
+
         const basePosition = element.position || { x: 100, y: 100, width: 200, height: 50 }
         const mergedPosition = position ? { ...basePosition, ...position } : basePosition
         const newElement = {
@@ -170,17 +176,17 @@ export function useBuilderState() {
           position: mergedPosition,
         }
         const newElements = [...page.elements, newElement]
-        
+
         // Save to local history (for Undo/Redo) với giới hạn kích thước
         setHistory((hist) => {
           const newHistory = [...hist.slice(0, historyIndex + 1), newElements]
           return addToHistory(newHistory)
         })
         setHistoryIndex((idx) => idx + 1)
-        
+
         // Save to database (async, non-blocking)
         saveActionToDB('ADD', newElement)
-        
+
         return { ...page, elements: newElements }
       })
     })
@@ -190,7 +196,7 @@ export function useBuilderState() {
     setPages((prevPages) => {
       return prevPages.map(page => {
         if (page.id !== activePageId) return page
-        
+
         const newElements = page.elements.map((el) => {
           if (el.id === id) {
             // Deep merge to avoid shared references
@@ -207,28 +213,28 @@ export function useBuilderState() {
               animations: updates.animations ? { ...el.animations, ...updates.animations } : el.animations,
               props: updates.props ? { ...el.props, ...updates.props } : el.props,
             };
-            
+
             // Debounce UPDATE action (chỉ save sau 1 giây không có changes nữa)
             if (updateDebounceTimerRef.current) {
               clearTimeout(updateDebounceTimerRef.current)
             }
-            
+
             updateDebounceTimerRef.current = setTimeout(() => {
               saveActionToDB('UPDATE', updated)
             }, 1000) // Đợi 1 giây sau khi user ngừng gõ
-            
+
             return updated;
           }
           return el;
         });
-        
+
         // Save to local history (ngay lập tức cho Undo/Redo) với giới hạn kích thước
         setHistory((hist) => {
           const newHistory = [...hist.slice(0, historyIndex + 1), newElements]
           return addToHistory(newHistory)
         })
         setHistoryIndex((idx) => idx + 1)
-        
+
         return { ...page, elements: newElements }
       })
     })
@@ -239,7 +245,7 @@ export function useBuilderState() {
       setPages((prevPages) =>
         prevPages.map(page => {
           if (page.id !== activePageId) return page
-          
+
           return {
             ...page,
             elements: page.elements.map((el) => {
@@ -268,23 +274,23 @@ export function useBuilderState() {
     setPages((prevPages) => {
       return prevPages.map(page => {
         if (page.id !== activePageId) return page
-        
+
         // Get element before deleting (để lưu vào history)
         const deletedElement = page.elements.find((el) => el.id === id)
         const newElements = page.elements.filter((el) => el.id !== id)
-        
+
         // Save to local history với giới hạn kích thước
         setHistory((hist) => {
           const newHistory = [...hist.slice(0, historyIndex + 1), newElements]
           return addToHistory(newHistory)
         })
         setHistoryIndex((idx) => idx + 1)
-        
+
         // Save to database (async)
         if (deletedElement) {
           saveActionToDB('DELETE', deletedElement)
         }
-        
+
         return { ...page, elements: newElements }
       })
     })
@@ -296,27 +302,27 @@ export function useBuilderState() {
       setPages((prevPages) => {
         return prevPages.map(page => {
           if (page.id !== activePageId) return page
-          
+
           const element = page.elements.find((el) => el.id === id)
           if (!element) return page
-          
+
           const newElement = {
             ...element,
             id: `${element.id}-copy-${Date.now()}`,
           }
-          
+
           const newElements = [...page.elements, newElement]
-          
+
           // Save to local history với giới hạn kích thước
           setHistory((hist) => {
             const newHistory = [...hist.slice(0, historyIndex + 1), newElements]
             return addToHistory(newHistory)
           })
           setHistoryIndex((idx) => idx + 1)
-          
+
           // Save to database (async)
           saveActionToDB('DUPLICATE', newElement)
-          
+
           return { ...page, elements: newElements }
         })
       })
@@ -329,32 +335,32 @@ export function useBuilderState() {
       setPages((prevPages) => {
         return prevPages.map(page => {
           if (page.id !== activePageId) return page
-          
+
           const newElements = page.elements.map((el) => {
             if (el.id === id) {
               const movedElement = { ...el, position: { ...el.position, ...position } }
-              
+
               // Debounce MOVE action (chỉ save sau 500ms không có movement nữa)
               if (moveDebounceTimerRef.current) {
                 clearTimeout(moveDebounceTimerRef.current)
               }
-              
+
               moveDebounceTimerRef.current = setTimeout(() => {
                 saveActionToDB('MOVE', movedElement)
               }, 500) // Đợi 500ms sau khi user ngừng drag
-              
+
               return movedElement
             }
             return el
           })
-          
+
           // Save to local history với giới hạn kích thước
           setHistory((hist) => {
             const newHistory = [...hist.slice(0, historyIndex + 1), newElements]
             return addToHistory(newHistory)
           })
           setHistoryIndex((idx) => idx + 1)
-          
+
           return { ...page, elements: newElements }
         })
       })
@@ -371,10 +377,10 @@ export function useBuilderState() {
       const newIndex = historyIndex - 1
       setHistoryIndex(newIndex)
       const historyElements = history[newIndex]
-      
+
       // Deep clone to avoid shared references
       const newElements = historyElements.map(deepCloneElement)
-      
+
       setPages((prevPages) =>
         prevPages.map(page =>
           page.id === activePageId ? { ...page, elements: newElements } : page
@@ -388,10 +394,10 @@ export function useBuilderState() {
       const newIndex = historyIndex + 1
       setHistoryIndex(newIndex)
       const historyElements = history[newIndex]
-      
+
       // Deep clone to avoid shared references
       const newElements = historyElements.map(deepCloneElement)
-      
+
       setPages((prevPages) =>
         prevPages.map(page =>
           page.id === activePageId ? { ...page, elements: newElements } : page
@@ -402,10 +408,10 @@ export function useBuilderState() {
 
   const saveToHistory = useCallback(() => {
     const currentElements = pages.find(p => p.id === activePageId)?.elements || []
-    
+
     // Deep clone before saving to history
     const clonedElements = currentElements.map(deepCloneElement)
-    
+
     setHistory((prev) => {
       const newHistory = [...prev.slice(0, historyIndex + 1), clonedElements]
       return addToHistory(newHistory)
@@ -425,19 +431,19 @@ export function useBuilderState() {
       } : undefined,
       metadata: page.metadata ? { ...page.metadata } : undefined,
     }))
-    
+
     setPages(clonedPages)
     setActivePageId(clonedPages[0]?.id || '')
     setSelectedElements([])
     setHistory([clonedPages[0]?.elements || []])
     setHistoryIndex(0)
-    
+
     // Set pageId để có thể save history
     if (clonedPages[0]?.id) {
       setCurrentPageId(clonedPages[0].id)
     }
   }, [])
-  
+
   // Page management functions
   const addPage = useCallback((name: string, metadata?: PageMetadata) => {
     const newPage: BuilderPage = {
@@ -447,21 +453,21 @@ export function useBuilderState() {
       order: pages.length,
       metadata: metadata || { title: name },
     }
-    
+
     setPages(prev => [...prev, newPage])
     setActivePageId(newPage.id)
     setCurrentPageId(newPage.id)
     setHistory([[]])
     setHistoryIndex(0)
   }, [pages.length])
-  
+
   const deletePage = useCallback(async (pageId: string) => {
     // Delete from database first if it's a saved page (not a temporary page)
     if (!pageId.startsWith('page-')) {
       try {
         const { pagesApi } = await import('@/api/pages.api')
         const result = await pagesApi.delete(pageId)
-        
+
         if (!result.success) {
           console.error('Failed to delete page from database:', result.message)
           throw new Error(result.message || 'Failed to delete page')
@@ -477,7 +483,7 @@ export function useBuilderState() {
       // Reorder after delete
       return filtered.map((p, idx) => ({ ...p, order: idx }))
     })
-    
+
     // Switch to another page if current page is deleted
     if (pageId === activePageId) {
       const remainingPages = pages.filter(p => p.id !== pageId)
@@ -487,11 +493,11 @@ export function useBuilderState() {
       }
     }
   }, [pages, activePageId])
-  
+
   const duplicatePage = useCallback((pageId: string) => {
     const pageToDuplicate = pages.find(p => p.id === pageId)
     if (!pageToDuplicate) return
-    
+
     // Deep clone function for duplication with new IDs
     const deepCloneElementWithNewId = (el: BuilderElement): BuilderElement => {
       const cloned = deepCloneElement(el)
@@ -501,7 +507,7 @@ export function useBuilderState() {
         children: cloned.children ? cloned.children.map(deepCloneElementWithNewId) : undefined,
       }
     }
-    
+
     const newPage: BuilderPage = {
       ...pageToDuplicate,
       id: `page-${Date.now()}`,
@@ -518,18 +524,18 @@ export function useBuilderState() {
       // Deep clone metadata if exists
       metadata: pageToDuplicate.metadata ? { ...pageToDuplicate.metadata } : undefined,
     }
-    
+
     setPages(prev => [...prev, newPage])
     setActivePageId(newPage.id)
     setCurrentPageId(newPage.id)
   }, [pages])
-  
+
   const renamePage = useCallback(async (pageId: string, newName: string) => {
     // Update local state immediately for better UX
     setPages(prev =>
       prev.map(p => p.id === pageId ? { ...p, name: newName } : p)
     )
-    
+
     // Save to database only if page exists in DB (not temporary ID)
     // Temporary IDs start with "page-", DB IDs are ObjectId format
     if (!pageId.startsWith('page-')) {
@@ -542,21 +548,21 @@ export function useBuilderState() {
       }
     }
   }, [])
-  
+
   const switchPage = useCallback((pageId: string) => {
     const page = pages.find(p => p.id === pageId)
     if (!page) return
-    
+
     // Deep clone elements before setting to history to avoid shared references
     const clonedElements = page.elements.map(deepCloneElement)
-    
+
     setActivePageId(pageId)
     setCurrentPageId(pageId)
     setSelectedElements([])
     setHistory([clonedElements])
     setHistoryIndex(0)
   }, [pages])
-  
+
   const updatePageMetadata = useCallback((pageId: string, metadata: PageMetadata) => {
     setPages(prev =>
       prev.map(p => p.id === pageId ? { ...p, metadata: { ...p.metadata, ...metadata } } : p)

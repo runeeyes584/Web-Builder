@@ -5,7 +5,7 @@ import type { Breakpoint } from "@/lib/builder-types"
 import { useUser } from "@clerk/nextjs"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ActiveUsers } from "./active-users"
-import { Canvas } from "./canvas"
+import { BuilderCanvas as Canvas } from "./canvas"
 import { CollaborativeCursor } from "./collaborative-cursor"
 
 interface CollaborativeCanvasProps {
@@ -38,7 +38,7 @@ interface CollaborativeCanvasProps {
   [key: string]: any
 }
 
-export function CollaborativeCanvas({ 
+export function CollaborativeCanvas({
   projectId,
   pageId,
   canEdit = true,
@@ -56,7 +56,7 @@ export function CollaborativeCanvas({
   onLayoutUpdate,
   onShowLeftSidebar,
   onSetActiveLeftPanel,
-  ...canvasProps 
+  ...canvasProps
 }: CollaborativeCanvasProps) {
   const { user } = useUser()
   const [mounted, setMounted] = useState(false)
@@ -67,7 +67,7 @@ export function CollaborativeCanvas({
   const onUpdateElementRef = useRef(onUpdateElement)
   const onUpdateElementPositionRef = useRef(onUpdateElementPosition)
   const onDeleteElementRef = useRef(onDeleteElement)
-  
+
   // Update refs when callbacks change
   useEffect(() => {
     onAddElementRef.current = onAddElement
@@ -78,7 +78,7 @@ export function CollaborativeCanvas({
 
   // Memoize username to prevent reconnections
   const username = useRef(user?.username || user?.emailAddresses[0]?.emailAddress || "Anonymous")
-  
+
   // Update username ref only if it was "Anonymous" and now we have real data
   useEffect(() => {
     if (user && username.current === "Anonymous") {
@@ -183,10 +183,10 @@ export function CollaborativeCanvas({
   // Wrap canvas callbacks to broadcast changes
   const handleAddElement = useCallback((element: any, position?: { x: number; y: number }) => {
     if (!canEdit) return;
-    
+
     // Apply locally first with position
     onAddElementRef.current?.(element, position)
-    
+
     // Broadcast to others
     if (projectId) {
       sendElementChange({
@@ -198,10 +198,10 @@ export function CollaborativeCanvas({
 
   const handleUpdateElement = useCallback((id: string, updates: any) => {
     if (!canEdit) return;
-    
+
     // Apply locally first
     onUpdateElementRef.current?.(id, updates)
-    
+
     // Broadcast to others
     if (projectId) {
       sendElementChange({
@@ -214,41 +214,41 @@ export function CollaborativeCanvas({
   // Throttle function to limit broadcast frequency
   const throttleTimers = useRef<Map<string, NodeJS.Timeout>>(new Map())
   const lastBroadcastTime = useRef<Map<string, number>>(new Map())
-  
+
   // Handle real-time drag movement (called on every mousemove during drag)
   const handleElementDragMove = useCallback((id: string, position: { x: number; y: number }) => {
     if (!canEdit || !projectId) return
-    
+
     // Throttle: only broadcast max once per 50ms per element
     const now = Date.now()
     const lastTime = lastBroadcastTime.current.get(id) || 0
-    
+
     if (now - lastTime < 50) {
       // Too soon, skip this update
       return
     }
-    
+
     lastBroadcastTime.current.set(id, now)
-    
+
     sendElementChange({
       action: 'move',
       element: { id, ...position },
     })
   }, [canEdit, projectId, sendElementChange])
-  
+
   const handleUpdateElementPosition = useCallback((id: string, position: any) => {
     if (!canEdit) return;
-    
+
     // Apply locally first (immediate UI update)
     onUpdateElementPositionRef.current?.(id, position)
-    
+
     // Broadcast final position after drag ends
     if (projectId) {
       sendElementChange({
         action: 'move',
         element: { id, ...position },
       })
-      
+
       // Clear throttle tracking
       lastBroadcastTime.current.delete(id)
     }
@@ -256,25 +256,56 @@ export function CollaborativeCanvas({
 
   const handleDeleteElement = useCallback((id: string) => {
     if (!canEdit) return;
-    
-    // Apply locally first
-    onDeleteElementRef.current?.(id)
-    
-    // Broadcast to others
-    if (projectId) {
-      sendElementChange({
-        action: 'delete',
-        element: { id },
+
+    // Find the element to be deleted
+    const elementToDelete = elements.find(el => el.id === id)
+
+    // List of IDs to delete (starting with the target element)
+    const idsToDelete = [id]
+
+    // If it's a section or card, find all elements inside it
+    if ((elementToDelete?.type === 'section' || elementToDelete?.type === 'card') && elementToDelete.position) {
+      const container = elementToDelete
+      const children = elements.filter(el => {
+        if (el.id === id) return false
+        if (!el.position) return false
+
+        // Check if element center is inside container
+        const elCenterX = el.position.x + (el.position.width || 0) / 2
+        const elCenterY = el.position.y + (el.position.height || 0) / 2
+
+        return (
+          elCenterX >= container.position!.x &&
+          elCenterX <= container.position!.x + (container.position!.width || 0) &&
+          elCenterY >= container.position!.y &&
+          elCenterY <= container.position!.y + (container.position!.height || 0)
+        )
       })
+
+      children.forEach(child => idsToDelete.push(child.id))
     }
-  }, [canEdit, projectId, sendElementChange])
+
+    // Delete all identified elements
+    idsToDelete.forEach(deleteId => {
+      // Apply locally first
+      onDeleteElementRef.current?.(deleteId)
+
+      // Broadcast to others
+      if (projectId) {
+        sendElementChange({
+          action: 'delete',
+          element: { id: deleteId },
+        })
+      }
+    })
+  }, [canEdit, projectId, sendElementChange, elements])
 
   const handleDuplicateElement = useCallback((id: string) => {
     if (!canEdit) return;
-    
+
     // Apply locally first
     const newElement = onDuplicateElement?.(id)
-    
+
     // Broadcast to others
     if (projectId && newElement) {
       sendElementChange({
@@ -286,7 +317,7 @@ export function CollaborativeCanvas({
 
   // Track mouse movement with throttling
   const lastCursorUpdate = useRef<number>(0)
-  
+
   useEffect(() => {
     if (!projectId) return
 
@@ -321,21 +352,21 @@ export function CollaborativeCanvas({
       {/* Active users display */}
       {projectId && activeUsers.length > 0 && (
         <div className="absolute top-4 right-4 z-50">
-          <ActiveUsers 
-            users={activeUsers} 
+          <ActiveUsers
+            users={activeUsers}
             currentUserClerkId={user?.id || ""}
           />
         </div>
       )}
 
       {/* Collaborative cursors - filter out current user and users on different pages */}
-      <CollaborativeCursor 
-        users={activeUsers.filter(u => u.clerkId !== user?.id && u.pageId === pageId)} 
-        containerRef={canvasRef} 
+      <CollaborativeCursor
+        users={activeUsers.filter(u => u.clerkId !== user?.id && u.pageId === pageId)}
+        containerRef={canvasRef}
       />
 
       {/* Original canvas with collaborative callbacks */}
-      <Canvas 
+      <Canvas
         // Pass through all canvas props
         canEdit={canEdit}
         elements={elements}

@@ -86,7 +86,7 @@ export class CollaborationSocket {
             },
             select: { color: true },
           });
-          
+
           if (existingSession && existingSession.color) {
             color = existingSession.color; // Reuse existing color
             console.log(`Reusing color ${color} for user ${clerkId}`);
@@ -344,7 +344,12 @@ export class CollaborationSocket {
           },
         },
       });
-    } catch (error) {
+    } catch (error: any) {
+      // Ignore P2025 error (record not found) - session may have already been deleted
+      if (error.code === 'P2025') {
+        console.log(`Session already removed for user ${clerkId} in project ${projectId}`);
+        return;
+      }
       console.error('Error removing database session:', error);
     }
   }
@@ -353,7 +358,7 @@ export class CollaborationSocket {
     try {
       // Get users from in-memory sessions (real-time data)
       const activeUsers: any[] = [];
-      
+
       this.userSessions.forEach((session, socketId) => {
         if (session.projectId === projectId) {
           activeUsers.push({
