@@ -6050,6 +6050,17 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Container function</Label>
+                        <p className="text-[10px] text-muted-foreground">Hide default content</p>
+                      </div>
+                      <Switch
+                        checked={!!selectedElement.props?.hideDefaultContent}
+                        onCheckedChange={(checked) => updateElementProps({ hideDefaultContent: checked })}
+                        aria-label="Toggle hide default card content"
+                      />
+                    </div>
                   </div>
                 ) : selectedElement.type === "quote" ? (
                   <div className="space-y-3">

@@ -3573,8 +3573,8 @@ export function BuilderCanvas({
           {
             element.type === "card" && (
               <div className="text-card-foreground w-full h-full" style={elementStyles}>
-                {/* Only show default card content if card is empty (no other elements inside) */}
-                {!elements.some(el => el.id !== element.id && isElementInsideSection(el, element)) ? (
+                {/* Hiển thị nội dung mặc định nếu không bật chế độ container */}
+                {!element.props?.hideDefaultContent && (
                   <>
                     <h3
                       className="mb-2"
@@ -3611,7 +3611,7 @@ export function BuilderCanvas({
                       </button>
                     )}
                   </>
-                ) : null}
+                )}
               </div>
             )
           }
@@ -3974,7 +3974,7 @@ export function BuilderCanvas({
                           title="YouTube video player"
                         />
                         {/* Overlay to prevent iframe interaction in edit mode */}
-                        {!isPreviewMode && (
+                        {!element.props?.previewMode && (
                           <div
                             className="absolute inset-0 cursor-pointer"
                             style={{ pointerEvents: 'auto' }}
@@ -4000,7 +4000,7 @@ export function BuilderCanvas({
                           title="Vimeo video player"
                         />
                         {/* Overlay to prevent iframe interaction in edit mode */}
-                        {!isPreviewMode && (
+                        {!element.props?.previewMode && (
                           <div
                             className="absolute inset-0 cursor-pointer"
                             style={{ pointerEvents: 'auto' }}
@@ -4025,7 +4025,7 @@ export function BuilderCanvas({
                           title="Facebook video player"
                         />
                         {/* Overlay to prevent iframe interaction in edit mode */}
-                        {!isPreviewMode && (
+                        {!element.props?.previewMode && (
                           <div
                             className="absolute inset-0 cursor-pointer"
                             style={{ pointerEvents: 'auto' }}
@@ -4052,7 +4052,7 @@ export function BuilderCanvas({
                           Your browser does not support the video tag.
                         </video>
                         {/* Overlay to prevent video interaction in edit mode */}
-                        {!isPreviewMode && (
+                        {!element.props?.previewMode && (
                           <div
                             className="absolute inset-0 cursor-pointer"
                             style={{ pointerEvents: 'auto' }}
@@ -4079,7 +4079,7 @@ export function BuilderCanvas({
                           Your browser does not support the video tag.
                         </video>
                         {/* Overlay to prevent video interaction in edit mode */}
-                        {!isPreviewMode && (
+                        {!element.props?.previewMode && (
                           <div
                             className="absolute inset-0 cursor-pointer"
                             style={{ pointerEvents: 'auto' }}
