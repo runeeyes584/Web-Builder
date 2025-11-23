@@ -398,7 +398,7 @@ export function BuilderCanvas({
   const [submergedSectionIndex, setSubmergedSectionIndex] = useState<number | null>(null)
   const [isHeaderSubmerged, setIsHeaderSubmerged] = useState(false)
   const [isFooterSubmerged, setIsFooterSubmerged] = useState(false)
-  
+
   // Track if context menu is currently open to prevent exiting interactive mode
   const contextMenuOpenRef = useRef(false)
 
@@ -2307,7 +2307,7 @@ export function BuilderCanvas({
       }
       return elRegion.type === elementRegion.type
     })
-    const maxZIndex = elementsInRegion.length > 0 
+    const maxZIndex = elementsInRegion.length > 0
       ? Math.max(...elementsInRegion.map(el => el.props?.zIndex ?? 0), 0)
       : 0
 
@@ -2532,6 +2532,7 @@ export function BuilderCanvas({
   }
 
   // overlay uses `isOver` directly
+
   // Helper to check if an element is visually inside a section
   const isElementInsideSection = (element: BuilderElement, section: BuilderElement) => {
     if (!element.position || !section.position) return false
@@ -2557,7 +2558,7 @@ export function BuilderCanvas({
 
     const element = elements.find((el) => el.id === elementId)
     if (!element?.position) return
-    
+
     // Check if element is locked - prevent dragging if locked
     if (element.props?.locked) {
       e.preventDefault()
@@ -2853,7 +2854,7 @@ export function BuilderCanvas({
       'heading': { minWidth: 100, minHeight: 40 },
       'paragraph': { minWidth: 120, minHeight: 50 },
       'button': { minWidth: 80, minHeight: 36 },
-      'image': { minWidth: 60, minHeight: 60 },
+      'image': { minWidth: 20, minHeight: 20 },
       'card': { minWidth: 150, minHeight: 100 },
       'form': { minWidth: 200, minHeight: 150 },
       'input': { minWidth: 120, minHeight: 36 },
@@ -2878,7 +2879,8 @@ export function BuilderCanvas({
     let contentMinWidth = baseMinWidth
     let contentMinHeight = baseMinHeight
 
-    if (element.content && element.content.length > 0) {
+    // Skip content-based width calculation for images (content is URL, not display text)
+    if (element.content && element.content.length > 0 && element.type !== 'image') {
       // Estimate minimum width based on content length (rough approximation)
       const estimatedCharWidth = 8
       contentMinWidth = Math.min(300, Math.max(baseMinWidth, element.content.length * estimatedCharWidth))
@@ -2902,7 +2904,7 @@ export function BuilderCanvas({
     direction: "e" | "s" | "se" | "n" | "w" | "ne" | "nw" | "sw"
   ) => {
     if (!canEdit) return // Block resizing for viewers
-    
+
     // Check if element is locked - prevent resizing if locked
     const element = elements.find((el) => el.id === elementId)
     if (!element?.position) return
@@ -2911,10 +2913,10 @@ export function BuilderCanvas({
       e.stopPropagation()
       return
     }
-    
+
     e.preventDefault()
     e.stopPropagation()
-    
+
     setIsResizing(elementId)
     const startPos = { ...element.position }
     if (!canvasEl) return
@@ -3033,7 +3035,7 @@ export function BuilderCanvas({
 
   const handleRotateMouseDown = (e: React.MouseEvent, elementId: string) => {
     if (!canEdit) return // Block rotating for viewers
-    
+
     // Check if element is locked - prevent rotating if locked
     const element = elements.find((el) => el.id === elementId)
     if (!element?.position) return
@@ -3042,10 +3044,10 @@ export function BuilderCanvas({
       e.stopPropagation()
       return
     }
-    
+
     e.preventDefault()
     e.stopPropagation()
-    
+
     setIsRotating(elementId)
 
     if (!canvasEl) return
@@ -3119,7 +3121,7 @@ export function BuilderCanvas({
       contextMenuOpenRef.current = false
       return
     }
-    
+
     onElementSelect("")
     setFocusedRegion(null)
     setFocusedSectionIndex(null)
@@ -3420,7 +3422,7 @@ export function BuilderCanvas({
     const elementStyles = getElementStyles(element)
     const position = element.position || { x: 0, y: 0, width: 200, height: 50 }
     const transient = transientRef.current.get(element.id)
-    
+
     // Check if element is hidden
     const isHidden = element.styles.display === "none"
     const isLocked = element.props?.locked || false
@@ -3441,7 +3443,6 @@ export function BuilderCanvas({
     const isActiveResize = isResizing === element.id
     const isActiveRotate = isRotating === element.id
 
-    
     // Compute effective z-index when dragging groups (so children stay visible above their container)
     const computedZIndex = (() => {
       const group = dragGroupRef.current
@@ -3511,7 +3512,7 @@ export function BuilderCanvas({
             </svg>
           </div>
         )}
-        
+
         {/* Element content */}
         <div
           className={`w-full h-full ${element.type === 'select' && element.props?.previewMode ? 'overflow-visible' : 'overflow-hidden'}`}
@@ -3526,1114 +3527,1163 @@ export function BuilderCanvas({
           )}
           {
             element.type === "paragraph" && (
-            <p className="text-card-foreground text-sm leading-tight" style={elementStyles}>
-              {element.content}
-            </p>
+              <p className="text-card-foreground text-sm leading-tight" style={elementStyles}>
+                {element.content}
+              </p>
             )
           }
           {
             element.type === "image" && (
-            <div
-              className="w-full h-full flex items-center justify-center overflow-hidden"
-              style={{
-                transform: `rotate(${element.props?.rotation || 0}deg)`,
-                borderRadius: elementStyles.borderRadius,
-              }}
-            >
-              <img
-                src={element.content || "/placeholder.svg"}
-                alt="Element"
-                className="max-w-full max-h-full object-contain"
-                style={elementStyles}
-              />
-            </div>
-          )}
-          {element.type === "button" && (
-            <button className="text-card-foreground w-full h-full hover:opacity-90 transition-opacity" style={elementStyles}>
-              {element.content}
-            </button>
-          )}
-          {element.type === "section" && (
-            <div className="text-card-foreground w-full h-full" style={elementStyles}>
-              {element.content}
-            </div>
-          )}
-          {element.type === "card" && (
-            <div className="text-card-foreground w-full h-full" style={elementStyles}>
-              <h3
-                className="mb-2"
-                style={{
-                  fontSize: element.props?.titleFontSize || "1.125rem",
-                  fontWeight: element.props?.titleFontWeight || "600",
-                  textAlign: element.props?.titleTextAlign || "left",
-                  fontFamily: element.props?.fontFamily || "inherit",
-                }}
-              >
-                {element.props?.title || "Card Title"}
-              </h3>
-              <p
-                className="text-sm text-muted-foreground"
-                style={{
-                  fontSize: element.props?.descriptionFontSize || "0.875rem",
-                  fontWeight: element.props?.descriptionFontWeight || "400",
-                  textAlign: element.props?.descriptionTextAlign || "left",
-                  fontFamily: element.props?.fontFamily || "inherit",
-                }}
-              >
-                {element.props?.description || element.content}
-              </p>
-              {element.props?.buttonText && (
-                <button
-                  className="mt-3 px-3 py-1 bg-primary text-primary-foreground text-xs rounded hover:opacity-90"
-                  style={{
-                    fontSize: element.props?.buttonFontSize || "0.75rem",
-                    fontWeight: element.props?.buttonFontWeight || "500",
-                    fontFamily: element.props?.fontFamily || "inherit",
-                  }}
-                >
-                  {element.props.buttonText}
-                </button>
-              )}
-            </div>
-          )}
-          {element.type === "quote" && (
-            <div className="text-card-foreground w-full h-full" style={elementStyles}>
-              <p
-                className="text-sm italic mb-2"
-                style={{
-                  fontSize: element.props?.fontSize || "0.875rem",
-                  fontWeight: element.props?.fontWeight || "400",
-                  textAlign: element.props?.textAlign || "left",
-                  fontFamily: element.props?.fontFamily || "inherit",
-                  fontStyle: element.props?.fontStyle || "italic",
-                }}
-              >
-                "{element.content}"
-              </p>
-              {element.props?.author && (
-                <p
-                  className="text-xs text-muted-foreground"
-                  style={{
-                    fontSize: element.props?.authorFontSize || "12px",
-                    fontWeight: element.props?.authorFontWeight || "400",
-                    textAlign: element.props?.textAlign || "left",
-                    fontFamily: element.props?.fontFamily || "inherit",
-                  }}
-                >
-                  — {element.props.author} —
-                </p>
-              )}
-            </div>
-          )}
-          {element.type === "separator" && (
-            <div
-              className="w-full flex items-center justify-center"
-              style={{
-                ...elementStyles,
-                height: element.props?.orientation === "vertical" ? "100%" : element.props?.thickness || "2px",
-                minHeight: element.props?.orientation === "vertical" ? "100%" : element.props?.thickness || "2px",
-              }}
-            >
               <div
-                className="bg-gray-500"
+                className="w-full h-full flex items-center justify-center overflow-hidden"
                 style={{
-                  height: element.props?.orientation === "vertical" ? "100%" : element.props?.thickness || "2px",
-                  width: element.props?.orientation === "vertical" ? element.props?.thickness || "2px" : "100%",
-                  borderStyle: element.props?.separatorStyle || "solid",
-                  borderWidth: element.props?.separatorStyle !== "solid" ? "1px" : "0",
-                  borderColor: element.props?.separatorStyle !== "solid" ? "currentColor" : "transparent",
-                  backgroundColor: element.styles?.backgroundColor || "#6b7280",
-                  minHeight: "2px",
-                  minWidth: "2px",
-                }}
-              ></div>
-            </div>
-          )}
-          {element.type === "list" && (
-            <div className="text-card-foreground w-full h-full" style={elementStyles}>
-              {element.props?.title && (
-                <h3
-                  className="mb-3"
-                  style={{
-                    fontSize: element.props?.titleFontSize || "1.125rem",
-                    fontWeight: element.props?.titleFontWeight || "600",
-                    textAlign: element.props?.titleTextAlign || "left",
-                    fontFamily: element.props?.fontFamily || "inherit",
-                    fontStyle: element.props?.titleFontStyle || "normal",
-                  }}
-                >
-                  {element.props.title}
-                </h3>
-              )}
-              {element.props?.listType === "ol" ? (
-                <ol
-                  className="space-y-1"
-                  style={{
-                    fontFamily: element.props?.fontFamily || "inherit",
-                    fontSize: element.props?.itemsFontSize || "0.875rem",
-                    fontWeight: element.props?.itemsFontWeight || "400",
-                    fontStyle: element.props?.itemsFontStyle || "normal",
-                    textAlign: element.props?.itemsTextAlign || "left",
-                  }}
-                >
-                  {(element.props?.listItems || element.content.split('\n')).map((item: string, index: number) => (
-                    <li key={index} className="flex items-center">
-                      <span className="mr-2 font-medium">{index + 1}.</span>
-                      {item.replace('• ', '')}
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <ul
-                  className="space-y-1"
-                  style={{
-                    fontFamily: element.props?.fontFamily || "inherit",
-                    fontSize: element.props?.itemsFontSize || "0.875rem",
-                    fontWeight: element.props?.itemsFontWeight || "400",
-                    fontStyle: element.props?.itemsFontStyle || "normal",
-                    textAlign: element.props?.itemsTextAlign || "left",
-                  }}
-                >
-                  {(element.props?.listItems || element.content.split('\n')).map((item: string, index: number) => (
-                    <li key={index} className="flex items-center">
-                      <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
-                      {item.replace('• ', '')}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-          {element.type === "input" && (
-            <input
-              type="text"
-              placeholder={element.content}
-              className="w-full h-full bg-background text-foreground border border-border rounded-md px-3 py-2"
-              style={{
-                ...elementStyles,
-                fontFamily: element.props?.inputFontFamily === "default" || element.props?.inputFontFamily === "inherit" ? undefined : element.props?.inputFontFamily,
-                fontSize: element.props?.inputFontSize ? `${element.props.inputFontSize}px` : undefined,
-                fontWeight: element.props?.inputFontWeight || undefined,
-                color: element.props?.inputTextColor || undefined,
-              }}
-            />
-          )}
-          {element.type === "textarea" && (
-            <textarea
-              placeholder={element.content}
-              rows={element.props?.rows || 4}
-              className="w-full h-full bg-background text-foreground border border-border rounded-md px-3 py-2 resize-none"
-              style={{
-                ...elementStyles,
-                fontFamily: element.props?.textareaFontFamily === "default" || element.props?.textareaFontFamily === "inherit" ? undefined : element.props?.textareaFontFamily,
-                fontSize: element.props?.textareaFontSize ? `${element.props.textareaFontSize}px` : undefined,
-                fontWeight: element.props?.textareaFontWeight || undefined,
-                color: element.props?.textareaTextColor || undefined,
-              }}
-            />
-          )}
-          {element.type === "select" && (
-            <>
-              {/* Normal Mode: Interactive Select */}
-              {!element.props?.previewMode && (
-                <div className="w-full h-full flex items-center relative z-50" style={elementStyles}>
-                  <Select
-                    value={element.props?.selectedValue || element.props?.defaultValue || undefined}
-                    onValueChange={(value) => {
-                      // Update the selected value in element props
-                      onUpdateElement(element.id, {
-                        props: {
-                          ...element.props,
-                          selectedValue: value
-                        }
-                      })
-                    }}
-                    required={element.props?.required || false}
-                    disabled={element.props?.disabled || false}
-                  >
-                    <SelectTrigger
-                      className="w-full bg-background border-border hover:bg-accent"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                      }}
-                      style={{
-                        fontFamily: element.props?.placeholderFontFamily || undefined,
-                        fontSize: element.props?.placeholderFontSize ? `${element.props.placeholderFontSize}px` : undefined,
-                        fontWeight: element.props?.placeholderFontWeight || undefined,
-                        color: element.props?.placeholderTextColor || undefined,
-                      }}
-                    >
-                      <SelectValue placeholder={element.props?.placeholder || "Select..."} />
-                    </SelectTrigger>
-                    <SelectContent
-                      className="bg-background border-border z-[9999]"
-                      style={{
-                        fontFamily: element.props?.optionsFontFamily || undefined,
-                        fontSize: element.props?.optionsFontSize ? `${element.props.optionsFontSize}px` : undefined,
-                        fontWeight: element.props?.optionsFontWeight || undefined,
-                        color: element.props?.optionsTextColor || undefined,
-                      }}
-                    >
-                      {(element.props?.options || ["Option 1", "Option 2", "Option 3"]).map((option: string, index: number) => (
-                        <SelectItem key={index} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* Preview Mode: Always Visible Dropdown */}
-              {element.props?.previewMode && (
-                <div className="w-full h-full flex items-center relative" style={elementStyles}>
-                  <div className="w-full pointer-events-none">
-                    <div
-                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm flex items-center justify-between"
-                      style={{
-                        fontFamily: element.props?.placeholderFontFamily || undefined,
-                        fontSize: element.props?.placeholderFontSize ? `${element.props.placeholderFontSize}px` : undefined,
-                        fontWeight: element.props?.placeholderFontWeight || undefined,
-                        color: element.props?.placeholderTextColor || undefined,
-                      }}
-                    >
-                      <span>{element.props?.defaultValue || element.props?.placeholder || "Select..."}</span>
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-
-                    {/* Always visible dropdown */}
-                    <div
-                      className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-[200px] overflow-auto"
-                      style={{
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        fontFamily: element.props?.optionsFontFamily || undefined,
-                        fontSize: element.props?.optionsFontSize ? `${element.props.optionsFontSize}px` : undefined,
-                        fontWeight: element.props?.optionsFontWeight || undefined,
-                        color: element.props?.optionsTextColor || undefined,
-                      }}
-                    >
-                      {(element.props?.options || ["Option 1", "Option 2", "Option 3"]).map((option: string, index: number) => (
-                        <div
-                          key={index}
-                          className="px-3 py-2 hover:bg-accent cursor-pointer text-sm"
-                          style={{
-                            fontFamily: element.props?.optionsFontFamily || undefined,
-                            fontSize: element.props?.optionsFontSize ? `${element.props.optionsFontSize}px` : undefined,
-                            fontWeight: element.props?.optionsFontWeight || undefined,
-                            color: element.props?.optionsTextColor || undefined,
-                          }}
-                        >
-                          {option}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-          {element.type === "checkbox" && (
-            <div className="text-card-foreground w-full h-full flex items-center gap-2" style={elementStyles}>
-              <input type="checkbox" className="w-4 h-4" />
-              <span
-                className="text-sm"
-                style={{
-                  fontFamily: element.props?.checkboxFontFamily || undefined,
-                  fontSize: element.props?.checkboxFontSize ? `${element.props.checkboxFontSize}px` : undefined,
-                  fontWeight: element.props?.checkboxFontWeight || undefined,
-                  color: element.props?.checkboxTextColor || undefined,
+                  transform: `rotate(${element.props?.rotation || 0}deg)`,
+                  borderRadius: elementStyles.borderRadius,
                 }}
               >
-                {element.content}
-              </span>
-            </div>
-          )}
-          {element.type === "radio" && (
-            <div className="text-card-foreground w-full h-full flex items-center gap-2" style={elementStyles}>
-              <input
-                type="radio"
-                name={element.props?.groupName || "radio-group"}
-                className="w-4 h-4"
-                checked={element.props?.checked || false}
-                readOnly
-              />
-              <span
-                className="text-sm"
-                style={{
-                  fontFamily: element.props?.radioFontFamily || undefined,
-                  fontSize: element.props?.radioFontSize ? `${element.props.radioFontSize}px` : undefined,
-                  fontWeight: element.props?.radioFontWeight || undefined,
-                  color: element.props?.radioTextColor || undefined,
-                }}
-              >
-                {element.content}
-              </span>
-            </div>
-          )}
-          {element.type === "switch" && (
-            <div className="text-card-foreground w-full h-full flex items-center gap-2" style={elementStyles}>
-              <div
-                className={`w-10 h-6 rounded-full relative transition-colors ${element.props?.checked ? 'bg-primary' : 'bg-muted'}`}
-                style={{
-                  backgroundColor: element.props?.checked ? (element.props?.switchColor || '#3b82f6') : undefined,
-                }}
-              >
-                <div
-                  className="w-4 h-4 bg-white rounded-full absolute top-1 transition-transform"
+                <img
+                  src={element.content || "/placeholder.svg"}
+                  alt="Element"
+                  className="w-full h-full object-cover"
                   style={{
-                    transform: element.props?.checked ? 'translateX(20px)' : 'translateX(2px)',
+                    ...elementStyles,
+                    borderRadius: 'inherit',
                   }}
                 />
               </div>
-              <span
-                className="text-sm"
+            )
+          }
+          {
+            element.type === "button" && (
+              <button className="text-card-foreground w-full h-full hover:opacity-90 transition-opacity" style={elementStyles}>
+                {element.content}
+              </button>
+            )
+          }
+          {
+            element.type === "section" && (
+              <div className="text-card-foreground w-full h-full" style={elementStyles}>
+                {/* Only show content text if section is empty (no other elements inside) */}
+                {!elements.some(el => el.id !== element.id && isElementInsideSection(el, element)) && (
+                  element.content
+                )}
+              </div>
+            )
+          }
+          {
+            element.type === "card" && (
+              <div className="text-card-foreground w-full h-full" style={elementStyles}>
+                {/* Only show default card content if card is empty (no other elements inside) */}
+                {!elements.some(el => el.id !== element.id && isElementInsideSection(el, element)) ? (
+                  <>
+                    <h3
+                      className="mb-2"
+                      style={{
+                        fontSize: element.props?.titleFontSize || "1.125rem",
+                        fontWeight: element.props?.titleFontWeight || "600",
+                        textAlign: element.props?.titleTextAlign || "left",
+                        fontFamily: element.props?.fontFamily || "inherit",
+                      }}
+                    >
+                      {element.props?.title || "Card Title"}
+                    </h3>
+                    <p
+                      className="text-sm text-muted-foreground"
+                      style={{
+                        fontSize: element.props?.descriptionFontSize || "0.875rem",
+                        fontWeight: element.props?.descriptionFontWeight || "400",
+                        textAlign: element.props?.descriptionTextAlign || "left",
+                        fontFamily: element.props?.fontFamily || "inherit",
+                      }}
+                    >
+                      {element.props?.description || element.content}
+                    </p>
+                    {element.props?.buttonText && (
+                      <button
+                        className="mt-3 px-3 py-1 bg-primary text-primary-foreground text-xs rounded hover:opacity-90"
+                        style={{
+                          fontSize: element.props?.buttonFontSize || "0.75rem",
+                          fontWeight: element.props?.buttonFontWeight || "500",
+                          fontFamily: element.props?.fontFamily || "inherit",
+                        }}
+                      >
+                        {element.props.buttonText}
+                      </button>
+                    )}
+                  </>
+                ) : null}
+              </div>
+            )
+          }
+          {
+            element.type === "quote" && (
+              <div className="text-card-foreground w-full h-full" style={elementStyles}>
+                <p
+                  className="text-sm italic mb-2"
+                  style={{
+                    fontSize: element.props?.fontSize || "0.875rem",
+                    fontWeight: element.props?.fontWeight || "400",
+                    textAlign: element.props?.textAlign || "left",
+                    fontFamily: element.props?.fontFamily || "inherit",
+                    fontStyle: element.props?.fontStyle || "italic",
+                  }}
+                >
+                  "{element.content}"
+                </p>
+                {element.props?.author && (
+                  <p
+                    className="text-xs text-muted-foreground"
+                    style={{
+                      fontSize: element.props?.authorFontSize || "12px",
+                      fontWeight: element.props?.authorFontWeight || "400",
+                      textAlign: element.props?.textAlign || "left",
+                      fontFamily: element.props?.fontFamily || "inherit",
+                    }}
+                  >
+                    — {element.props.author} —
+                  </p>
+                )}
+              </div>
+            )
+          }
+          {
+            element.type === "separator" && (
+              <div
+                className="w-full flex items-center justify-center"
                 style={{
-                  fontFamily: element.props?.switchFontFamily || undefined,
-                  fontSize: element.props?.switchFontSize ? `${element.props.switchFontSize}px` : undefined,
-                  fontWeight: element.props?.switchFontWeight || undefined,
-                  color: element.props?.switchTextColor || undefined,
+                  ...elementStyles,
+                  height: element.props?.orientation === "vertical" ? "100%" : element.props?.thickness || "2px",
+                  minHeight: element.props?.orientation === "vertical" ? "100%" : element.props?.thickness || "2px",
+                }}
+              >
+                <div
+                  className="bg-gray-500"
+                  style={{
+                    height: element.props?.orientation === "vertical" ? "100%" : element.props?.thickness || "2px",
+                    width: element.props?.orientation === "vertical" ? element.props?.thickness || "2px" : "100%",
+                    borderStyle: element.props?.separatorStyle || "solid",
+                    borderWidth: element.props?.separatorStyle !== "solid" ? "1px" : "0",
+                    borderColor: element.props?.separatorStyle !== "solid" ? "currentColor" : "transparent",
+                    backgroundColor: element.styles?.backgroundColor || "#6b7280",
+                    minHeight: "2px",
+                    minWidth: "2px",
+                  }}
+                ></div>
+              </div>
+            )
+          }
+          {
+            element.type === "list" && (
+              <div className="text-card-foreground w-full h-full" style={elementStyles}>
+                {element.props?.title && (
+                  <h3
+                    className="mb-3"
+                    style={{
+                      fontSize: element.props?.titleFontSize || "1.125rem",
+                      fontWeight: element.props?.titleFontWeight || "600",
+                      textAlign: element.props?.titleTextAlign || "left",
+                      fontFamily: element.props?.fontFamily || "inherit",
+                      fontStyle: element.props?.titleFontStyle || "normal",
+                    }}
+                  >
+                    {element.props.title}
+                  </h3>
+                )}
+                {element.props?.listType === "ol" ? (
+                  <ol
+                    className="space-y-1"
+                    style={{
+                      fontFamily: element.props?.fontFamily || "inherit",
+                      fontSize: element.props?.itemsFontSize || "0.875rem",
+                      fontWeight: element.props?.itemsFontWeight || "400",
+                      fontStyle: element.props?.itemsFontStyle || "normal",
+                      textAlign: element.props?.itemsTextAlign || "left",
+                    }}
+                  >
+                    {(element.props?.listItems || element.content.split('\n')).map((item: string, index: number) => (
+                      <li key={index} className="flex items-center">
+                        <span className="mr-2 font-medium">{index + 1}.</span>
+                        {item.replace('• ', '')}
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <ul
+                    className="space-y-1"
+                    style={{
+                      fontFamily: element.props?.fontFamily || "inherit",
+                      fontSize: element.props?.itemsFontSize || "0.875rem",
+                      fontWeight: element.props?.itemsFontWeight || "400",
+                      fontStyle: element.props?.itemsFontStyle || "normal",
+                      textAlign: element.props?.itemsTextAlign || "left",
+                    }}
+                  >
+                    {(element.props?.listItems || element.content.split('\n')).map((item: string, index: number) => (
+                      <li key={index} className="flex items-center">
+                        <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
+                        {item.replace('• ', '')}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )
+          }
+          {
+            element.type === "input" && (
+              <input
+                type="text"
+                placeholder={element.content}
+                className="w-full h-full bg-background text-foreground border border-border rounded-md px-3 py-2"
+                style={{
+                  ...elementStyles,
+                  fontFamily: element.props?.inputFontFamily === "default" || element.props?.inputFontFamily === "inherit" ? undefined : element.props?.inputFontFamily,
+                  fontSize: element.props?.inputFontSize ? `${element.props.inputFontSize}px` : undefined,
+                  fontWeight: element.props?.inputFontWeight || undefined,
+                  color: element.props?.inputTextColor || undefined,
+                }}
+              />
+            )
+          }
+          {
+            element.type === "textarea" && (
+              <textarea
+                placeholder={element.content}
+                rows={element.props?.rows || 4}
+                className="w-full h-full bg-background text-foreground border border-border rounded-md px-3 py-2 resize-none"
+                style={{
+                  ...elementStyles,
+                  fontFamily: element.props?.textareaFontFamily === "default" || element.props?.textareaFontFamily === "inherit" ? undefined : element.props?.textareaFontFamily,
+                  fontSize: element.props?.textareaFontSize ? `${element.props.textareaFontSize}px` : undefined,
+                  fontWeight: element.props?.textareaFontWeight || undefined,
+                  color: element.props?.textareaTextColor || undefined,
+                }}
+              />
+            )
+          }
+          {
+            element.type === "select" && (
+              <>
+                {/* Normal Mode: Interactive Select */}
+                {!element.props?.previewMode && (
+                  <div className="w-full h-full flex items-center relative z-50" style={elementStyles}>
+                    <Select
+                      value={element.props?.selectedValue || element.props?.defaultValue || undefined}
+                      onValueChange={(value) => {
+                        // Update the selected value in element props
+                        onUpdateElement(element.id, {
+                          props: {
+                            ...element.props,
+                            selectedValue: value
+                          }
+                        })
+                      }}
+                      required={element.props?.required || false}
+                      disabled={element.props?.disabled || false}
+                    >
+                      <SelectTrigger
+                        className="w-full bg-background border-border hover:bg-accent"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                        }}
+                        style={{
+                          fontFamily: element.props?.placeholderFontFamily || undefined,
+                          fontSize: element.props?.placeholderFontSize ? `${element.props.placeholderFontSize}px` : undefined,
+                          fontWeight: element.props?.placeholderFontWeight || undefined,
+                          color: element.props?.placeholderTextColor || undefined,
+                        }}
+                      >
+                        <SelectValue placeholder={element.props?.placeholder || "Select..."} />
+                      </SelectTrigger>
+                      <SelectContent
+                        className="bg-background border-border z-[9999]"
+                        style={{
+                          fontFamily: element.props?.optionsFontFamily || undefined,
+                          fontSize: element.props?.optionsFontSize ? `${element.props.optionsFontSize}px` : undefined,
+                          fontWeight: element.props?.optionsFontWeight || undefined,
+                          color: element.props?.optionsTextColor || undefined,
+                        }}
+                      >
+                        {(element.props?.options || ["Option 1", "Option 2", "Option 3"]).map((option: string, index: number) => (
+                          <SelectItem key={index} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Preview Mode: Always Visible Dropdown */}
+                {element.props?.previewMode && (
+                  <div className="w-full h-full flex items-center relative" style={elementStyles}>
+                    <div className="w-full pointer-events-none">
+                      <div
+                        className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm flex items-center justify-between"
+                        style={{
+                          fontFamily: element.props?.placeholderFontFamily || undefined,
+                          fontSize: element.props?.placeholderFontSize ? `${element.props.placeholderFontSize}px` : undefined,
+                          fontWeight: element.props?.placeholderFontWeight || undefined,
+                          color: element.props?.placeholderTextColor || undefined,
+                        }}
+                      >
+                        <span>{element.props?.defaultValue || element.props?.placeholder || "Select..."}</span>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+
+                      {/* Always visible dropdown */}
+                      <div
+                        className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-[200px] overflow-auto"
+                        style={{
+                          top: '100%',
+                          left: 0,
+                          right: 0,
+                          fontFamily: element.props?.optionsFontFamily || undefined,
+                          fontSize: element.props?.optionsFontSize ? `${element.props.optionsFontSize}px` : undefined,
+                          fontWeight: element.props?.optionsFontWeight || undefined,
+                          color: element.props?.optionsTextColor || undefined,
+                        }}
+                      >
+                        {(element.props?.options || ["Option 1", "Option 2", "Option 3"]).map((option: string, index: number) => (
+                          <div
+                            key={index}
+                            className="px-3 py-2 hover:bg-accent cursor-pointer text-sm"
+                            style={{
+                              fontFamily: element.props?.optionsFontFamily || undefined,
+                              fontSize: element.props?.optionsFontSize ? `${element.props.optionsFontSize}px` : undefined,
+                              fontWeight: element.props?.optionsFontWeight || undefined,
+                              color: element.props?.optionsTextColor || undefined,
+                            }}
+                          >
+                            {option}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )
+          }
+          {
+            element.type === "checkbox" && (
+              <div className="text-card-foreground w-full h-full flex items-center gap-2" style={elementStyles}>
+                <input type="checkbox" className="w-4 h-4" />
+                <span
+                  className="text-sm"
+                  style={{
+                    fontFamily: element.props?.checkboxFontFamily || undefined,
+                    fontSize: element.props?.checkboxFontSize ? `${element.props.checkboxFontSize}px` : undefined,
+                    fontWeight: element.props?.checkboxFontWeight || undefined,
+                    color: element.props?.checkboxTextColor || undefined,
+                  }}
+                >
+                  {element.content}
+                </span>
+              </div>
+            )
+          }
+          {
+            element.type === "radio" && (
+              <div className="text-card-foreground w-full h-full flex items-center gap-2" style={elementStyles}>
+                <input
+                  type="radio"
+                  name={element.props?.groupName || "radio-group"}
+                  className="w-4 h-4"
+                  checked={element.props?.checked || false}
+                  readOnly
+                />
+                <span
+                  className="text-sm"
+                  style={{
+                    fontFamily: element.props?.radioFontFamily || undefined,
+                    fontSize: element.props?.radioFontSize ? `${element.props.radioFontSize}px` : undefined,
+                    fontWeight: element.props?.radioFontWeight || undefined,
+                    color: element.props?.radioTextColor || undefined,
+                  }}
+                >
+                  {element.content}
+                </span>
+              </div>
+            )
+          }
+          {
+            element.type === "switch" && (
+              <div className="text-card-foreground w-full h-full flex items-center gap-2" style={elementStyles}>
+                <div
+                  className={`w-10 h-6 rounded-full relative transition-colors ${element.props?.checked ? 'bg-primary' : 'bg-muted'}`}
+                  style={{
+                    backgroundColor: element.props?.checked ? (element.props?.switchColor || '#3b82f6') : undefined,
+                  }}
+                >
+                  <div
+                    className="w-4 h-4 bg-white rounded-full absolute top-1 transition-transform"
+                    style={{
+                      transform: element.props?.checked ? 'translateX(20px)' : 'translateX(2px)',
+                    }}
+                  />
+                </div>
+                <span
+                  className="text-sm"
+                  style={{
+                    fontFamily: element.props?.switchFontFamily || undefined,
+                    fontSize: element.props?.switchFontSize ? `${element.props.switchFontSize}px` : undefined,
+                    fontWeight: element.props?.switchFontWeight || undefined,
+                    color: element.props?.switchTextColor || undefined,
+                  }}
+                >
+                  {element.content}
+                </span>
+              </div>
+            )
+          }
+          {
+            element.type === "video" && (
+              <div className="w-full h-full bg-muted rounded-lg flex items-center justify-center overflow-hidden relative" style={elementStyles}>
+                {(() => {
+                  const videoUrl = element.content || ''
+
+                  // Check for YouTube URL (supports all formats including short links with ?si parameter)
+                  const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+                  const youtubeMatch = videoUrl.match(youtubeRegex)
+
+                  // Check for Vimeo URL
+                  const vimeoRegex = /vimeo\.com\/(?:.*\/)?(\d+)/
+                  const vimeoMatch = videoUrl.match(vimeoRegex)
+
+                  // Check for Facebook video URL
+                  const facebookRegex = /facebook\.com\/.*\/videos\/(\d+)|fb\.watch\/([a-zA-Z0-9_-]+)/
+                  const facebookMatch = videoUrl.match(facebookRegex)
+
+                  if (youtubeMatch) {
+                    // Render YouTube embed
+                    const videoId = youtubeMatch[1]
+                    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${element.props?.autoplay ? 1 : 0}&controls=${element.props?.controls !== false ? 1 : 0}&loop=${element.props?.loop ? 1 : 0}${element.props?.loop ? `&playlist=${videoId}` : ''}&rel=0`
+
+                    return (
+                      <>
+                        <iframe
+                          src={embedUrl}
+                          className="w-full h-full"
+                          style={{ border: 'none', borderRadius: 'inherit' }}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                          loading="lazy"
+                          title="YouTube video player"
+                        />
+                        {/* Overlay to prevent iframe interaction in edit mode */}
+                        {!isPreviewMode && (
+                          <div
+                            className="absolute inset-0 cursor-pointer"
+                            style={{ pointerEvents: 'auto' }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onElementSelect(element.id)
+                            }}
+                          />
+                        )}
+                      </>
+                    )
+                  } else if (vimeoMatch) {
+                    // Render Vimeo embed
+                    const videoId = vimeoMatch[1]
+                    return (
+                      <>
+                        <iframe
+                          src={`https://player.vimeo.com/video/${videoId}?autoplay=${element.props?.autoplay ? 1 : 0}&loop=${element.props?.loop ? 1 : 0}`}
+                          className="w-full h-full"
+                          style={{ border: 'none', borderRadius: 'inherit' }}
+                          allow="autoplay; fullscreen; picture-in-picture"
+                          allowFullScreen
+                          title="Vimeo video player"
+                        />
+                        {/* Overlay to prevent iframe interaction in edit mode */}
+                        {!isPreviewMode && (
+                          <div
+                            className="absolute inset-0 cursor-pointer"
+                            style={{ pointerEvents: 'auto' }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onElementSelect(element.id)
+                            }}
+                          />
+                        )}
+                      </>
+                    )
+                  } else if (facebookMatch) {
+                    // Render Facebook embed
+                    return (
+                      <>
+                        <iframe
+                          src={`https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(videoUrl)}&show_text=false&autoplay=${element.props?.autoplay ? 'true' : 'false'}`}
+                          className="w-full h-full"
+                          style={{ border: 'none', borderRadius: 'inherit' }}
+                          allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                          allowFullScreen
+                          title="Facebook video player"
+                        />
+                        {/* Overlay to prevent iframe interaction in edit mode */}
+                        {!isPreviewMode && (
+                          <div
+                            className="absolute inset-0 cursor-pointer"
+                            style={{ pointerEvents: 'auto' }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onElementSelect(element.id)
+                            }}
+                          />
+                        )}
+                      </>
+                    )
+                  } else if (videoUrl.startsWith('blob:')) {
+                    // Show uploaded video file
+                    return (
+                      <>
+                        <video
+                          src={videoUrl}
+                          controls={element.props?.controls !== false}
+                          autoPlay={element.props?.autoplay || false}
+                          loop={element.props?.loop || false}
+                          className="w-full h-full object-cover"
+                          style={{ borderRadius: 'inherit' }}
+                        >
+                          Your browser does not support the video tag.
+                        </video>
+                        {/* Overlay to prevent video interaction in edit mode */}
+                        {!isPreviewMode && (
+                          <div
+                            className="absolute inset-0 cursor-pointer"
+                            style={{ pointerEvents: 'auto' }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onElementSelect(element.id)
+                            }}
+                          />
+                        )}
+                      </>
+                    )
+                  } else if (videoUrl && (videoUrl.startsWith('http://') || videoUrl.startsWith('https://'))) {
+                    // Show direct video URL (.mp4, .webm, etc.)
+                    return (
+                      <>
+                        <video
+                          src={videoUrl}
+                          controls={element.props?.controls !== false}
+                          autoPlay={element.props?.autoplay || false}
+                          loop={element.props?.loop || false}
+                          className="w-full h-full object-cover"
+                          style={{ borderRadius: 'inherit' }}
+                        >
+                          Your browser does not support the video tag.
+                        </video>
+                        {/* Overlay to prevent video interaction in edit mode */}
+                        {!isPreviewMode && (
+                          <div
+                            className="absolute inset-0 cursor-pointer"
+                            style={{ pointerEvents: 'auto' }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onElementSelect(element.id)
+                            }}
+                          />
+                        )}
+                      </>
+                    )
+                  } else {
+                    // Show placeholder if no video
+                    return (
+                      <div className="text-center text-muted-foreground">
+                        <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <svg className="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </div>
+                        <p className="text-sm">Video Player</p>
+                      </div>
+                    )
+                  }
+                })()}
+              </div>
+            )
+          }
+          {
+            element.type === "audio" && (
+              <div
+                className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden"
+                style={{
+                  ...elementStyles,
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: 0,
+                }}
+              >
+                {element.content ? (
+                  <audio
+                    src={element.content}
+                    controls={element.props?.controls !== false}
+                    autoPlay={element.props?.autoplay || false}
+                    muted={element.props?.muted || false}
+                    loop={element.props?.loop || false}
+                    className="w-full"
+                    style={{
+                      maxWidth: '100%',
+                      outline: 'none',
+                    }}
+                  />
+                ) : (
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-muted-foreground">Audio Player</p>
+                    <p className="text-xs text-muted-foreground mt-1">Upload audio in properties</p>
+                  </div>
+                )}
+              </div>
+            )
+          }
+          {
+            element.type === "gallery" && (
+              <div className="w-full h-full bg-card border border-border rounded-lg p-3 overflow-auto" style={elementStyles}>
+                {element.props?.images && element.props.images.length > 0 ? (
+                  <div
+                    className={element.props?.layout === 'row' ? 'flex gap-2 h-full overflow-x-auto' : 'grid gap-2'}
+                    style={element.props?.layout === 'row' ? {} : {
+                      gridTemplateColumns: `repeat(${element.props?.columns || 3}, 1fr)`,
+                    }}
+                  >
+                    {element.props.images.map((imageUrl: string, index: number) => (
+                      <div
+                        key={index}
+                        className={`relative bg-muted rounded overflow-hidden ${element.props?.layout === 'row' ? 'flex-shrink-0 h-full' : 'w-full'}`}
+                        style={element.props?.layout === 'row'
+                          ? { aspectRatio: '1/1' }
+                          : { paddingBottom: '100%', position: 'relative' }
+                        }
+                      >
+                        <img
+                          src={imageUrl}
+                          alt={element.props?.imageNames?.[index] || `Image ${index + 1}`}
+                          className={element.props?.layout === 'row'
+                            ? 'w-full h-full object-cover'
+                            : 'absolute inset-0 w-full h-full object-cover'
+                          }
+                          style={{ pointerEvents: 'none' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center h-full flex flex-col items-center justify-center">
+                    <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                      <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{element.content || 'Image Gallery'}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Upload images in properties</p>
+                  </div>
+                )}
+              </div>
+            )
+          }
+          {
+            element.type === "icon" && (
+              <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+                {element.props?.iconImage ? (
+                  <img
+                    src={element.props.iconImage}
+                    alt={element.props?.iconFileName || 'Icon'}
+                    style={{
+                      pointerEvents: 'none',
+                      width: `${element.props?.size || 24}px`,
+                      height: `${element.props?.size || 24}px`,
+                      objectFit: 'contain'
+                    }}
+                  />
+                ) : (
+                  <span style={{ fontSize: `${element.props?.size || 24}px` }}>
+                    {element.content}
+                  </span>
+                )}
+              </div>
+            )
+          }
+          {
+            element.type === "badge" && (
+              <div
+                className="w-full h-full flex items-center justify-center"
+                style={{
+                  ...elementStyles,
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '9999px',
+                  fontFamily: elementStyles.fontFamily,
+                  fontSize: elementStyles.fontSize,
+                  fontWeight: elementStyles.fontWeight,
+                  ...(element.props?.variant === 'default' && {
+                    backgroundColor: 'var(--color-primary)',
+                    color: 'var(--color-primary-foreground)',
+                  }),
+                  ...(element.props?.variant === 'secondary' && {
+                    backgroundColor: 'var(--color-secondary)',
+                    color: 'var(--color-secondary-foreground)',
+                  }),
+                  ...(element.props?.variant === 'destructive' && {
+                    backgroundColor: 'var(--color-destructive)',
+                    color: 'var(--color-destructive-foreground)',
+                  }),
+                  ...(element.props?.variant === 'outline' && {
+                    backgroundColor: 'transparent',
+                    color: 'var(--color-foreground)',
+                    border: '1px solid var(--color-border)',
+                  }),
+                  ...(!element.props?.variant && {
+                    backgroundColor: 'var(--color-primary)',
+                    color: 'var(--color-primary-foreground)',
+                  }),
                 }}
               >
                 {element.content}
-              </span>
-            </div>
-          )}
-          {element.type === "video" && (
-            <div className="w-full h-full bg-muted rounded-lg flex items-center justify-center overflow-hidden relative" style={elementStyles}>
-              {(() => {
-                const videoUrl = element.content || ''
-
-                // Check for YouTube URL (supports all formats including short links with ?si parameter)
-                const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-                const youtubeMatch = videoUrl.match(youtubeRegex)
-
-                // Check for Vimeo URL
-                const vimeoRegex = /vimeo\.com\/(?:.*\/)?(\d+)/
-                const vimeoMatch = videoUrl.match(vimeoRegex)
-
-                // Check for Facebook video URL
-                const facebookRegex = /facebook\.com\/.*\/videos\/(\d+)|fb\.watch\/([a-zA-Z0-9_-]+)/
-                const facebookMatch = videoUrl.match(facebookRegex)
-
-                if (youtubeMatch) {
-                  // Render YouTube embed
-                  const videoId = youtubeMatch[1]
-                  const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${element.props?.autoplay ? 1 : 0}&controls=${element.props?.controls !== false ? 1 : 0}&loop=${element.props?.loop ? 1 : 0}${element.props?.loop ? `&playlist=${videoId}` : ''}&rel=0`
-
-                  return (
-                    <>
-                      <iframe
-                        src={embedUrl}
-                        className="w-full h-full"
-                        style={{ border: 'none', borderRadius: 'inherit' }}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                        loading="lazy"
-                        title="YouTube video player"
-                      />
-                      {/* Overlay to prevent iframe interaction in edit mode */}
-                      {!element.props?.previewMode && (
-                        <div
-                          className="absolute inset-0 cursor-pointer"
-                          style={{ pointerEvents: 'auto' }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onElementSelect(element.id)
-                          }}
-                        />
-                      )}
-                    </>
-                  )
-                } else if (vimeoMatch) {
-                  // Render Vimeo embed
-                  const videoId = vimeoMatch[1]
-                  return (
-                    <>
-                      <iframe
-                        src={`https://player.vimeo.com/video/${videoId}?autoplay=${element.props?.autoplay ? 1 : 0}&loop=${element.props?.loop ? 1 : 0}`}
-                        className="w-full h-full"
-                        style={{ border: 'none', borderRadius: 'inherit' }}
-                        allow="autoplay; fullscreen; picture-in-picture"
-                        allowFullScreen
-                        title="Vimeo video player"
-                      />
-                      {/* Overlay to prevent iframe interaction in edit mode */}
-                      {!element.props?.previewMode && (
-                        <div
-                          className="absolute inset-0 cursor-pointer"
-                          style={{ pointerEvents: 'auto' }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onElementSelect(element.id)
-                          }}
-                        />
-                      )}
-                    </>
-                  )
-                } else if (facebookMatch) {
-                  // Render Facebook embed
-                  return (
-                    <>
-                      <iframe
-                        src={`https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(videoUrl)}&show_text=false&autoplay=${element.props?.autoplay ? 'true' : 'false'}`}
-                        className="w-full h-full"
-                        style={{ border: 'none', borderRadius: 'inherit' }}
-                        allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                        allowFullScreen
-                        title="Facebook video player"
-                      />
-                      {/* Overlay to prevent iframe interaction in edit mode */}
-                      {!element.props?.previewMode && (
-                        <div
-                          className="absolute inset-0 cursor-pointer"
-                          style={{ pointerEvents: 'auto' }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onElementSelect(element.id)
-                          }}
-                        />
-                      )}
-                    </>
-                  )
-                } else if (videoUrl.startsWith('blob:')) {
-                  // Show uploaded video file
-                  return (
-                    <>
-                      <video
-                        src={videoUrl}
-                        controls={element.props?.controls !== false}
-                        autoPlay={element.props?.autoplay || false}
-                        loop={element.props?.loop || false}
-                        className="w-full h-full object-cover"
-                        style={{ borderRadius: 'inherit' }}
-                      >
-                        Your browser does not support the video tag.
-                      </video>
-                      {/* Overlay to prevent video interaction in edit mode */}
-                      {!element.props?.previewMode && (
-                        <div
-                          className="absolute inset-0 cursor-pointer"
-                          style={{ pointerEvents: 'auto' }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onElementSelect(element.id)
-                          }}
-                        />
-                      )}
-                    </>
-                  )
-                } else if (videoUrl && (videoUrl.startsWith('http://') || videoUrl.startsWith('https://'))) {
-                  // Show direct video URL (.mp4, .webm, etc.)
-                  return (
-                    <>
-                      <video
-                        src={videoUrl}
-                        controls={element.props?.controls !== false}
-                        autoPlay={element.props?.autoplay || false}
-                        loop={element.props?.loop || false}
-                        className="w-full h-full object-cover"
-                        style={{ borderRadius: 'inherit' }}
-                      >
-                        Your browser does not support the video tag.
-                      </video>
-                      {/* Overlay to prevent video interaction in edit mode */}
-                      {!element.props?.previewMode && (
-                        <div
-                          className="absolute inset-0 cursor-pointer"
-                          style={{ pointerEvents: 'auto' }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onElementSelect(element.id)
-                          }}
-                        />
-                      )}
-                    </>
-                  )
-                } else {
-                  // Show placeholder if no video
-                  return (
-                    <div className="text-center text-muted-foreground">
-                      <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <svg className="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                      </div>
-                      <p className="text-sm">Video Player</p>
-                    </div>
-                  )
-                }
-              })()}
-            </div>
-          )}
-          {element.type === "audio" && (
-            <div
-              className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden"
-              style={{
-                ...elementStyles,
-                background: 'transparent',
-                border: 'none',
-                borderRadius: 0,
-              }}
-            >
-              {element.content ? (
-                <audio
-                  src={element.content}
-                  controls={element.props?.controls !== false}
-                  autoPlay={element.props?.autoplay || false}
-                  muted={element.props?.muted || false}
-                  loop={element.props?.loop || false}
-                  className="w-full"
-                  style={{
-                    maxWidth: '100%',
-                    outline: 'none',
-                  }}
-                />
-              ) : (
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
-                    </svg>
+              </div>
+            )
+          }
+          {
+            element.type === "avatar" && (
+              <div
+                className="w-full h-full"
+                style={{
+                  ...elementStyles,
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  // Override any width/height from elementStyles
+                  width: '100%',
+                  height: '100%',
+                }}
+              >
+                {element.props?.src ? (
+                  <img
+                    src={element.props.src}
+                    alt={element.content || 'Avatar'}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      objectFit: 'cover',
+                      borderRadius: '50%',
+                      pointerEvents: 'none'
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      borderRadius: '50%',
+                      backgroundColor: elementStyles.backgroundColor || 'var(--color-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: (() => {
+                        // Use avatarSize from props, fallback to position height
+                        const size = element.props?.avatarSize
+                          ? parseInt(element.props.avatarSize)
+                          : (element.position?.height || 60);
+                        // Icon size is 40% of container
+                        return `${size * 0.4}px`;
+                      })(),
+                      color: elementStyles.color || 'var(--color-foreground)',
+                    }}
+                  >
+                    {element.content || '👤'}
                   </div>
-                  <p className="text-sm text-muted-foreground">Audio Player</p>
-                  <p className="text-xs text-muted-foreground mt-1">Upload audio in properties</p>
-                </div>
-              )}
-            </div>
-          )}
-          {element.type === "gallery" && (
-            <div className="w-full h-full bg-card border border-border rounded-lg p-3 overflow-auto" style={elementStyles}>
-              {element.props?.images && element.props.images.length > 0 ? (
-                <div
-                  className={element.props?.layout === 'row' ? 'flex gap-2 h-full overflow-x-auto' : 'grid gap-2'}
-                  style={element.props?.layout === 'row' ? {} : {
-                    gridTemplateColumns: `repeat(${element.props?.columns || 3}, 1fr)`,
-                  }}
-                >
-                  {element.props.images.map((imageUrl: string, index: number) => (
-                    <div
-                      key={index}
-                      className={`relative bg-muted rounded overflow-hidden ${element.props?.layout === 'row' ? 'flex-shrink-0 h-full' : 'w-full'}`}
-                      style={element.props?.layout === 'row'
-                        ? { aspectRatio: '1/1' }
-                        : { paddingBottom: '100%', position: 'relative' }
-                      }
-                    >
-                      <img
-                        src={imageUrl}
-                        alt={element.props?.imageNames?.[index] || `Image ${index + 1}`}
-                        className={element.props?.layout === 'row'
-                          ? 'w-full h-full object-cover'
-                          : 'absolute inset-0 w-full h-full object-cover'
+                )}
+              </div>
+            )
+          }
+          {
+            element.type === "modal" && (
+              <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+                {element.props?.previewMode ? (
+                  // Preview Mode - Show modal directly in canvas (exact same as popup)
+                  <div
+                    className="w-full h-full bg-black/80 overflow-auto"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '1rem'
+                    }}
+                  >
+                    {(() => {
+                      const modalType = element.props?.modalType || 'default';
+                      const modalSize = element.props?.modalSize || 'medium';
+                      const showInputs = element.props?.showInputs || false;
+
+                      // Modal type colors and icons (SAME as popup)
+                      const typeConfig: any = {
+                        default: {
+                          bg: 'bg-card',
+                          icon: '',
+                          iconColor: '',
+                          cancelBg: 'bg-muted hover:bg-muted/80',
+                          cancelText: 'text-foreground',
+                          confirmBg: 'bg-primary hover:bg-primary/90',
+                          confirmText: 'text-primary-foreground'
+                        },
+                        success: {
+                          bg: 'bg-green-950',
+                          icon: '✓',
+                          iconColor: 'text-green-400',
+                          cancelBg: 'bg-green-900/50 hover:bg-green-900/70',
+                          cancelText: 'text-green-200',
+                          confirmBg: 'bg-green-600 hover:bg-green-700',
+                          confirmText: 'text-white'
+                        },
+                        error: {
+                          bg: 'bg-red-950',
+                          icon: '✕',
+                          iconColor: 'text-red-400',
+                          cancelBg: 'bg-red-900/50 hover:bg-red-900/70',
+                          cancelText: 'text-red-200',
+                          confirmBg: 'bg-red-600 hover:bg-red-700',
+                          confirmText: 'text-white'
+                        },
+                        warning: {
+                          bg: 'bg-yellow-950',
+                          icon: '⚠',
+                          iconColor: 'text-yellow-400',
+                          cancelBg: 'bg-yellow-900/50 hover:bg-yellow-900/70',
+                          cancelText: 'text-yellow-200',
+                          confirmBg: 'bg-yellow-600 hover:bg-yellow-700',
+                          confirmText: 'text-white'
+                        },
+                        info: {
+                          bg: 'bg-blue-950',
+                          icon: 'ℹ',
+                          iconColor: 'text-blue-400',
+                          cancelBg: 'bg-blue-900/50 hover:bg-blue-900/70',
+                          cancelText: 'text-blue-200',
+                          confirmBg: 'bg-blue-600 hover:bg-blue-700',
+                          confirmText: 'text-white'
                         }
-                        style={{ pointerEvents: 'none' }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center h-full flex flex-col items-center justify-center">
-                  <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{element.content || 'Image Gallery'}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Upload images in properties</p>
-                </div>
-              )}
-            </div>
-          )}
-          {element.type === "icon" && (
-            <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-              {element.props?.iconImage ? (
-                <img
-                  src={element.props.iconImage}
-                  alt={element.props?.iconFileName || 'Icon'}
-                  style={{
-                    pointerEvents: 'none',
-                    width: `${element.props?.size || 24}px`,
-                    height: `${element.props?.size || 24}px`,
-                    objectFit: 'contain'
-                  }}
-                />
-              ) : (
-                <span style={{ fontSize: `${element.props?.size || 24}px` }}>
-                  {element.content}
-                </span>
-              )}
-            </div>
-          )}
-          {element.type === "badge" && (
-            <div
-              className="w-full h-full flex items-center justify-center"
-              style={{
-                ...elementStyles,
-                padding: '0.25rem 0.75rem',
-                borderRadius: '9999px',
-                fontFamily: elementStyles.fontFamily,
-                fontSize: elementStyles.fontSize,
-                fontWeight: elementStyles.fontWeight,
-                ...(element.props?.variant === 'default' && {
-                  backgroundColor: 'var(--color-primary)',
-                  color: 'var(--color-primary-foreground)',
-                }),
-                ...(element.props?.variant === 'secondary' && {
-                  backgroundColor: 'var(--color-secondary)',
-                  color: 'var(--color-secondary-foreground)',
-                }),
-                ...(element.props?.variant === 'destructive' && {
-                  backgroundColor: 'var(--color-destructive)',
-                  color: 'var(--color-destructive-foreground)',
-                }),
-                ...(element.props?.variant === 'outline' && {
-                  backgroundColor: 'transparent',
-                  color: 'var(--color-foreground)',
-                  border: '1px solid var(--color-border)',
-                }),
-                ...(!element.props?.variant && {
-                  backgroundColor: 'var(--color-primary)',
-                  color: 'var(--color-primary-foreground)',
-                }),
-              }}
-            >
-              {element.content}
-            </div>
-          )}
-          {element.type === "avatar" && (
-            <div
-              className="w-full h-full"
-              style={{
-                ...elementStyles,
-                padding: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                // Override any width/height from elementStyles
-                width: '100%',
-                height: '100%',
-              }}
-            >
-              {element.props?.src ? (
-                <img
-                  src={element.props.src}
-                  alt={element.content || 'Avatar'}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    objectFit: 'cover',
-                    borderRadius: '50%',
-                    pointerEvents: 'none'
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    borderRadius: '50%',
-                    backgroundColor: elementStyles.backgroundColor || 'var(--color-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: (() => {
-                      // Use avatarSize from props, fallback to position height
-                      const size = element.props?.avatarSize
-                        ? parseInt(element.props.avatarSize)
-                        : (element.position?.height || 60);
-                      // Icon size is 40% of container
-                      return `${size * 0.4}px`;
-                    })(),
-                    color: elementStyles.color || 'var(--color-foreground)',
-                  }}
-                >
-                  {element.content || '👤'}
-                </div>
-              )}
-            </div>
-          )}
-          {element.type === "modal" && (
-            <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-              {element.props?.previewMode ? (
-                // Preview Mode - Show modal directly in canvas (exact same as popup)
-                <div
-                  className="w-full h-full bg-black/80 overflow-auto"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '1rem'
-                  }}
-                >
-                  {(() => {
-                    const modalType = element.props?.modalType || 'default';
-                    const modalSize = element.props?.modalSize || 'medium';
-                    const showInputs = element.props?.showInputs || false;
+                      };
 
-                    // Modal type colors and icons (SAME as popup)
-                    const typeConfig: any = {
-                      default: {
-                        bg: 'bg-card',
-                        icon: '',
-                        iconColor: '',
-                        cancelBg: 'bg-muted hover:bg-muted/80',
-                        cancelText: 'text-foreground',
-                        confirmBg: 'bg-primary hover:bg-primary/90',
-                        confirmText: 'text-primary-foreground'
-                      },
-                      success: {
-                        bg: 'bg-green-950',
-                        icon: '✓',
-                        iconColor: 'text-green-400',
-                        cancelBg: 'bg-green-900/50 hover:bg-green-900/70',
-                        cancelText: 'text-green-200',
-                        confirmBg: 'bg-green-600 hover:bg-green-700',
-                        confirmText: 'text-white'
-                      },
-                      error: {
-                        bg: 'bg-red-950',
-                        icon: '✕',
-                        iconColor: 'text-red-400',
-                        cancelBg: 'bg-red-900/50 hover:bg-red-900/70',
-                        cancelText: 'text-red-200',
-                        confirmBg: 'bg-red-600 hover:bg-red-700',
-                        confirmText: 'text-white'
-                      },
-                      warning: {
-                        bg: 'bg-yellow-950',
-                        icon: '⚠',
-                        iconColor: 'text-yellow-400',
-                        cancelBg: 'bg-yellow-900/50 hover:bg-yellow-900/70',
-                        cancelText: 'text-yellow-200',
-                        confirmBg: 'bg-yellow-600 hover:bg-yellow-700',
-                        confirmText: 'text-white'
-                      },
-                      info: {
-                        bg: 'bg-blue-950',
-                        icon: 'ℹ',
-                        iconColor: 'text-blue-400',
-                        cancelBg: 'bg-blue-900/50 hover:bg-blue-900/70',
-                        cancelText: 'text-blue-200',
-                        confirmBg: 'bg-blue-600 hover:bg-blue-700',
-                        confirmText: 'text-white'
-                      }
-                    };
+                      // Modal size (SAME as popup)
+                      const sizeStyles: any = {
+                        small: { width: '384px', maxWidth: '90%' },
+                        medium: { width: '448px', maxWidth: '90%' },
+                        large: { width: '672px', maxWidth: '90%' },
+                        fullscreen: { width: '95%', height: '95%', maxHeight: '95vh', overflow: 'auto' }
+                      };
 
-                    // Modal size (SAME as popup)
-                    const sizeStyles: any = {
-                      small: { width: '384px', maxWidth: '90%' },
-                      medium: { width: '448px', maxWidth: '90%' },
-                      large: { width: '672px', maxWidth: '90%' },
-                      fullscreen: { width: '95%', height: '95%', maxHeight: '95vh', overflow: 'auto' }
-                    };
-
-                    return (
-                      <div
-                        className={`${typeConfig[modalType].bg} border border-border rounded-lg shadow-2xl p-6`}
-                        style={sizeStyles[modalSize]}
-                      >
-                        {/* Header */}
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            {typeConfig[modalType].icon && (
-                              <div className={`text-2xl ${typeConfig[modalType].iconColor}`}>
-                                {typeConfig[modalType].icon}
-                              </div>
-                            )}
-                            <h3
-                              className="text-lg font-semibold"
-                              style={{
-                                ...(element.props?.titleFontFamily && element.props.titleFontFamily !== 'inherit' && { fontFamily: element.props.titleFontFamily }),
-                                ...(element.props?.titleFontSize && { fontSize: element.props.titleFontSize + 'px' }),
-                                ...(element.props?.titleFontWeight && { fontWeight: element.props.titleFontWeight }),
-                                ...(element.props?.titleColor && { color: element.props.titleColor })
-                              }}
-                            >
-                              {element.content || 'Modal Title'}
-                            </h3>
-                          </div>
-                          <button className="text-muted-foreground hover:text-foreground text-xl leading-none">✕</button>
-                        </div>
-
-                        {/* Body */}
+                      return (
                         <div
-                          className="text-sm text-muted-foreground mb-4"
-                          style={{
-                            ...(element.props?.contentFontFamily && element.props.contentFontFamily !== 'inherit' && { fontFamily: element.props.contentFontFamily }),
-                            ...(element.props?.contentFontSize && { fontSize: element.props.contentFontSize + 'px' }),
-                            ...(element.props?.contentFontWeight && { fontWeight: element.props.contentFontWeight }),
-                            ...(element.props?.contentColor && { color: element.props.contentColor })
-                          }}
+                          className={`${typeConfig[modalType].bg} border border-border rounded-lg shadow-2xl p-6`}
+                          style={sizeStyles[modalSize]}
                         >
-                          {element.props?.modalContent || 'Modal Content'}
-                        </div>
-
-                        {/* Input fields */}
-                        {showInputs && (
-                          <div className="space-y-3 my-4">
-                            <div>
-                              <label className="text-xs text-muted-foreground block mb-1">
-                                {element.props?.input1Label || 'Email'}
-                              </label>
-                              <input
-                                type="text"
-                                placeholder={element.props?.input1Placeholder || 'Enter your email'}
-                                className="w-full px-3 py-2 bg-sidebar-accent border border-sidebar-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                readOnly
-                              />
+                          {/* Header */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              {typeConfig[modalType].icon && (
+                                <div className={`text-2xl ${typeConfig[modalType].iconColor}`}>
+                                  {typeConfig[modalType].icon}
+                                </div>
+                              )}
+                              <h3
+                                className="text-lg font-semibold"
+                                style={{
+                                  ...(element.props?.titleFontFamily && element.props.titleFontFamily !== 'inherit' && { fontFamily: element.props.titleFontFamily }),
+                                  ...(element.props?.titleFontSize && { fontSize: element.props.titleFontSize + 'px' }),
+                                  ...(element.props?.titleFontWeight && { fontWeight: element.props.titleFontWeight }),
+                                  ...(element.props?.titleColor && { color: element.props.titleColor })
+                                }}
+                              >
+                                {element.content || 'Modal Title'}
+                              </h3>
                             </div>
-                            <div>
-                              <label className="text-xs text-muted-foreground block mb-1">
-                                {element.props?.input2Label || 'Password'}
-                              </label>
-                              <input
-                                type="password"
-                                placeholder={element.props?.input2Placeholder || 'Enter your password'}
-                                className="w-full px-3 py-2 bg-sidebar-accent border border-sidebar-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                readOnly
-                              />
-                            </div>
+                            <button className="text-muted-foreground hover:text-foreground text-xl leading-none">✕</button>
                           </div>
-                        )}
 
-                        {/* Footer - SAME styling as popup */}
-                        <div className="mt-6 flex justify-end gap-2">
-                          <button className={`px-4 py-2 text-sm rounded-md transition-colors ${typeConfig[modalType].cancelBg} ${typeConfig[modalType].cancelText}`}>
-                            Cancel
-                          </button>
-                          <button className={`px-4 py-2 text-sm rounded-md transition-colors ${typeConfig[modalType].confirmBg} ${typeConfig[modalType].confirmText}`}>
-                            Confirm
-                          </button>
+                          {/* Body */}
+                          <div
+                            className="text-sm text-muted-foreground mb-4"
+                            style={{
+                              ...(element.props?.contentFontFamily && element.props.contentFontFamily !== 'inherit' && { fontFamily: element.props.contentFontFamily }),
+                              ...(element.props?.contentFontSize && { fontSize: element.props.contentFontSize + 'px' }),
+                              ...(element.props?.contentFontWeight && { fontWeight: element.props.contentFontWeight }),
+                              ...(element.props?.contentColor && { color: element.props.contentColor })
+                            }}
+                          >
+                            {element.props?.modalContent || 'Modal Content'}
+                          </div>
+
+                          {/* Input fields */}
+                          {showInputs && (
+                            <div className="space-y-3 my-4">
+                              <div>
+                                <label className="text-xs text-muted-foreground block mb-1">
+                                  {element.props?.input1Label || 'Email'}
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder={element.props?.input1Placeholder || 'Enter your email'}
+                                  className="w-full px-3 py-2 bg-sidebar-accent border border-sidebar-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                  readOnly
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-muted-foreground block mb-1">
+                                  {element.props?.input2Label || 'Password'}
+                                </label>
+                                <input
+                                  type="password"
+                                  placeholder={element.props?.input2Placeholder || 'Enter your password'}
+                                  className="w-full px-3 py-2 bg-sidebar-accent border border-sidebar-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                  readOnly
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Footer - SAME styling as popup */}
+                          <div className="mt-6 flex justify-end gap-2">
+                            <button className={`px-4 py-2 text-sm rounded-md transition-colors ${typeConfig[modalType].cancelBg} ${typeConfig[modalType].cancelText}`}>
+                              Cancel
+                            </button>
+                            <button className={`px-4 py-2 text-sm rounded-md transition-colors ${typeConfig[modalType].confirmBg} ${typeConfig[modalType].confirmText}`}>
+                              Confirm
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              ) : (
-                // Normal Mode - Show button
-                <button
-                  onClick={() => {
-                    const modalType = element.props?.modalType || 'default';
-                    const modalSize = element.props?.modalSize || 'medium';
-                    const showInputs = element.props?.showInputs || false;
-                    const confirmAction = element.props?.confirmAction || 'close';
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  // Normal Mode - Show button
+                  <button
+                    onClick={() => {
+                      const modalType = element.props?.modalType || 'default';
+                      const modalSize = element.props?.modalSize || 'medium';
+                      const showInputs = element.props?.showInputs || false;
+                      const confirmAction = element.props?.confirmAction || 'close';
 
-                    // Modal type colors and icons
-                    const typeConfig: any = {
-                      default: {
-                        bg: 'bg-card',
-                        icon: '',
-                        iconColor: '',
-                        cancelBg: 'bg-muted hover:bg-muted/80',
-                        cancelText: 'text-foreground',
-                        confirmBg: 'bg-primary hover:bg-primary/90',
-                        confirmText: 'text-primary-foreground'
-                      },
-                      success: {
-                        bg: 'bg-green-950',
-                        icon: '✓',
-                        iconColor: 'text-green-400',
-                        cancelBg: 'bg-green-900/50 hover:bg-green-900/70',
-                        cancelText: 'text-green-200',
-                        confirmBg: 'bg-green-600 hover:bg-green-700',
-                        confirmText: 'text-white'
-                      },
-                      error: {
-                        bg: 'bg-red-950',
-                        icon: '✕',
-                        iconColor: 'text-red-400',
-                        cancelBg: 'bg-red-900/50 hover:bg-red-900/70',
-                        cancelText: 'text-red-200',
-                        confirmBg: 'bg-red-600 hover:bg-red-700',
-                        confirmText: 'text-white'
-                      },
-                      warning: {
-                        bg: 'bg-yellow-950',
-                        icon: '⚠',
-                        iconColor: 'text-yellow-400',
-                        cancelBg: 'bg-yellow-900/50 hover:bg-yellow-900/70',
-                        cancelText: 'text-yellow-200',
-                        confirmBg: 'bg-yellow-600 hover:bg-yellow-700',
-                        confirmText: 'text-white'
-                      },
-                      info: {
-                        bg: 'bg-blue-950',
-                        icon: 'ℹ',
-                        iconColor: 'text-blue-400',
-                        cancelBg: 'bg-blue-900/50 hover:bg-blue-900/70',
-                        cancelText: 'text-blue-200',
-                        confirmBg: 'bg-blue-600 hover:bg-blue-700',
-                        confirmText: 'text-white'
+                      // Modal type colors and icons
+                      const typeConfig: any = {
+                        default: {
+                          bg: 'bg-card',
+                          icon: '',
+                          iconColor: '',
+                          cancelBg: 'bg-muted hover:bg-muted/80',
+                          cancelText: 'text-foreground',
+                          confirmBg: 'bg-primary hover:bg-primary/90',
+                          confirmText: 'text-primary-foreground'
+                        },
+                        success: {
+                          bg: 'bg-green-950',
+                          icon: '✓',
+                          iconColor: 'text-green-400',
+                          cancelBg: 'bg-green-900/50 hover:bg-green-900/70',
+                          cancelText: 'text-green-200',
+                          confirmBg: 'bg-green-600 hover:bg-green-700',
+                          confirmText: 'text-white'
+                        },
+                        error: {
+                          bg: 'bg-red-950',
+                          icon: '✕',
+                          iconColor: 'text-red-400',
+                          cancelBg: 'bg-red-900/50 hover:bg-red-900/70',
+                          cancelText: 'text-red-200',
+                          confirmBg: 'bg-red-600 hover:bg-red-700',
+                          confirmText: 'text-white'
+                        },
+                        warning: {
+                          bg: 'bg-yellow-950',
+                          icon: '⚠',
+                          iconColor: 'text-yellow-400',
+                          cancelBg: 'bg-yellow-900/50 hover:bg-yellow-900/70',
+                          cancelText: 'text-yellow-200',
+                          confirmBg: 'bg-yellow-600 hover:bg-yellow-700',
+                          confirmText: 'text-white'
+                        },
+                        info: {
+                          bg: 'bg-blue-950',
+                          icon: 'ℹ',
+                          iconColor: 'text-blue-400',
+                          cancelBg: 'bg-blue-900/50 hover:bg-blue-900/70',
+                          cancelText: 'text-blue-200',
+                          confirmBg: 'bg-blue-600 hover:bg-blue-700',
+                          confirmText: 'text-white'
+                        }
+                      };
+
+                      // Modal size classes
+                      const sizeConfig: any = {
+                        small: 'max-w-sm',
+                        medium: 'max-w-md',
+                        large: 'max-w-2xl',
+                        fullscreen: 'max-w-[95vw] max-h-[95vh] overflow-auto'
+                      };
+
+                      // Create modal overlay
+                      const overlay = document.createElement('div');
+                      overlay.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4';
+                      overlay.style.animation = 'fadeIn 0.2s ease-out';
+
+                      // Create modal content
+                      const modalContent = document.createElement('div');
+                      modalContent.className = typeConfig[modalType].bg + ' border border-border rounded-lg shadow-2xl p-6 ' + sizeConfig[modalSize] + ' w-full relative';
+                      modalContent.style.animation = 'slideIn 0.3s ease-out';
+
+                      // Modal header with icon
+                      const header = document.createElement('div');
+                      header.className = 'flex items-center justify-between mb-4';
+
+                      const titleContainer = document.createElement('div');
+                      titleContainer.className = 'flex items-center gap-3';
+
+                      if (typeConfig[modalType].icon) {
+                        const icon = document.createElement('div');
+                        icon.className = 'text-2xl ' + typeConfig[modalType].iconColor;
+                        icon.textContent = typeConfig[modalType].icon;
+                        titleContainer.appendChild(icon);
                       }
-                    };
 
-                    // Modal size classes
-                    const sizeConfig: any = {
-                      small: 'max-w-sm',
-                      medium: 'max-w-md',
-                      large: 'max-w-2xl',
-                      fullscreen: 'max-w-[95vw] max-h-[95vh] overflow-auto'
-                    };
-
-                    // Create modal overlay
-                    const overlay = document.createElement('div');
-                    overlay.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4';
-                    overlay.style.animation = 'fadeIn 0.2s ease-out';
-
-                    // Create modal content
-                    const modalContent = document.createElement('div');
-                    modalContent.className = typeConfig[modalType].bg + ' border border-border rounded-lg shadow-2xl p-6 ' + sizeConfig[modalSize] + ' w-full relative';
-                    modalContent.style.animation = 'slideIn 0.3s ease-out';
-
-                    // Modal header with icon
-                    const header = document.createElement('div');
-                    header.className = 'flex items-center justify-between mb-4';
-
-                    const titleContainer = document.createElement('div');
-                    titleContainer.className = 'flex items-center gap-3';
-
-                    if (typeConfig[modalType].icon) {
-                      const icon = document.createElement('div');
-                      icon.className = 'text-2xl ' + typeConfig[modalType].iconColor;
-                      icon.textContent = typeConfig[modalType].icon;
-                      titleContainer.appendChild(icon);
-                    }
-
-                    const title = document.createElement('h3');
-                    title.className = 'text-lg font-semibold';
-                    title.textContent = element.content || 'Modal Title';
-                    // Apply typography styles
-                    if (element.props?.titleFontFamily && element.props.titleFontFamily !== 'inherit') {
-                      title.style.fontFamily = element.props.titleFontFamily;
-                    }
-                    if (element.props?.titleFontSize) {
-                      title.style.fontSize = element.props.titleFontSize + 'px';
-                    }
-                    if (element.props?.titleFontWeight) {
-                      title.style.fontWeight = element.props.titleFontWeight;
-                    }
-                    if (element.props?.titleColor) {
-                      title.style.color = element.props.titleColor;
-                    }
-                    titleContainer.appendChild(title);
-
-                    const closeBtn = document.createElement('button');
-                    closeBtn.innerHTML = '✕';
-                    closeBtn.className = 'text-muted-foreground hover:text-foreground text-xl leading-none';
-                    closeBtn.onclick = () => document.body.removeChild(overlay);
-
-                    header.appendChild(titleContainer);
-                    header.appendChild(closeBtn);
-
-                    // Modal body
-                    const body = document.createElement('div');
-                    body.className = 'text-sm text-muted-foreground mb-4';
-                    body.textContent = element.props?.modalContent || 'Modal Content';
-                    // Apply typography styles
-                    if (element.props?.contentFontFamily && element.props.contentFontFamily !== 'inherit') {
-                      body.style.fontFamily = element.props.contentFontFamily;
-                    }
-                    if (element.props?.contentFontSize) {
-                      body.style.fontSize = element.props.contentFontSize + 'px';
-                    }
-                    if (element.props?.contentFontWeight) {
-                      body.style.fontWeight = element.props.contentFontWeight;
-                    }
-                    if (element.props?.contentColor) {
-                      body.style.color = element.props.contentColor;
-                    }
-
-                    // Input fields (if enabled)
-                    if (showInputs) {
-                      const inputsContainer = document.createElement('div');
-                      inputsContainer.className = 'space-y-3 my-4';
-
-                      // Input 1
-                      const input1Container = document.createElement('div');
-                      const label1 = document.createElement('label');
-                      label1.className = 'text-xs text-muted-foreground block mb-1';
-                      label1.textContent = element.props?.input1Label || 'Email';
-                      const input1 = document.createElement('input');
-                      input1.type = 'text';
-                      input1.placeholder = element.props?.input1Placeholder || 'Enter your email';
-                      input1.className = 'w-full px-3 py-2 bg-sidebar-accent border border-sidebar-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary';
-                      input1Container.appendChild(label1);
-                      input1Container.appendChild(input1);
-
-                      // Input 2
-                      const input2Container = document.createElement('div');
-                      const label2 = document.createElement('label');
-                      label2.className = 'text-xs text-muted-foreground block mb-1';
-                      label2.textContent = element.props?.input2Label || 'Password';
-                      const input2 = document.createElement('input');
-                      input2.type = 'password';
-                      input2.placeholder = element.props?.input2Placeholder || 'Enter your password';
-                      input2.className = 'w-full px-3 py-2 bg-sidebar-accent border border-sidebar-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary';
-                      input2Container.appendChild(label2);
-                      input2Container.appendChild(input2);
-
-                      inputsContainer.appendChild(input1Container);
-                      inputsContainer.appendChild(input2Container);
-                      body.appendChild(inputsContainer);
-                    }
-
-                    // Modal footer
-                    const footer = document.createElement('div');
-                    footer.className = 'mt-6 flex justify-end gap-2';
-                    const cancelBtn = document.createElement('button');
-                    cancelBtn.textContent = 'Cancel';
-                    cancelBtn.className = 'px-4 py-2 text-sm rounded-md transition-colors ' + typeConfig[modalType].cancelBg + ' ' + typeConfig[modalType].cancelText;
-                    cancelBtn.onclick = () => document.body.removeChild(overlay);
-                    const confirmBtn = document.createElement('button');
-                    confirmBtn.textContent = 'Confirm';
-                    confirmBtn.className = 'px-4 py-2 text-sm rounded-md transition-colors ' + typeConfig[modalType].confirmBg + ' ' + typeConfig[modalType].confirmText;
-                    confirmBtn.onclick = () => {
-                      if (confirmAction === 'link' && element.props?.confirmUrl) {
-                        window.location.href = element.props.confirmUrl;
-                      } else if (confirmAction === 'alert') {
-                        alert(element.props?.alertMessage || 'Action completed!');
-                        document.body.removeChild(overlay);
-                      } else {
-                        document.body.removeChild(overlay);
+                      const title = document.createElement('h3');
+                      title.className = 'text-lg font-semibold';
+                      title.textContent = element.content || 'Modal Title';
+                      // Apply typography styles
+                      if (element.props?.titleFontFamily && element.props.titleFontFamily !== 'inherit') {
+                        title.style.fontFamily = element.props.titleFontFamily;
                       }
-                    };
-                    footer.appendChild(cancelBtn);
-                    footer.appendChild(confirmBtn);
+                      if (element.props?.titleFontSize) {
+                        title.style.fontSize = element.props.titleFontSize + 'px';
+                      }
+                      if (element.props?.titleFontWeight) {
+                        title.style.fontWeight = element.props.titleFontWeight;
+                      }
+                      if (element.props?.titleColor) {
+                        title.style.color = element.props.titleColor;
+                      }
+                      titleContainer.appendChild(title);
 
-                    modalContent.appendChild(header);
-                    modalContent.appendChild(body);
-                    modalContent.appendChild(footer);
-                    overlay.appendChild(modalContent);
+                      const closeBtn = document.createElement('button');
+                      closeBtn.innerHTML = '✕';
+                      closeBtn.className = 'text-muted-foreground hover:text-foreground text-xl leading-none';
+                      closeBtn.onclick = () => document.body.removeChild(overlay);
 
-                    // Close on overlay click
-                    overlay.onclick = (e) => {
-                      if (e.target === overlay) document.body.removeChild(overlay);
-                    };
+                      header.appendChild(titleContainer);
+                      header.appendChild(closeBtn);
 
-                    document.body.appendChild(overlay);
-                  }}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
-                  style={{
-                    ...(element.props?.buttonFontFamily && element.props.buttonFontFamily !== 'inherit' && { fontFamily: element.props.buttonFontFamily }),
-                    ...(element.props?.buttonFontSize && { fontSize: element.props.buttonFontSize + 'px' }),
-                    ...(element.props?.buttonFontWeight && { fontWeight: element.props.buttonFontWeight }),
-                    ...(element.props?.buttonTextColor && { color: element.props.buttonTextColor }),
-                    ...(element.props?.buttonBgColor && { backgroundColor: element.props.buttonBgColor })
-                  }}
-                >
-                  {element.props?.buttonText || 'Open Modal'}
-                </button>
-              )}
-              <style dangerouslySetInnerHTML={{
-                __html: `
+                      // Modal body
+                      const body = document.createElement('div');
+                      body.className = 'text-sm text-muted-foreground mb-4';
+                      body.textContent = element.props?.modalContent || 'Modal Content';
+                      // Apply typography styles
+                      if (element.props?.contentFontFamily && element.props.contentFontFamily !== 'inherit') {
+                        body.style.fontFamily = element.props.contentFontFamily;
+                      }
+                      if (element.props?.contentFontSize) {
+                        body.style.fontSize = element.props.contentFontSize + 'px';
+                      }
+                      if (element.props?.contentFontWeight) {
+                        body.style.fontWeight = element.props.contentFontWeight;
+                      }
+                      if (element.props?.contentColor) {
+                        body.style.color = element.props.contentColor;
+                      }
+
+                      // Input fields (if enabled)
+                      if (showInputs) {
+                        const inputsContainer = document.createElement('div');
+                        inputsContainer.className = 'space-y-3 my-4';
+
+                        // Input 1
+                        const input1Container = document.createElement('div');
+                        const label1 = document.createElement('label');
+                        label1.className = 'text-xs text-muted-foreground block mb-1';
+                        label1.textContent = element.props?.input1Label || 'Email';
+                        const input1 = document.createElement('input');
+                        input1.type = 'text';
+                        input1.placeholder = element.props?.input1Placeholder || 'Enter your email';
+                        input1.className = 'w-full px-3 py-2 bg-sidebar-accent border border-sidebar-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary';
+                        input1Container.appendChild(label1);
+                        input1Container.appendChild(input1);
+
+                        // Input 2
+                        const input2Container = document.createElement('div');
+                        const label2 = document.createElement('label');
+                        label2.className = 'text-xs text-muted-foreground block mb-1';
+                        label2.textContent = element.props?.input2Label || 'Password';
+                        const input2 = document.createElement('input');
+                        input2.type = 'password';
+                        input2.placeholder = element.props?.input2Placeholder || 'Enter your password';
+                        input2.className = 'w-full px-3 py-2 bg-sidebar-accent border border-sidebar-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary';
+                        input2Container.appendChild(label2);
+                        input2Container.appendChild(input2);
+
+                        inputsContainer.appendChild(input1Container);
+                        inputsContainer.appendChild(input2Container);
+                        body.appendChild(inputsContainer);
+                      }
+
+                      // Modal footer
+                      const footer = document.createElement('div');
+                      footer.className = 'mt-6 flex justify-end gap-2';
+                      const cancelBtn = document.createElement('button');
+                      cancelBtn.textContent = 'Cancel';
+                      cancelBtn.className = 'px-4 py-2 text-sm rounded-md transition-colors ' + typeConfig[modalType].cancelBg + ' ' + typeConfig[modalType].cancelText;
+                      cancelBtn.onclick = () => document.body.removeChild(overlay);
+                      const confirmBtn = document.createElement('button');
+                      confirmBtn.textContent = 'Confirm';
+                      confirmBtn.className = 'px-4 py-2 text-sm rounded-md transition-colors ' + typeConfig[modalType].confirmBg + ' ' + typeConfig[modalType].confirmText;
+                      confirmBtn.onclick = () => {
+                        if (confirmAction === 'link' && element.props?.confirmUrl) {
+                          window.location.href = element.props.confirmUrl;
+                        } else if (confirmAction === 'alert') {
+                          alert(element.props?.alertMessage || 'Action completed!');
+                          document.body.removeChild(overlay);
+                        } else {
+                          document.body.removeChild(overlay);
+                        }
+                      };
+                      footer.appendChild(cancelBtn);
+                      footer.appendChild(confirmBtn);
+
+                      modalContent.appendChild(header);
+                      modalContent.appendChild(body);
+                      modalContent.appendChild(footer);
+                      overlay.appendChild(modalContent);
+
+                      // Close on overlay click
+                      overlay.onclick = (e) => {
+                        if (e.target === overlay) document.body.removeChild(overlay);
+                      };
+
+                      document.body.appendChild(overlay);
+                    }}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+                    style={{
+                      ...(element.props?.buttonFontFamily && element.props.buttonFontFamily !== 'inherit' && { fontFamily: element.props.buttonFontFamily }),
+                      ...(element.props?.buttonFontSize && { fontSize: element.props.buttonFontSize + 'px' }),
+                      ...(element.props?.buttonFontWeight && { fontWeight: element.props.buttonFontWeight }),
+                      ...(element.props?.buttonTextColor && { color: element.props.buttonTextColor }),
+                      ...(element.props?.buttonBgColor && { backgroundColor: element.props.buttonBgColor })
+                    }}
+                  >
+                    {element.props?.buttonText || 'Open Modal'}
+                  </button>
+                )}
+                <style dangerouslySetInnerHTML={{
+                  __html: `
           @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -4643,351 +4693,353 @@ export function BuilderCanvas({
             to { transform: translateY(0); opacity: 1; }
           }
         `}} />
-            </div>
-          )}
-          {element.type === "tooltip" && (
-            <>
-              {/* Normal Tooltip */}
-              {!element.props?.previewMode && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div
-                      className="w-full h-full flex items-center justify-center text-sm text-muted-foreground hover:text-foreground cursor-help transition-colors duration-200"
-                      style={{
-                        ...elementStyles,
-                        ...(element.props?.triggerFontFamily && element.props.triggerFontFamily !== 'inherit' && { fontFamily: element.props.triggerFontFamily }),
-                        ...(element.props?.triggerFontSize && { fontSize: element.props.triggerFontSize + 'px' }),
-                        ...(element.props?.triggerFontWeight && { fontWeight: element.props.triggerFontWeight }),
-                        ...(element.props?.triggerTextColor && { color: element.props.triggerTextColor })
-                      }}
-                    >
-                      <span>
-                        {element.props?.triggerText || 'Hover me'}
-                      </span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side={element.props?.position || 'top'}
-                    className="max-w-xs"
-                    style={{
-                      ...(element.props?.tooltipFontFamily && element.props.tooltipFontFamily !== 'inherit' && { fontFamily: element.props.tooltipFontFamily }),
-                      ...(element.props?.tooltipFontSize && { fontSize: element.props.tooltipFontSize + 'px' }),
-                      ...(element.props?.tooltipFontWeight && { fontWeight: element.props.tooltipFontWeight }),
-                      ...(element.props?.tooltipTextColor && { color: element.props.tooltipTextColor })
-                    }}
-                  >
-                    {element.content || 'Tooltip text'}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-
-              {/* Preview Mode - Always Visible Tooltip */}
-              {element.props?.previewMode && (
-                <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground hover:text-foreground cursor-help transition-colors duration-200" style={elementStyles}>
-                  <span style={{
-                    ...(element.props?.triggerFontFamily && element.props.triggerFontFamily !== 'inherit' && { fontFamily: element.props.triggerFontFamily }),
-                    ...(element.props?.triggerFontSize && { fontSize: element.props.triggerFontSize + 'px' }),
-                    ...(element.props?.triggerFontWeight && { fontWeight: element.props.triggerFontWeight }),
-                    ...(element.props?.triggerTextColor && { color: element.props.triggerTextColor })
-                  }}>
-                    {element.props?.triggerText || 'Hover me'}
-                  </span>
-
-                  {/* Always visible tooltip */}
-                  <div
-                    className="absolute z-50 w-fit origin-center rounded-lg px-3 py-2 text-xs text-balance shadow-lg bg-gradient-to-br from-popover via-popover to-popover/95 border border-border/50 backdrop-blur-sm text-popover-foreground animate-in fade-in-0 zoom-in-95 duration-200"
-                    style={{
-                      ...(element.props?.position === 'top' && { bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: '4px' }),
-                      ...(element.props?.position === 'bottom' && { top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: '4px' }),
-                      ...(element.props?.position === 'left' && { right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: '4px' }),
-                      ...(element.props?.position === 'right' && { left: '100%', top: '50%', transform: 'translateY(-50%)', marginLeft: '4px' }),
-                      ...(element.props?.tooltipFontFamily && element.props.tooltipFontFamily !== 'inherit' && { fontFamily: element.props.tooltipFontFamily }),
-                      ...(element.props?.tooltipFontSize && { fontSize: element.props.tooltipFontSize + 'px' }),
-                      ...(element.props?.tooltipFontWeight && { fontWeight: element.props.tooltipFontWeight }),
-                      ...(element.props?.tooltipTextColor && { color: element.props.tooltipTextColor })
-                    }}
-                  >
-                    {element.content || 'Tooltip text'}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-          {element.type === "dropdown" && (
-            <div className="w-full h-full flex items-center" style={elementStyles}>
-              <Select defaultValue={element.props?.defaultValue || ""}>
-                <SelectTrigger
-                  className="w-full h-auto min-h-[40px] text-card-foreground hover:bg-card/80 transition-colors"
-                  style={{
-                    ...(element.props?.labelFontFamily && element.props.labelFontFamily !== 'inherit' && element.props.labelFontFamily !== 'default' && { fontFamily: element.props.labelFontFamily }),
-                    ...(element.props?.labelFontSize && { fontSize: element.props.labelFontSize + 'px' }),
-                    ...(element.props?.labelFontWeight && { fontWeight: element.props.labelFontWeight }),
-                    ...(element.props?.labelTextColor && { color: element.props.labelTextColor })
-                  }}
-                >
-                  <SelectValue placeholder={element.content || "Select option"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {(element.props?.options || []).map((option: string, index: number) => (
-                    <SelectItem
-                      key={index}
-                      value={option}
-                      style={{
-                        ...(element.props?.optionFontFamily && element.props.optionFontFamily !== 'inherit' && element.props.optionFontFamily !== 'default' && { fontFamily: element.props.optionFontFamily }),
-                        ...(element.props?.optionFontSize && { fontSize: element.props.optionFontSize + 'px' }),
-                        ...(element.props?.optionFontWeight && { fontWeight: element.props.optionFontWeight }),
-                        ...(element.props?.optionTextColor && { color: element.props.optionTextColor })
-                      }}
-                    >
-                      {option}
-                    </SelectItem>
-                  ))}
-                  {(element.props?.options || []).length === 0 && (
-                    <SelectItem value="no-options" disabled>
-                      No options available
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          {element.type === "tabs" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <TabsComponent element={element} />
-            </div>
-          )}
-          {element.type === "carousel" && (
-            <CarouselComponent element={element} />
-          )}
-          {element.type === "table" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg overflow-hidden" style={elementStyles}>
-              <table className="w-full text-sm">
-                <thead className="bg-muted">
-                  <tr>
-                    {Array.from({ length: element.props?.columns || 3 }, (_, i) => (
-                      <th
-                        key={i}
-                        className="p-2 text-left"
+              </div>
+            )
+          }
+          {
+            element.type === "tooltip" && (
+              <>
+                {/* Normal Tooltip */}
+                {!element.props?.previewMode && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className="w-full h-full flex items-center justify-center text-sm text-muted-foreground hover:text-foreground cursor-help transition-colors duration-200"
                         style={{
-                          fontFamily: element.props?.headerFontFamily === "default" || element.props?.headerFontFamily === "inherit" ? undefined : element.props?.headerFontFamily,
-                          fontSize: element.props?.headerFontSize ? `${element.props.headerFontSize}px` : undefined,
-                          fontWeight: element.props?.headerFontWeight === "default" || element.props?.headerFontWeight === "inherit" ? undefined : element.props?.headerFontWeight,
-                          color: element.props?.headerTextColor || undefined
+                          ...elementStyles,
+                          ...(element.props?.triggerFontFamily && element.props.triggerFontFamily !== 'inherit' && { fontFamily: element.props.triggerFontFamily }),
+                          ...(element.props?.triggerFontSize && { fontSize: element.props.triggerFontSize + 'px' }),
+                          ...(element.props?.triggerFontWeight && { fontWeight: element.props.triggerFontWeight }),
+                          ...(element.props?.triggerTextColor && { color: element.props.triggerTextColor })
                         }}
                       >
-                        {element.props?.tableData?.headers?.[i] || `Header ${i + 1}`}
-                      </th>
+                        <span>
+                          {element.props?.triggerText || 'Hover me'}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side={element.props?.position || 'top'}
+                      className="max-w-xs"
+                      style={{
+                        ...(element.props?.tooltipFontFamily && element.props.tooltipFontFamily !== 'inherit' && { fontFamily: element.props.tooltipFontFamily }),
+                        ...(element.props?.tooltipFontSize && { fontSize: element.props.tooltipFontSize + 'px' }),
+                        ...(element.props?.tooltipFontWeight && { fontWeight: element.props.tooltipFontWeight }),
+                        ...(element.props?.tooltipTextColor && { color: element.props.tooltipTextColor })
+                      }}
+                    >
+                      {element.content || 'Tooltip text'}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+
+                {/* Preview Mode - Always Visible Tooltip */}
+                {element.props?.previewMode && (
+                  <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground hover:text-foreground cursor-help transition-colors duration-200" style={elementStyles}>
+                    <span style={{
+                      ...(element.props?.triggerFontFamily && element.props.triggerFontFamily !== 'inherit' && { fontFamily: element.props.triggerFontFamily }),
+                      ...(element.props?.triggerFontSize && { fontSize: element.props.triggerFontSize + 'px' }),
+                      ...(element.props?.triggerFontWeight && { fontWeight: element.props.triggerFontWeight }),
+                      ...(element.props?.triggerTextColor && { color: element.props.triggerTextColor })
+                    }}>
+                      {element.props?.triggerText || 'Hover me'}
+                    </span>
+
+                    {/* Always visible tooltip */}
+                    <div
+                      className="absolute z-50 w-fit origin-center rounded-lg px-3 py-2 text-xs text-balance shadow-lg bg-gradient-to-br from-popover via-popover to-popover/95 border border-border/50 backdrop-blur-sm text-popover-foreground animate-in fade-in-0 zoom-in-95 duration-200"
+                      style={{
+                        ...(element.props?.position === 'top' && { bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: '4px' }),
+                        ...(element.props?.position === 'bottom' && { top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: '4px' }),
+                        ...(element.props?.position === 'left' && { right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: '4px' }),
+                        ...(element.props?.position === 'right' && { left: '100%', top: '50%', transform: 'translateY(-50%)', marginLeft: '4px' }),
+                        ...(element.props?.tooltipFontFamily && element.props.tooltipFontFamily !== 'inherit' && { fontFamily: element.props.tooltipFontFamily }),
+                        ...(element.props?.tooltipFontSize && { fontSize: element.props.tooltipFontSize + 'px' }),
+                        ...(element.props?.tooltipFontWeight && { fontWeight: element.props.tooltipFontWeight }),
+                        ...(element.props?.tooltipTextColor && { color: element.props.tooltipTextColor })
+                      }}
+                    >
+                      {element.content || 'Tooltip text'}
+                    </div>
+                  </div>
+                )}
+              </>
+            )
+          }
+          {
+            element.type === "dropdown" && (
+              <div className="w-full h-full flex items-center" style={elementStyles}>
+                <Select defaultValue={element.props?.defaultValue || ""}>
+                  <SelectTrigger
+                    className="w-full h-auto min-h-[40px] text-card-foreground hover:bg-card/80 transition-colors"
+                    style={{
+                      ...(element.props?.labelFontFamily && element.props.labelFontFamily !== 'inherit' && element.props.labelFontFamily !== 'default' && { fontFamily: element.props.labelFontFamily }),
+                      ...(element.props?.labelFontSize && { fontSize: element.props.labelFontSize + 'px' }),
+                      ...(element.props?.labelFontWeight && { fontWeight: element.props.labelFontWeight }),
+                      ...(element.props?.labelTextColor && { color: element.props.labelTextColor })
+                    }}
+                  >
+                    <SelectValue placeholder={element.content || "Select option"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(element.props?.options || []).map((option: string, index: number) => (
+                      <SelectItem
+                        key={index}
+                        value={option}
+                        style={{
+                          ...(element.props?.optionFontFamily && element.props.optionFontFamily !== 'inherit' && element.props.optionFontFamily !== 'default' && { fontFamily: element.props.optionFontFamily }),
+                          ...(element.props?.optionFontSize && { fontSize: element.props.optionFontSize + 'px' }),
+                          ...(element.props?.optionFontWeight && { fontWeight: element.props.optionFontWeight }),
+                          ...(element.props?.optionTextColor && { color: element.props.optionTextColor })
+                        }}
+                      >
+                        {option}
+                      </SelectItem>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.from({ length: element.props?.rows || 4 }, (_, rowIndex) => (
-                    <tr key={rowIndex} className="border-t border-border">
-                      {Array.from({ length: element.props?.columns || 3 }, (_, colIndex) => (
-                        <td
-                          key={`${rowIndex}-${colIndex}`}
-                          className="p-2"
+                    {(element.props?.options || []).length === 0 && (
+                      <SelectItem value="no-options" disabled>
+                        No options available
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )
+          }
+          {
+            element.type === "tabs" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <TabsComponent element={element} />
+              </div>
+            )
+          }
+          {
+            element.type === "carousel" && (
+              <CarouselComponent element={element} />
+            )
+          }
+          {
+            element.type === "table" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg overflow-hidden" style={elementStyles}>
+                <table className="w-full text-sm">
+                  <thead className="bg-muted">
+                    <tr>
+                      {Array.from({ length: element.props?.columns || 3 }, (_, i) => (
+                        <th
+                          key={i}
+                          className="p-2 text-left"
                           style={{
-                            fontFamily: element.props?.contentFontFamily === "default" || element.props?.contentFontFamily === "inherit" ? undefined : element.props?.contentFontFamily,
-                            fontSize: element.props?.contentFontSize ? `${element.props.contentFontSize}px` : undefined,
-                            fontWeight: element.props?.contentFontWeight === "default" || element.props?.contentFontWeight === "inherit" ? undefined : element.props?.contentFontWeight,
-                            color: element.props?.contentTextColor || undefined
+                            fontFamily: element.props?.headerFontFamily === "default" || element.props?.headerFontFamily === "inherit" ? undefined : element.props?.headerFontFamily,
+                            fontSize: element.props?.headerFontSize ? `${element.props.headerFontSize}px` : undefined,
+                            fontWeight: element.props?.headerFontWeight === "default" || element.props?.headerFontWeight === "inherit" ? undefined : element.props?.headerFontWeight,
+                            color: element.props?.headerTextColor || undefined
                           }}
                         >
-                          {element.props?.tableData?.rows?.[rowIndex]?.[colIndex] || `Row ${rowIndex + 1}, Col ${colIndex + 1}`}
-                        </td>
+                          {element.props?.tableData?.headers?.[i] || `Header ${i + 1}`}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          {element.type === "chart" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex flex-col p-4" style={elementStyles}>
-              <div className="text-center mb-4">
-                <h3 className="text-sm font-medium">{element.content || "Chart"}</h3>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: element.props?.rows || 4 }, (_, rowIndex) => (
+                      <tr key={rowIndex} className="border-t border-border">
+                        {Array.from({ length: element.props?.columns || 3 }, (_, colIndex) => (
+                          <td
+                            key={`${rowIndex}-${colIndex}`}
+                            className="p-2"
+                            style={{
+                              fontFamily: element.props?.contentFontFamily === "default" || element.props?.contentFontFamily === "inherit" ? undefined : element.props?.contentFontFamily,
+                              fontSize: element.props?.contentFontSize ? `${element.props.contentFontSize}px` : undefined,
+                              fontWeight: element.props?.contentFontWeight === "default" || element.props?.contentFontWeight === "inherit" ? undefined : element.props?.contentFontWeight,
+                              color: element.props?.contentTextColor || undefined
+                            }}
+                          >
+                            {element.props?.tableData?.rows?.[rowIndex]?.[colIndex] || `Row ${rowIndex + 1}, Col ${colIndex + 1}`}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="flex-1 flex items-center justify-center">
-                {element.props?.chartType === "bar" && (
-                  <div className="w-full h-full flex items-end justify-center gap-2 p-4">
-                    {(element.props?.chartData || Array.from({ length: element.props?.dataPoints || 5 }, (_, i) => ({ label: `Item ${i + 1}`, value: Math.random() * 100 }))).map((data: any, index: number) => {
-                      const maxValue = Math.max(...(element.props?.chartData || []).map((d: any) => d.value || 0))
-                      const height = maxValue > 0 ? `${(data.value / maxValue) * 80}%` : "20%"
+            )
+          }
+          {
+            element.type === "chart" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex flex-col p-4" style={elementStyles}>
+                <div className="text-center mb-4">
+                  <h3 className="text-sm font-medium">{element.content || "Chart"}</h3>
+                </div>
+                <div className="flex-1 flex items-center justify-center">
+                  {element.props?.chartType === "bar" && (
+                    <div className="w-full h-full flex items-end justify-center gap-2 p-4">
+                      {(element.props?.chartData || Array.from({ length: element.props?.dataPoints || 5 }, (_, i) => ({ label: `Item ${i + 1}`, value: Math.random() * 100 }))).map((data: any, index: number) => {
+                        const maxValue = Math.max(...(element.props?.chartData || []).map((d: any) => d.value || 0))
+                        const height = maxValue > 0 ? `${(data.value / maxValue) * 80}%` : "20%"
+                        return (
+                          <div key={index} className="flex flex-col items-center gap-1">
+                            <div
+                              className="bg-primary rounded-t w-8 transition-all duration-300 hover:bg-primary/80"
+                              style={{ height }}
+                            />
+                            <span className="text-xs text-muted-foreground">{data.label}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                  {element.props?.chartType === "line" && (
+                    <div className="w-full h-full relative p-4">
+                      <svg className="w-full h-full" viewBox="0 0 300 200">
+                        {element.props?.showGrid && (
+                          <defs>
+                            <pattern id="grid" width="30" height="20" patternUnits="userSpaceOnUse">
+                              <path d="M 30 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.2" />
+                            </pattern>
+                          </defs>
+                        )}
+                        {element.props?.showGrid && <rect width="100%" height="100%" fill="url(#grid)" />}
+                        {(element.props?.chartData || Array.from({ length: element.props?.dataPoints || 5 }, (_, i) => ({ label: `Point ${i + 1}`, value: Math.random() * 100 }))).length > 1 && (
+                          <>
+                            <polyline
+                              fill="none"
+                              stroke="hsl(var(--primary))"
+                              strokeWidth="2"
+                              points={(element.props?.chartData || []).map((data: any, index: number) => {
+                                const x = (index / Math.max(1, (element.props?.chartData || []).length - 1)) * 280 + 10
+                                const y = 190 - ((data.value || 0) / Math.max(1, Math.max(...(element.props?.chartData || []).map((d: any) => d.value || 0)))) * 160
+                                return `${x},${y}`
+                              }).join(' ')}
+                            />
+                            {(element.props?.chartData || []).map((data: any, index: number) => {
+                              const x = (index / Math.max(1, (element.props?.chartData || []).length - 1)) * 280 + 10
+                              const y = 190 - ((data.value || 0) / Math.max(1, Math.max(...(element.props?.chartData || []).map((d: any) => d.value || 0)))) * 160
+                              return (
+                                <circle
+                                  key={index}
+                                  cx={x}
+                                  cy={y}
+                                  r="3"
+                                  fill="hsl(var(--primary))"
+                                  className="hover:r-4 transition-all duration-200"
+                                />
+                              )
+                            })}
+                          </>
+                        )}
+                      </svg>
+                    </div>
+                  )}
+                  {element.props?.chartType === "pie" && (
+                    <div className="w-full h-full flex items-center justify-center p-4">
+                      <svg className="w-32 h-32" viewBox="0 0 100 100">
+                        {(element.props?.chartData || Array.from({ length: element.props?.dataPoints || 5 }, (_, i) => ({ label: `Slice ${i + 1}`, value: Math.random() * 100 }))).map((data: any, index: number) => {
+                          const total = (element.props?.chartData || []).reduce((sum: number, d: any) => sum + (d.value || 0), 0)
+                          const percentage = total > 0 ? (data.value || 0) / total : 0
+                          const angle = percentage * 360
+                          const colors = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"]
+                          const color = colors[index % colors.length]
+
+                          let startAngle = 0
+                          for (let i = 0; i < index; i++) {
+                            const prevData = (element.props?.chartData || [])[i]
+                            const prevPercentage = total > 0 ? (prevData?.value || 0) / total : 0
+                            startAngle += prevPercentage * 360
+                          }
+
+                          const x1 = 50 + 40 * Math.cos((startAngle - 90) * Math.PI / 180)
+                          const y1 = 50 + 40 * Math.sin((startAngle - 90) * Math.PI / 180)
+                          const x2 = 50 + 40 * Math.cos((startAngle + angle - 90) * Math.PI / 180)
+                          const y2 = 50 + 40 * Math.sin((startAngle + angle - 90) * Math.PI / 180)
+                          const largeArcFlag = angle > 180 ? 1 : 0
+
+                          return (
+                            <path
+                              key={index}
+                              d={`M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArcFlag} 1 ${x2} ${y2} Z`}
+                              fill={color}
+                              className="hover:opacity-80 transition-opacity duration-200"
+                            />
+                          )
+                        })}
+                      </svg>
+                    </div>
+                  )}
+                  {element.props?.chartType === "doughnut" && (
+                    <div className="w-full h-full flex items-center justify-center p-4">
+                      <svg className="w-32 h-32" viewBox="0 0 100 100">
+                        {(element.props?.chartData || Array.from({ length: element.props?.dataPoints || 5 }, (_, i) => ({ label: `Segment ${i + 1}`, value: Math.random() * 100 }))).map((data: any, index: number) => {
+                          const total = (element.props?.chartData || []).reduce((sum: number, d: any) => sum + (d.value || 0), 0)
+                          const percentage = total > 0 ? (data.value || 0) / total : 0
+                          const angle = percentage * 360
+                          const colors = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"]
+                          const color = colors[index % colors.length]
+
+                          let startAngle = 0
+                          for (let i = 0; i < index; i++) {
+                            const prevData = (element.props?.chartData || [])[i]
+                            const prevPercentage = total > 0 ? (prevData?.value || 0) / total : 0
+                            startAngle += prevPercentage * 360
+                          }
+
+                          const radius = 30
+                          const innerRadius = 15
+                          const x1 = 50 + radius * Math.cos((startAngle - 90) * Math.PI / 180)
+                          const y1 = 50 + radius * Math.sin((startAngle - 90) * Math.PI / 180)
+                          const x2 = 50 + radius * Math.cos((startAngle + angle - 90) * Math.PI / 180)
+                          const y2 = 50 + radius * Math.sin((startAngle + angle - 90) * Math.PI / 180)
+                          const x3 = 50 + innerRadius * Math.cos((startAngle + angle - 90) * Math.PI / 180)
+                          const y3 = 50 + innerRadius * Math.sin((startAngle + angle - 90) * Math.PI / 180)
+                          const x4 = 50 + innerRadius * Math.cos((startAngle - 90) * Math.PI / 180)
+                          const y4 = 50 + innerRadius * Math.sin((startAngle - 90) * Math.PI / 180)
+                          const largeArcFlag = angle > 180 ? 1 : 0
+
+                          return (
+                            <path
+                              key={index}
+                              d={`M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x4} ${y4} Z`}
+                              fill={color}
+                              className="hover:opacity-80 transition-opacity duration-200"
+                            />
+                          )
+                        })}
+                      </svg>
+                    </div>
+                  )}
+                  {!element.props?.chartType && (
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                        <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                      </div>
+                      <p className="text-sm text-muted-foreground">Select a chart type</p>
+                    </div>
+                  )}
+                </div>
+                {element.props?.showLegend && (element.props?.chartType === "pie" || element.props?.chartType === "doughnut") && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {(element.props?.chartData || []).map((data: any, index: number) => {
+                      const colors = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"]
+                      const color = colors[index % colors.length]
                       return (
-                        <div key={index} className="flex flex-col items-center gap-1">
-                          <div
-                            className="bg-primary rounded-t w-8 transition-all duration-300 hover:bg-primary/80"
-                            style={{ height }}
-                          />
-                          <span className="text-xs text-muted-foreground">{data.label}</span>
+                        <div key={index} className="flex items-center gap-1 text-xs">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                          <span>{data.label}</span>
                         </div>
                       )
                     })}
                   </div>
                 )}
-                {element.props?.chartType === "line" && (
-                  <div className="w-full h-full relative p-4">
-                    <svg className="w-full h-full" viewBox="0 0 300 200">
-                      {element.props?.showGrid && (
-                        <defs>
-                          <pattern id="grid" width="30" height="20" patternUnits="userSpaceOnUse">
-                            <path d="M 30 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.2" />
-                          </pattern>
-                        </defs>
-                      )}
-                      {element.props?.showGrid && <rect width="100%" height="100%" fill="url(#grid)" />}
-                      {(element.props?.chartData || Array.from({ length: element.props?.dataPoints || 5 }, (_, i) => ({ label: `Point ${i + 1}`, value: Math.random() * 100 }))).length > 1 && (
-                        <>
-                          <polyline
-                            fill="none"
-                            stroke="hsl(var(--primary))"
-                            strokeWidth="2"
-                            points={(element.props?.chartData || []).map((data: any, index: number) => {
-                              const x = (index / Math.max(1, (element.props?.chartData || []).length - 1)) * 280 + 10
-                              const y = 190 - ((data.value || 0) / Math.max(1, Math.max(...(element.props?.chartData || []).map((d: any) => d.value || 0)))) * 160
-                              return `${x},${y}`
-                            }).join(' ')}
-                          />
-                          {(element.props?.chartData || []).map((data: any, index: number) => {
-                            const x = (index / Math.max(1, (element.props?.chartData || []).length - 1)) * 280 + 10
-                            const y = 190 - ((data.value || 0) / Math.max(1, Math.max(...(element.props?.chartData || []).map((d: any) => d.value || 0)))) * 160
-                            return (
-                              <circle
-                                key={index}
-                                cx={x}
-                                cy={y}
-                                r="3"
-                                fill="hsl(var(--primary))"
-                                className="hover:r-4 transition-all duration-200"
-                              />
-                            )
-                          })}
-                        </>
-                      )}
-                    </svg>
-                  </div>
-                )}
-                {element.props?.chartType === "pie" && (
-                  <div className="w-full h-full flex items-center justify-center p-4">
-                    <svg className="w-32 h-32" viewBox="0 0 100 100">
-                      {(element.props?.chartData || Array.from({ length: element.props?.dataPoints || 5 }, (_, i) => ({ label: `Slice ${i + 1}`, value: Math.random() * 100 }))).map((data: any, index: number) => {
-                        const total = (element.props?.chartData || []).reduce((sum: number, d: any) => sum + (d.value || 0), 0)
-                        const percentage = total > 0 ? (data.value || 0) / total : 0
-                        const angle = percentage * 360
-                        const colors = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"]
-                        const color = colors[index % colors.length]
-
-                        let startAngle = 0
-                        for (let i = 0; i < index; i++) {
-                          const prevData = (element.props?.chartData || [])[i]
-                          const prevPercentage = total > 0 ? (prevData?.value || 0) / total : 0
-                          startAngle += prevPercentage * 360
-                        }
-
-                        const x1 = 50 + 40 * Math.cos((startAngle - 90) * Math.PI / 180)
-                        const y1 = 50 + 40 * Math.sin((startAngle - 90) * Math.PI / 180)
-                        const x2 = 50 + 40 * Math.cos((startAngle + angle - 90) * Math.PI / 180)
-                        const y2 = 50 + 40 * Math.sin((startAngle + angle - 90) * Math.PI / 180)
-                        const largeArcFlag = angle > 180 ? 1 : 0
-
-                        return (
-                          <path
-                            key={index}
-                            d={`M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArcFlag} 1 ${x2} ${y2} Z`}
-                            fill={color}
-                            className="hover:opacity-80 transition-opacity duration-200"
-                          />
-                        )
-                      })}
-                    </svg>
-                  </div>
-                )}
-                {element.props?.chartType === "doughnut" && (
-                  <div className="w-full h-full flex items-center justify-center p-4">
-                    <svg className="w-32 h-32" viewBox="0 0 100 100">
-                      {(element.props?.chartData || Array.from({ length: element.props?.dataPoints || 5 }, (_, i) => ({ label: `Segment ${i + 1}`, value: Math.random() * 100 }))).map((data: any, index: number) => {
-                        const total = (element.props?.chartData || []).reduce((sum: number, d: any) => sum + (d.value || 0), 0)
-                        const percentage = total > 0 ? (data.value || 0) / total : 0
-                        const angle = percentage * 360
-                        const colors = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"]
-                        const color = colors[index % colors.length]
-
-                        let startAngle = 0
-                        for (let i = 0; i < index; i++) {
-                          const prevData = (element.props?.chartData || [])[i]
-                          const prevPercentage = total > 0 ? (prevData?.value || 0) / total : 0
-                          startAngle += prevPercentage * 360
-                        }
-
-                        const radius = 30
-                        const innerRadius = 15
-                        const x1 = 50 + radius * Math.cos((startAngle - 90) * Math.PI / 180)
-                        const y1 = 50 + radius * Math.sin((startAngle - 90) * Math.PI / 180)
-                        const x2 = 50 + radius * Math.cos((startAngle + angle - 90) * Math.PI / 180)
-                        const y2 = 50 + radius * Math.sin((startAngle + angle - 90) * Math.PI / 180)
-                        const x3 = 50 + innerRadius * Math.cos((startAngle + angle - 90) * Math.PI / 180)
-                        const y3 = 50 + innerRadius * Math.sin((startAngle + angle - 90) * Math.PI / 180)
-                        const x4 = 50 + innerRadius * Math.cos((startAngle - 90) * Math.PI / 180)
-                        const y4 = 50 + innerRadius * Math.sin((startAngle - 90) * Math.PI / 180)
-                        const largeArcFlag = angle > 180 ? 1 : 0
-
-                        return (
-                          <path
-                            key={index}
-                            d={`M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x4} ${y4} Z`}
-                            fill={color}
-                            className="hover:opacity-80 transition-opacity duration-200"
-                          />
-                        )
-                      })}
-                    </svg>
-                  </div>
-                )}
-                {!element.props?.chartType && (
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                      <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                    </div>
-                    <p className="text-sm text-muted-foreground">Select a chart type</p>
-                  </div>
-                )}
               </div>
-              {element.props?.showLegend && (element.props?.chartType === "pie" || element.props?.chartType === "doughnut") && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {(element.props?.chartData || []).map((data: any, index: number) => {
-                    const colors = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"]
-                    const color = colors[index % colors.length]
-                    return (
-                      <div key={index} className="flex items-center gap-1 text-xs">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                        <span>{data.label}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-          {element.type === "progress" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4 flex flex-col justify-center" style={elementStyles}>
-              <div className="mb-2">
-                <span
-                  className="text-sm font-medium"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || undefined,
-                    fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : undefined,
-                    fontWeight: element.props?.titleFontWeight || undefined,
-                    color: element.props?.titleTextColor || undefined,
-                  }}
-                >
-                  {element.content || "Progress"}
-                </span>
-                {element.props?.showPercentage && (
+            )
+          }
+          {
+            element.type === "progress" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4 flex flex-col justify-center" style={elementStyles}>
+                <div className="mb-2">
                   <span
-                    className="text-sm text-muted-foreground ml-2"
+                    className="text-sm font-medium"
                     style={{
                       fontFamily: element.props?.titleFontFamily || undefined,
                       fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : undefined,
@@ -4995,1672 +5047,1707 @@ export function BuilderCanvas({
                       color: element.props?.titleTextColor || undefined,
                     }}
                   >
-                    {element.props?.value || 50}%
+                    {element.content || "Progress"}
                   </span>
-                )}
-              </div>
-              <div
-                className="w-full rounded-full overflow-hidden"
-                style={{
-                  backgroundColor: element.props?.backgroundColor || "#e5e7eb",
-                  height: `${element.props?.height || 8}px`
-                }}
-              >
+                  {element.props?.showPercentage && (
+                    <span
+                      className="text-sm text-muted-foreground ml-2"
+                      style={{
+                        fontFamily: element.props?.titleFontFamily || undefined,
+                        fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : undefined,
+                        fontWeight: element.props?.titleFontWeight || undefined,
+                        color: element.props?.titleTextColor || undefined,
+                      }}
+                    >
+                      {element.props?.value || 50}%
+                    </span>
+                  )}
+                </div>
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ${element.props?.animated ? "animate-pulse" : ""
-                    }`}
+                  className="w-full rounded-full overflow-hidden"
                   style={{
-                    width: `${element.props?.value || 50}%`,
-                    backgroundColor: element.props?.progressColor || "#3b82f6",
-                    transition: element.props?.animated ? "width 0.5s ease-in-out" : "none"
-                  }}
-                />
-              </div>
-            </div>
-          )}
-          {element.type === "timeline" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-              <div className="space-y-4">
-                <h3
-                  className="text-lg font-semibold mb-4"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || undefined,
-                    fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : undefined,
-                    fontWeight: element.props?.titleFontWeight || undefined,
-                    color: element.props?.titleTextColor || undefined,
+                    backgroundColor: element.props?.backgroundColor || "#e5e7eb",
+                    height: `${element.props?.height || 8}px`
                   }}
                 >
-                  {element.content || "Timeline"}
-                </h3>
-                <div className="relative">
-                  {/* Timeline line */}
-                  <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border"></div>
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${element.props?.animated ? "animate-pulse" : ""
+                      }`}
+                    style={{
+                      width: `${element.props?.value || 50}%`,
+                      backgroundColor: element.props?.progressColor || "#3b82f6",
+                      transition: element.props?.animated ? "width 0.5s ease-in-out" : "none"
+                    }}
+                  />
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "timeline" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+                <div className="space-y-4">
+                  <h3
+                    className="text-lg font-semibold mb-4"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || undefined,
+                      fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : undefined,
+                      fontWeight: element.props?.titleFontWeight || undefined,
+                      color: element.props?.titleTextColor || undefined,
+                    }}
+                  >
+                    {element.content || "Timeline"}
+                  </h3>
+                  <div className="relative">
+                    {/* Timeline line */}
+                    <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border"></div>
 
-                  {/* Timeline events */}
-                  {Array.from({ length: element.props?.eventCount || 4 }, (_, index) => (
-                    <div key={index} className="relative flex items-start gap-4 pb-6">
-                      {/* Event dot */}
-                      <div
-                        className="w-3 h-3 bg-primary rounded-full mt-1 flex-shrink-0 z-10"
-                        style={{
-                          backgroundColor: element.props?.timelineEvents?.[index]?.dotColor || undefined,
-                        }}
-                      ></div>
+                    {/* Timeline events */}
+                    {Array.from({ length: element.props?.eventCount || 4 }, (_, index) => (
+                      <div key={index} className="relative flex items-start gap-4 pb-6">
+                        {/* Event dot */}
+                        <div
+                          className="w-3 h-3 bg-primary rounded-full mt-1 flex-shrink-0 z-10"
+                          style={{
+                            backgroundColor: element.props?.timelineEvents?.[index]?.dotColor || undefined,
+                          }}
+                        ></div>
 
-                      {/* Event content */}
-                      <div className="flex-1 min-w-0">
-                        <h4
-                          className="text-sm font-medium"
-                          style={{
-                            fontFamily: element.props?.eventTitleFontFamily || undefined,
-                            fontSize: element.props?.eventTitleFontSize ? `${element.props.eventTitleFontSize}px` : undefined,
-                            fontWeight: element.props?.eventTitleFontWeight || undefined,
-                            color: element.props?.eventTitleTextColor || undefined,
-                          }}
-                        >
-                          {element.props?.timelineEvents?.[index]?.title || `Event ${index + 1}`}
-                        </h4>
-                        <p
-                          className="text-xs text-muted-foreground mt-1"
-                          style={{
-                            fontFamily: element.props?.descriptionFontFamily || undefined,
-                            fontSize: element.props?.descriptionFontSize ? `${element.props.descriptionFontSize}px` : undefined,
-                            fontWeight: element.props?.descriptionFontWeight || undefined,
-                            color: element.props?.descriptionTextColor || undefined,
-                          }}
-                        >
-                          {element.props?.timelineEvents?.[index]?.description || `Description for event ${index + 1}`}
-                        </p>
-                        {element.props?.timelineEvents?.[index]?.date && (
+                        {/* Event content */}
+                        <div className="flex-1 min-w-0">
+                          <h4
+                            className="text-sm font-medium"
+                            style={{
+                              fontFamily: element.props?.eventTitleFontFamily || undefined,
+                              fontSize: element.props?.eventTitleFontSize ? `${element.props.eventTitleFontSize}px` : undefined,
+                              fontWeight: element.props?.eventTitleFontWeight || undefined,
+                              color: element.props?.eventTitleTextColor || undefined,
+                            }}
+                          >
+                            {element.props?.timelineEvents?.[index]?.title || `Event ${index + 1}`}
+                          </h4>
                           <p
                             className="text-xs text-muted-foreground mt-1"
                             style={{
-                              fontFamily: element.props?.dateFontFamily || undefined,
-                              fontSize: element.props?.dateFontSize ? `${element.props.dateFontSize}px` : undefined,
-                              fontWeight: element.props?.dateFontWeight || undefined,
-                              color: element.props?.dateTextColor || undefined,
+                              fontFamily: element.props?.descriptionFontFamily || undefined,
+                              fontSize: element.props?.descriptionFontSize ? `${element.props.descriptionFontSize}px` : undefined,
+                              fontWeight: element.props?.descriptionFontWeight || undefined,
+                              color: element.props?.descriptionTextColor || undefined,
                             }}
                           >
-                            {element.props.timelineEvents[index].date}
+                            {element.props?.timelineEvents?.[index]?.description || `Description for event ${index + 1}`}
                           </p>
-                        )}
+                          {element.props?.timelineEvents?.[index]?.date && (
+                            <p
+                              className="text-xs text-muted-foreground mt-1"
+                              style={{
+                                fontFamily: element.props?.dateFontFamily || undefined,
+                                fontSize: element.props?.dateFontSize ? `${element.props.dateFontSize}px` : undefined,
+                                fontWeight: element.props?.dateFontWeight || undefined,
+                                color: element.props?.dateTextColor || undefined,
+                              }}
+                            >
+                              {element.props.timelineEvents[index].date}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          {element.type === "stats" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Array.from({ length: element.props?.statCount || 3 }, (_, index) => {
-                  const stat = element.props?.stats?.[index] || {}
-                  return (
-                    <div key={index} className="bg-sidebar-accent border border-sidebar-border rounded-lg p-4 text-center">
-                      <div
-                        className="text-2xl font-bold text-primary mb-2"
-                        style={{
-                          fontFamily: element.props?.valueFontFamily || undefined,
-                          fontSize: element.props?.valueFontSize ? `${element.props.valueFontSize}px` : undefined,
-                          fontWeight: element.props?.valueFontWeight || undefined,
-                          color: element.props?.valueTextColor || undefined,
-                        }}
-                      >
-                        {stat.value || `${(index + 1) * 1000}`}
-                      </div>
-                      <div
-                        className="text-sm text-muted-foreground"
-                        style={{
-                          fontFamily: element.props?.labelFontFamily || undefined,
-                          fontSize: element.props?.labelFontSize ? `${element.props.labelFontSize}px` : undefined,
-                          fontWeight: element.props?.labelFontWeight || undefined,
-                          color: element.props?.labelTextColor || undefined,
-                        }}
-                      >
-                        {stat.label || `Stat ${index + 1}`}
-                      </div>
-                      {stat.description && (
+            )
+          }
+          {
+            element.type === "stats" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Array.from({ length: element.props?.statCount || 3 }, (_, index) => {
+                    const stat = element.props?.stats?.[index] || {}
+                    return (
+                      <div key={index} className="bg-sidebar-accent border border-sidebar-border rounded-lg p-4 text-center">
                         <div
-                          className="text-xs text-muted-foreground mt-1"
+                          className="text-2xl font-bold text-primary mb-2"
                           style={{
-                            fontFamily: element.props?.descriptionFontFamily || undefined,
-                            fontSize: element.props?.descriptionFontSize ? `${element.props.descriptionFontSize}px` : undefined,
-                            fontWeight: element.props?.descriptionFontWeight || undefined,
-                            color: element.props?.descriptionTextColor || undefined,
+                            fontFamily: element.props?.valueFontFamily || undefined,
+                            fontSize: element.props?.valueFontSize ? `${element.props.valueFontSize}px` : undefined,
+                            fontWeight: element.props?.valueFontWeight || undefined,
+                            color: element.props?.valueTextColor || undefined,
                           }}
                         >
-                          {stat.description}
+                          {stat.value || `${(index + 1) * 1000}`}
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
+                        <div
+                          className="text-sm text-muted-foreground"
+                          style={{
+                            fontFamily: element.props?.labelFontFamily || undefined,
+                            fontSize: element.props?.labelFontSize ? `${element.props.labelFontSize}px` : undefined,
+                            fontWeight: element.props?.labelFontWeight || undefined,
+                            color: element.props?.labelTextColor || undefined,
+                          }}
+                        >
+                          {stat.label || `Stat ${index + 1}`}
+                        </div>
+                        {stat.description && (
+                          <div
+                            className="text-xs text-muted-foreground mt-1"
+                            style={{
+                              fontFamily: element.props?.descriptionFontFamily || undefined,
+                              fontSize: element.props?.descriptionFontSize ? `${element.props.descriptionFontSize}px` : undefined,
+                              fontWeight: element.props?.descriptionFontWeight || undefined,
+                              color: element.props?.descriptionTextColor || undefined,
+                            }}
+                          >
+                            {stat.description}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )}
-          {element.type === "counter" && (
-            <CounterComponent element={element} currentBreakpoint={currentBreakpoint} />
-          )}
-          {element.type === "product-card" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg overflow-hidden" style={elementStyles}>
-              <div
-                className="bg-muted flex items-center justify-center overflow-hidden"
-                style={{
-                  height: element.props?.enableScaling !== false
-                    ? `${Math.max(60, (element.position?.height || 200) * ((element.props?.imageHeight || 40) / 100))}px`
-                    : `${(element.position?.height || 200) * ((element.props?.imageHeight || 40) / 100)}px`
-                }}
-              >
-                {element.props?.imageUrl ? (
-                  <img
-                    src={element.props.imageUrl}
-                    alt={element.content}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <svg
-                    className="text-muted-foreground"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    style={{
-                      width: element.props?.enableScaling !== false
-                        ? `${Math.max(20, (element.position?.width || 200) * 0.1)}px`
-                        : '32px',
-                      height: element.props?.enableScaling !== false
-                        ? `${Math.max(20, (element.position?.width || 200) * 0.1)}px`
-                        : '32px'
-                    }}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                )}
-              </div>
-              <div
-                style={{
-                  padding: element.props?.enableScaling !== false
-                    ? `${Math.max(8, (element.position?.height || 200) * 0.04)}px`
-                    : '12px'
-                }}
-              >
-                <h3
-                  className="mb-1"
+            )
+          }
+          {
+            element.type === "counter" && (
+              <CounterComponent element={element} currentBreakpoint={currentBreakpoint} />
+            )
+          }
+          {
+            element.type === "product-card" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg overflow-hidden" style={elementStyles}>
+                <div
+                  className="bg-muted flex items-center justify-center overflow-hidden"
                   style={{
-                    fontFamily: element.props?.productNameFontFamily || 'inherit',
-                    fontSize: element.props?.productNameFontSize
-                      ? `${element.props.productNameFontSize}px`
-                      : element.props?.enableScaling !== false
-                        ? `${Math.max(10, (element.position?.width || 200) * 0.05)}px`
-                        : '14px',
-                    fontWeight: element.props?.productNameFontWeight || '600',
-                    color: element.props?.productNameColor || 'inherit'
+                    height: element.props?.enableScaling !== false
+                      ? `${Math.max(60, (element.position?.height || 200) * ((element.props?.imageHeight || 40) / 100))}px`
+                      : `${(element.position?.height || 200) * ((element.props?.imageHeight || 40) / 100)}px`
                   }}
                 >
-                  {element.content}
-                </h3>
-                <p
-                  className="mb-2"
+                  {element.props?.imageUrl ? (
+                    <img
+                      src={element.props.imageUrl}
+                      alt={element.content}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <svg
+                      className="text-muted-foreground"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      style={{
+                        width: element.props?.enableScaling !== false
+                          ? `${Math.max(20, (element.position?.width || 200) * 0.1)}px`
+                          : '32px',
+                        height: element.props?.enableScaling !== false
+                          ? `${Math.max(20, (element.position?.width || 200) * 0.1)}px`
+                          : '32px'
+                      }}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  )}
+                </div>
+                <div
                   style={{
-                    fontFamily: element.props?.descriptionFontFamily || 'inherit',
-                    fontSize: element.props?.descriptionFontSize
-                      ? `${element.props.descriptionFontSize}px`
-                      : element.props?.enableScaling !== false
-                        ? `${Math.max(8, (element.position?.width || 200) * 0.035)}px`
-                        : '12px',
-                    fontWeight: element.props?.descriptionFontWeight || '400',
-                    color: element.props?.descriptionColor || '#a1a1aa'
+                    padding: element.props?.enableScaling !== false
+                      ? `${Math.max(8, (element.position?.height || 200) * 0.04)}px`
+                      : '12px'
                   }}
                 >
-                  {element.props?.description || "Product description"}
-                </p>
-                <div className="flex items-center justify-between">
-                  <span
+                  <h3
+                    className="mb-1"
                     style={{
-                      fontFamily: element.props?.priceFontFamily || 'inherit',
-                      fontSize: element.props?.priceFontSize
-                        ? `${element.props.priceFontSize}px`
+                      fontFamily: element.props?.productNameFontFamily || 'inherit',
+                      fontSize: element.props?.productNameFontSize
+                        ? `${element.props.productNameFontSize}px`
                         : element.props?.enableScaling !== false
-                          ? `${Math.max(10, (element.position?.width || 200) * 0.045)}px`
+                          ? `${Math.max(10, (element.position?.width || 200) * 0.05)}px`
                           : '14px',
-                      fontWeight: element.props?.priceFontWeight || '700',
-                      color: element.props?.priceColor || '#3b82f6'
+                      fontWeight: element.props?.productNameFontWeight || '600',
+                      color: element.props?.productNameColor || 'inherit'
                     }}
                   >
-                    {(() => {
-                      const currency = element.props?.productCurrency || "USD";
-                      const price = element.props?.price || "99.99";
-
-                      const currencySymbols: Record<string, string> = {
-                        USD: "$",
-                        EUR: "€",
-                        GBP: "£",
-                        JPY: "¥",
-                        VND: "₫",
-                        CNY: "¥",
-                        KRW: "₩",
-                        THB: "฿",
-                        SGD: "S$",
-                        AUD: "A$",
-                        CAD: "C$",
-                        INR: "₹"
-                      };
-
-                      // Currencies with symbol after amount
-                      const symbolAfter = ["VND", "KRW", "THB"];
-                      const symbol = currencySymbols[currency] || "$";
-
-                      if (symbolAfter.includes(currency)) {
-                        return `${price}${symbol}`;
-                      } else {
-                        return `${symbol}${price}`;
-                      }
-                    })()}
-                  </span>
-                  <button
-                    className="rounded"
+                    {element.content}
+                  </h3>
+                  <p
+                    className="mb-2"
                     style={{
-                      fontFamily: element.props?.buttonFontFamily || 'inherit',
-                      fontSize: element.props?.buttonFontSize
-                        ? `${element.props.buttonFontSize}px`
+                      fontFamily: element.props?.descriptionFontFamily || 'inherit',
+                      fontSize: element.props?.descriptionFontSize
+                        ? `${element.props.descriptionFontSize}px`
                         : element.props?.enableScaling !== false
                           ? `${Math.max(8, (element.position?.width || 200) * 0.035)}px`
                           : '12px',
-                      fontWeight: element.props?.buttonFontWeight || '400',
-                      color: element.props?.buttonTextColor || '#ffffff',
-                      backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
-                      padding: element.props?.enableScaling !== false
-                        ? `${Math.max(4, (element.position?.height || 200) * 0.015)}px ${Math.max(8, (element.position?.width || 200) * 0.025)}px`
-                        : '4px 8px'
+                      fontWeight: element.props?.descriptionFontWeight || '400',
+                      color: element.props?.descriptionColor || '#a1a1aa'
                     }}
                   >
-                    {element.props?.buttonText || "Add"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "price" && (
-            <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-              <span
-                style={{
-                  fontFamily: element.props?.priceFontFamily || 'inherit',
-                  fontSize: element.props?.priceFontSize
-                    ? `${element.props.priceFontSize}px`
-                    : '24px',
-                  fontWeight: element.props?.priceFontWeight || '700',
-                  color: element.props?.priceTextColor || 'inherit'
-                }}
-              >
-                {(() => {
-                  const currency = element.props?.currency || "USD";
-                  const amount = element.props?.priceAmount || element.content || "99.99";
-                  const period = element.props?.period || "";
-
-                  const currencySymbols: Record<string, string> = {
-                    USD: "$",
-                    EUR: "€",
-                    GBP: "£",
-                    JPY: "¥",
-                    VND: "₫",
-                    CNY: "¥",
-                    KRW: "₩",
-                    THB: "฿",
-                    SGD: "S$",
-                    AUD: "A$",
-                    CAD: "C$",
-                    INR: "₹"
-                  };
-
-                  // Currencies with symbol after amount
-                  const symbolAfter = ["VND", "KRW", "THB"];
-                  const symbol = currencySymbols[currency] || "$";
-
-                  if (symbolAfter.includes(currency)) {
-                    return `${amount}${symbol}${period}`;
-                  } else {
-                    return `${symbol}${amount}${period}`;
-                  }
-                })()}
-              </span>
-            </div>
-          )}
-          {element.type === "rating" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-              <div className="space-y-3">
-                {/* Stars */}
-                <div className="flex items-center justify-center gap-1">
-                  {Array.from({ length: element.props?.maxStars || 5 }).map((_, index) => {
-                    const value = element.props?.value || 4;
-                    const isFilled = index < Math.floor(value);
-                    const isHalf = index === Math.floor(value) && value % 1 !== 0;
-
-                    return (
-                      <svg
-                        key={index}
-                        className={`w-6 h-6 ${isFilled || isHalf ? "text-yellow-400" : "text-muted-foreground/30"
-                          }`}
-                        fill={isFilled || isHalf ? "currentColor" : "none"}
-                        stroke="currentColor"
-                        strokeWidth={isFilled || isHalf ? 0 : 2}
-                        viewBox="0 0 24 24"
-                      >
-                        {isHalf ? (
-                          <>
-                            <defs>
-                              <linearGradient id={`half-${index}`}>
-                                <stop offset="50%" stopColor="currentColor" />
-                                <stop offset="50%" stopColor="transparent" />
-                              </linearGradient>
-                            </defs>
-                            <path
-                              fill={`url(#half-${index})`}
-                              d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                            />
-                            <path
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                            />
-                          </>
-                        ) : (
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        )}
-                      </svg>
-                    );
-                  })}
-                </div>
-
-                {/* Comment Box */}
-                {element.props?.showComment !== false && (
-                  <textarea
-                    placeholder={element.props?.commentPlaceholder || "Write your review..."}
-                    className="w-full px-3 py-2 border border-border rounded bg-background resize-none"
-                    style={{
-                      fontFamily: element.props?.commentFontFamily || 'inherit',
-                      fontSize: element.props?.commentFontSize
-                        ? `${element.props.commentFontSize}px`
-                        : '14px',
-                      fontWeight: element.props?.commentFontWeight || '400',
-                      color: element.props?.commentTextColor || 'inherit'
-                    }}
-                    rows={3}
-                    disabled
-                  />
-                )}
-
-                {/* Submit Button */}
-                {element.props?.showSubmitButton !== false && (
-                  <button
-                    className="w-full px-4 py-2 rounded hover:opacity-90 transition-opacity"
-                    style={{
-                      fontFamily: element.props?.buttonFontFamily || 'inherit',
-                      fontSize: element.props?.buttonFontSize
-                        ? `${element.props.buttonFontSize}px`
-                        : '14px',
-                      fontWeight: element.props?.buttonFontWeight || '500',
-                      color: element.props?.buttonTextColor || '#ffffff',
-                      backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6'
-                    }}
-                  >
-                    {element.props?.submitButtonText || "Submit Review"}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-          {element.type === "cart" && (
-            <button
-              className="w-full h-full rounded-lg hover:opacity-90 transition-opacity"
-              style={{
-                ...elementStyles,
-                fontFamily: element.props?.cartFontFamily || 'inherit',
-                fontSize: element.props?.cartFontSize
-                  ? `${element.props.cartFontSize}px`
-                  : '16px',
-                fontWeight: element.props?.cartFontWeight || '500',
-                color: element.props?.cartTextColor || '#ffffff',
-                backgroundColor: element.props?.cartBackgroundColor || '#3b82f6'
-              }}
-            >
-              {element.content}
-            </button>
-          )}
-          {element.type === "checkout" && (
-            <button
-              className="w-full h-full rounded-lg hover:opacity-90 transition-opacity"
-              style={{
-                ...elementStyles,
-                fontFamily: element.props?.checkoutFontFamily || 'inherit',
-                fontSize: element.props?.checkoutFontSize
-                  ? `${element.props.checkoutFontSize}px`
-                  : '16px',
-                fontWeight: element.props?.checkoutFontWeight || '600',
-                color: element.props?.checkoutTextColor || '#ffffff',
-                backgroundColor: element.props?.checkoutBackgroundColor || '#3b82f6'
-              }}
-            >
-              {element.content}
-            </button>
-          )}
-          {element.type === "social-links" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center p-4" style={elementStyles}>
-              {element.props?.socialLinks && element.props.socialLinks.length > 0 ? (
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {element.props.socialLinks.map((link: any, index: number) => (
-                    <a
-                      key={index}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center hover:bg-primary/30 transition-colors"
-                      title={link.platform}
-                    >
-                      <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                        {link.platform.toLowerCase().includes('facebook') ? (
-                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                        ) : link.platform.toLowerCase().includes('twitter') || link.platform.toLowerCase().includes('x') ? (
-                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                        ) : link.platform.toLowerCase().includes('instagram') ? (
-                          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                        ) : link.platform.toLowerCase().includes('linkedin') ? (
-                          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-                        ) : (
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        )}
-                      </svg>
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
-                    </svg>
-                  </div>
-                  <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z" />
-                    </svg>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          {element.type === "contact-info" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-              <div className="space-y-2">
-                {element.props?.phone && (
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    <span
-                      className="text-sm"
-                      style={{
-                        fontFamily: element.props?.phoneFontFamily || 'inherit',
-                        fontSize: element.props?.phoneFontSize ? `${element.props.phoneFontSize}px` : '14px',
-                        fontWeight: element.props?.phoneFontWeight || '400',
-                        color: element.props?.phoneTextColor || 'inherit'
-                      }}
-                    >
-                      {element.props.phone}
-                    </span>
-                  </div>
-                )}
-                {element.props?.email && (
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <span
-                      className="text-sm"
-                      style={{
-                        fontFamily: element.props?.emailFontFamily || 'inherit',
-                        fontSize: element.props?.emailFontSize ? `${element.props.emailFontSize}px` : '14px',
-                        fontWeight: element.props?.emailFontWeight || '400',
-                        color: element.props?.emailTextColor || 'inherit'
-                      }}
-                    >
-                      {element.props.email}
-                    </span>
-                  </div>
-                )}
-                {element.props?.address && (
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span
-                      className="text-sm"
-                      style={{
-                        fontFamily: element.props?.addressFontFamily || 'inherit',
-                        fontSize: element.props?.addressFontSize ? `${element.props.addressFontSize}px` : '14px',
-                        fontWeight: element.props?.addressFontWeight || '400',
-                        color: element.props?.addressTextColor || 'inherit'
-                      }}
-                    >
-                      {element.props.address}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          {element.type === "map" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg overflow-hidden" style={elementStyles}>
-              {element.content && (
-                <div
-                  className="p-3 bg-muted border-b border-border text-center"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || 'inherit',
-                    fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : '16px',
-                    fontWeight: element.props?.titleFontWeight || '600',
-                    color: element.props?.titleTextColor || 'inherit'
-                  }}
-                >
-                  {element.content}
-                </div>
-              )}
-              <div className="w-full h-full flex flex-col">
-                {element.props?.address && (
-                  <div
-                    className="p-2 bg-muted/50 text-sm border-b border-border"
-                    style={{
-                      fontFamily: element.props?.addressFontFamily || 'inherit',
-                      fontSize: element.props?.addressFontSize ? `${element.props.addressFontSize}px` : '12px',
-                      fontWeight: element.props?.addressFontWeight || '400',
-                      color: element.props?.addressTextColor || 'inherit'
-                    }}
-                  >
-                    <div className="flex items-start gap-2">
-                      <svg className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span className="flex-1">{element.props.address}</span>
-                    </div>
-                  </div>
-                )}
-                <div className="flex-1 bg-muted flex items-center justify-center">
-                  {element.props?.mapUrl ? (
-                    <iframe
-                      src={element.props.mapUrl}
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0 }}
-                      allowFullScreen
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      title={element.content || "Map Location"}
-                    />
-                  ) : (
-                    <div className="text-center p-4">
-                      <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                        <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Add Map URL to display map</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "newsletter" && (() => {
-            // Calculate scale factor for auto-scaling
-            const originalPosition = element.position || { x: 0, y: 0, width: 200, height: 50 }
-            const currentPosition = {
-              width: transientRef.current.get(element.id)?.width ?? originalPosition.width,
-              height: transientRef.current.get(element.id)?.height ?? originalPosition.height,
-            }
-            const scaleX = (currentPosition.width || 200) / (originalPosition.width || 200)
-            const scaleY = (currentPosition.height || 50) / (originalPosition.height || 50)
-            const scaleFactor = element.props?.autoScale !== false ? Math.min(scaleX, scaleY) : 1
-
-            return (
-              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-                <div className="text-center">
-                  <h3
-                    className="font-semibold text-sm mb-2"
-                    style={{
-                      fontFamily: element.props?.titleFontFamily || 'inherit',
-                      fontSize: `${(element.props?.titleFontSize || 14) * scaleFactor}px`,
-                      fontWeight: element.props?.titleFontWeight || '600',
-                      color: element.props?.titleTextColor || 'inherit'
-                    }}
-                  >
-                    {element.content || 'Subscribe to Newsletter'}
-                  </h3>
-                  <p
-                    className="text-xs text-muted-foreground mb-3"
-                    style={{
-                      fontFamily: element.props?.subtitleFontFamily || 'inherit',
-                      fontSize: `${(element.props?.subtitleFontSize || 12) * scaleFactor}px`,
-                      fontWeight: element.props?.subtitleFontWeight || '400',
-                      color: element.props?.subtitleTextColor || 'inherit'
-                    }}
-                  >
-                    {element.props?.subtitle || 'Get updates delivered to your inbox'}
+                    {element.props?.description || "Product description"}
                   </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="email"
-                      placeholder={element.props?.inputPlaceholder || 'Enter email'}
-                      className="flex-1 px-2 py-1 text-xs border border-border rounded bg-background"
+                  <div className="flex items-center justify-between">
+                    <span
                       style={{
-                        fontSize: `${12 * scaleFactor}px`,
-                        padding: `${4 * scaleFactor}px ${8 * scaleFactor}px`
+                        fontFamily: element.props?.priceFontFamily || 'inherit',
+                        fontSize: element.props?.priceFontSize
+                          ? `${element.props.priceFontSize}px`
+                          : element.props?.enableScaling !== false
+                            ? `${Math.max(10, (element.position?.width || 200) * 0.045)}px`
+                            : '14px',
+                        fontWeight: element.props?.priceFontWeight || '700',
+                        color: element.props?.priceColor || '#3b82f6'
                       }}
-                    />
+                    >
+                      {(() => {
+                        const currency = element.props?.productCurrency || "USD";
+                        const price = element.props?.price || "99.99";
+
+                        const currencySymbols: Record<string, string> = {
+                          USD: "$",
+                          EUR: "€",
+                          GBP: "£",
+                          JPY: "¥",
+                          VND: "₫",
+                          CNY: "¥",
+                          KRW: "₩",
+                          THB: "฿",
+                          SGD: "S$",
+                          AUD: "A$",
+                          CAD: "C$",
+                          INR: "₹"
+                        };
+
+                        // Currencies with symbol after amount
+                        const symbolAfter = ["VND", "KRW", "THB"];
+                        const symbol = currencySymbols[currency] || "$";
+
+                        if (symbolAfter.includes(currency)) {
+                          return `${price}${symbol}`;
+                        } else {
+                          return `${symbol}${price}`;
+                        }
+                      })()}
+                    </span>
                     <button
-                      className="px-3 py-1 text-xs rounded"
+                      className="rounded"
                       style={{
                         fontFamily: element.props?.buttonFontFamily || 'inherit',
-                        fontSize: `${(element.props?.buttonFontSize || 12) * scaleFactor}px`,
-                        fontWeight: element.props?.buttonFontWeight || '500',
+                        fontSize: element.props?.buttonFontSize
+                          ? `${element.props.buttonFontSize}px`
+                          : element.props?.enableScaling !== false
+                            ? `${Math.max(8, (element.position?.width || 200) * 0.035)}px`
+                            : '12px',
+                        fontWeight: element.props?.buttonFontWeight || '400',
                         color: element.props?.buttonTextColor || '#ffffff',
                         backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
-                        padding: `${4 * scaleFactor}px ${12 * scaleFactor}px`
+                        padding: element.props?.enableScaling !== false
+                          ? `${Math.max(4, (element.position?.height || 200) * 0.015)}px ${Math.max(8, (element.position?.width || 200) * 0.025)}px`
+                          : '4px 8px'
                       }}
                     >
-                      {element.props?.buttonText || 'Subscribe'}
+                      {element.props?.buttonText || "Add"}
                     </button>
                   </div>
                 </div>
               </div>
             )
-          })()}
-          {element.type === "team" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg overflow-hidden" style={elementStyles}>
-              <div
-                className="bg-muted flex items-center justify-center overflow-hidden"
+          }
+          {
+            element.type === "price" && (
+              <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+                <span
+                  style={{
+                    fontFamily: element.props?.priceFontFamily || 'inherit',
+                    fontSize: element.props?.priceFontSize
+                      ? `${element.props.priceFontSize}px`
+                      : '24px',
+                    fontWeight: element.props?.priceFontWeight || '700',
+                    color: element.props?.priceTextColor || 'inherit'
+                  }}
+                >
+                  {(() => {
+                    const currency = element.props?.currency || "USD";
+                    const amount = element.props?.priceAmount || element.content || "99.99";
+                    const period = element.props?.period || "";
+
+                    const currencySymbols: Record<string, string> = {
+                      USD: "$",
+                      EUR: "€",
+                      GBP: "£",
+                      JPY: "¥",
+                      VND: "₫",
+                      CNY: "¥",
+                      KRW: "₩",
+                      THB: "฿",
+                      SGD: "S$",
+                      AUD: "A$",
+                      CAD: "C$",
+                      INR: "₹"
+                    };
+
+                    // Currencies with symbol after amount
+                    const symbolAfter = ["VND", "KRW", "THB"];
+                    const symbol = currencySymbols[currency] || "$";
+
+                    if (symbolAfter.includes(currency)) {
+                      return `${amount}${symbol}${period}`;
+                    } else {
+                      return `${symbol}${amount}${period}`;
+                    }
+                  })()}
+                </span>
+              </div>
+            )
+          }
+          {
+            element.type === "rating" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+                <div className="space-y-3">
+                  {/* Stars */}
+                  <div className="flex items-center justify-center gap-1">
+                    {Array.from({ length: element.props?.maxStars || 5 }).map((_, index) => {
+                      const value = element.props?.value || 4;
+                      const isFilled = index < Math.floor(value);
+                      const isHalf = index === Math.floor(value) && value % 1 !== 0;
+
+                      return (
+                        <svg
+                          key={index}
+                          className={`w-6 h-6 ${isFilled || isHalf ? "text-yellow-400" : "text-muted-foreground/30"
+                            }`}
+                          fill={isFilled || isHalf ? "currentColor" : "none"}
+                          stroke="currentColor"
+                          strokeWidth={isFilled || isHalf ? 0 : 2}
+                          viewBox="0 0 24 24"
+                        >
+                          {isHalf ? (
+                            <>
+                              <defs>
+                                <linearGradient id={`half-${index}`}>
+                                  <stop offset="50%" stopColor="currentColor" />
+                                  <stop offset="50%" stopColor="transparent" />
+                                </linearGradient>
+                              </defs>
+                              <path
+                                fill={`url(#half-${index})`}
+                                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                              />
+                              <path
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                              />
+                            </>
+                          ) : (
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                          )}
+                        </svg>
+                      );
+                    })}
+                  </div>
+
+                  {/* Comment Box */}
+                  {element.props?.showComment !== false && (
+                    <textarea
+                      placeholder={element.props?.commentPlaceholder || "Write your review..."}
+                      className="w-full px-3 py-2 border border-border rounded bg-background resize-none"
+                      style={{
+                        fontFamily: element.props?.commentFontFamily || 'inherit',
+                        fontSize: element.props?.commentFontSize
+                          ? `${element.props.commentFontSize}px`
+                          : '14px',
+                        fontWeight: element.props?.commentFontWeight || '400',
+                        color: element.props?.commentTextColor || 'inherit'
+                      }}
+                      rows={3}
+                      disabled
+                    />
+                  )}
+
+                  {/* Submit Button */}
+                  {element.props?.showSubmitButton !== false && (
+                    <button
+                      className="w-full px-4 py-2 rounded hover:opacity-90 transition-opacity"
+                      style={{
+                        fontFamily: element.props?.buttonFontFamily || 'inherit',
+                        fontSize: element.props?.buttonFontSize
+                          ? `${element.props.buttonFontSize}px`
+                          : '14px',
+                        fontWeight: element.props?.buttonFontWeight || '500',
+                        color: element.props?.buttonTextColor || '#ffffff',
+                        backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6'
+                      }}
+                    >
+                      {element.props?.submitButtonText || "Submit Review"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "cart" && (
+              <button
+                className="w-full h-full rounded-lg hover:opacity-90 transition-opacity"
                 style={{
-                  height: `${element.props?.imageHeight || 40}%`
+                  ...elementStyles,
+                  fontFamily: element.props?.cartFontFamily || 'inherit',
+                  fontSize: element.props?.cartFontSize
+                    ? `${element.props.cartFontSize}px`
+                    : '16px',
+                  fontWeight: element.props?.cartFontWeight || '500',
+                  color: element.props?.cartTextColor || '#ffffff',
+                  backgroundColor: element.props?.cartBackgroundColor || '#3b82f6'
                 }}
               >
-                {element.props?.memberImage ? (
-                  <img
-                    src={element.props.memberImage}
-                    alt={element.content || "Team Member"}
-                    className="w-full h-full object-cover"
-                    style={{
-                      borderRadius: element.props?.imageBorderRadius ? `${element.props.imageBorderRadius}px` : '0px'
-                    }}
-                  />
+                {element.content}
+              </button>
+            )
+          }
+          {
+            element.type === "checkout" && (
+              <button
+                className="w-full h-full rounded-lg hover:opacity-90 transition-opacity"
+                style={{
+                  ...elementStyles,
+                  fontFamily: element.props?.checkoutFontFamily || 'inherit',
+                  fontSize: element.props?.checkoutFontSize
+                    ? `${element.props.checkoutFontSize}px`
+                    : '16px',
+                  fontWeight: element.props?.checkoutFontWeight || '600',
+                  color: element.props?.checkoutTextColor || '#ffffff',
+                  backgroundColor: element.props?.checkoutBackgroundColor || '#3b82f6'
+                }}
+              >
+                {element.content}
+              </button>
+            )
+          }
+          {
+            element.type === "social-links" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center p-4" style={elementStyles}>
+                {element.props?.socialLinks && element.props.socialLinks.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {element.props.socialLinks.map((link: any, index: number) => (
+                      <a
+                        key={index}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center hover:bg-primary/30 transition-colors"
+                        title={link.platform}
+                      >
+                        <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                          {link.platform.toLowerCase().includes('facebook') ? (
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                          ) : link.platform.toLowerCase().includes('twitter') || link.platform.toLowerCase().includes('x') ? (
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                          ) : link.platform.toLowerCase().includes('instagram') ? (
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                          ) : link.platform.toLowerCase().includes('linkedin') ? (
+                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                          ) : (
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                          )}
+                        </svg>
+                      </a>
+                    ))}
+                  </div>
                 ) : (
-                  <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-                    <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+                  <div className="flex gap-2">
+                    <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
+                      </svg>
+                    </div>
+                    <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z" />
+                      </svg>
+                    </div>
                   </div>
                 )}
               </div>
-              <div className="p-3 text-center">
-                <h3
-                  className="font-semibold text-sm mb-1"
-                  style={{
-                    fontFamily: element.props?.nameFontFamily || 'inherit',
-                    fontSize: element.props?.nameFontSize ? `${element.props.nameFontSize}px` : '14px',
-                    fontWeight: element.props?.nameFontWeight || '600',
-                    color: element.props?.nameTextColor || 'inherit'
-                  }}
-                >
-                  {element.content || 'Team Member'}
-                </h3>
-                <p
-                  className="text-xs text-muted-foreground"
-                  style={{
-                    fontFamily: element.props?.roleFontFamily || 'inherit',
-                    fontSize: element.props?.roleFontSize ? `${element.props.roleFontSize}px` : '12px',
-                    fontWeight: element.props?.roleFontWeight || '400',
-                    color: element.props?.roleTextColor || 'inherit'
-                  }}
-                >
-                  {element.props?.role || 'Team Member'}
-                </p>
+            )
+          }
+          {
+            element.type === "contact-info" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+                <div className="space-y-2">
+                  {element.props?.phone && (
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      <span
+                        className="text-sm"
+                        style={{
+                          fontFamily: element.props?.phoneFontFamily || 'inherit',
+                          fontSize: element.props?.phoneFontSize ? `${element.props.phoneFontSize}px` : '14px',
+                          fontWeight: element.props?.phoneFontWeight || '400',
+                          color: element.props?.phoneTextColor || 'inherit'
+                        }}
+                      >
+                        {element.props.phone}
+                      </span>
+                    </div>
+                  )}
+                  {element.props?.email && (
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <span
+                        className="text-sm"
+                        style={{
+                          fontFamily: element.props?.emailFontFamily || 'inherit',
+                          fontSize: element.props?.emailFontSize ? `${element.props.emailFontSize}px` : '14px',
+                          fontWeight: element.props?.emailFontWeight || '400',
+                          color: element.props?.emailTextColor || 'inherit'
+                        }}
+                      >
+                        {element.props.email}
+                      </span>
+                    </div>
+                  )}
+                  {element.props?.address && (
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span
+                        className="text-sm"
+                        style={{
+                          fontFamily: element.props?.addressFontFamily || 'inherit',
+                          fontSize: element.props?.addressFontSize ? `${element.props.addressFontSize}px` : '14px',
+                          fontWeight: element.props?.addressFontWeight || '400',
+                          color: element.props?.addressTextColor || 'inherit'
+                        }}
+                      >
+                        {element.props.address}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-          {element.type === "testimonial" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg p-4" style={elementStyles}>
-              <div className="text-center">
-                <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h4v10h-10z" />
-                  </svg>
-                </div>
-                <p
-                  className="text-sm italic mb-2"
-                  style={{
-                    fontFamily: element.props?.reviewFontFamily || 'inherit',
-                    fontSize: element.props?.reviewFontSize ? `${element.props.reviewFontSize}px` : '14px',
-                    fontWeight: element.props?.reviewFontWeight || '400',
-                    color: element.props?.reviewTextColor || 'inherit'
-                  }}
-                >
-                  "{element.content || 'Customer Review'}"
-                </p>
-                <div
-                  className="text-xs text-muted-foreground"
-                  style={{
-                    fontFamily: element.props?.nameFontFamily || 'inherit',
-                    fontSize: element.props?.nameFontSize ? `${element.props.nameFontSize}px` : '12px',
-                    fontWeight: element.props?.nameFontWeight || '600',
-                    color: element.props?.nameTextColor || 'inherit'
-                  }}
-                >
-                  {element.props?.customerName || 'Customer Name'}
-                </div>
-                {element.props?.customerTitle && (
+            )
+          }
+          {
+            element.type === "map" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg overflow-hidden" style={elementStyles}>
+                {element.content && (
                   <div
-                    className="text-xs text-muted-foreground/80 mt-1"
+                    className="p-3 bg-muted border-b border-border text-center"
                     style={{
                       fontFamily: element.props?.titleFontFamily || 'inherit',
-                      fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : '10px',
-                      fontWeight: element.props?.titleFontWeight || '400',
+                      fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : '16px',
+                      fontWeight: element.props?.titleFontWeight || '600',
                       color: element.props?.titleTextColor || 'inherit'
                     }}
                   >
-                    {element.props.customerTitle}
+                    {element.content}
                   </div>
                 )}
-              </div>
-            </div>
-          )}
-          {element.type === "grid" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-              <div className="grid grid-cols-2 gap-2 h-full">
-                <div className="bg-muted rounded p-2 text-xs text-center">Item 1</div>
-                <div className="bg-muted rounded p-2 text-xs text-center">Item 2</div>
-                <div className="bg-muted rounded p-2 text-xs text-center">Item 3</div>
-                <div className="bg-muted rounded p-2 text-xs text-center">Item 4</div>
-              </div>
-            </div>
-          )}
-          {element.type === "navigation" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center px-4" style={{
-              ...elementStyles,
-              justifyContent: element.props?.logoPosition === "center" ? "center" :
-                element.props?.logoPosition === "right" ? "flex-end" : "space-between"
-            }}>
-              {element.props?.logoType === "image" && element.props?.logoImageUrl ? (
-                <img
-                  src={element.props.logoImageUrl}
-                  alt="Logo"
-                  className="object-contain"
-                  style={{
-                    height: element.props?.autoScale ?
-                      `${Math.min(Number.parseInt(element.props?.logoImageHeight) || 32, (element.position?.height || 50) - 20)}px` :
-                      element.props?.logoImageHeight || '32px',
-                    width: element.props?.autoScale ?
-                      `${Math.min(Number.parseInt(element.props?.logoImageWidth) || 120, (element.position?.width || 300) * 0.4)}px` :
-                      element.props?.logoImageWidth || '120px',
-                    maxHeight: element.props?.logoImageHeight || '32px',
-                    maxWidth: element.props?.logoImageWidth || '120px'
-                  }}
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'
-                  }}
-                />
-              ) : (
-                <div
-                  className="font-semibold text-sm"
-                  style={{
-                    fontSize: element.props?.logoFontSize || '16px',
-                    fontWeight: element.props?.logoFontWeight || '600',
-                    fontFamily: element.props?.logoFontFamily || 'inherit'
-                  }}
-                >
-                  {element.props?.logo || 'Logo'}
-                </div>
-              )}
-              <div className="flex gap-4">
-                {(element.props?.menuItems || ['Home', 'About', 'Contact']).map((item: string, index: number) => (
-                  <span
-                    key={index}
-                    className="text-sm"
-                    style={{
-                      fontSize: element.props?.menuItemFontSize || '14px',
-                      fontWeight: element.props?.menuItemFontWeight || '400',
-                      fontFamily: element.props?.menuItemFontFamily || 'inherit'
-                    }}
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {element.type === "footer" && (
-            <div className="text-card-foreground w-full h-full bg-muted border border-border rounded-lg flex flex-col justify-center px-4" style={elementStyles}>
-              <div className="w-full" style={{ fontFamily: element.props?.fontFamily || "inherit" }}>
-                <p
-                  className="mb-1"
-                  style={{
-                    fontSize: element.props?.titleFontSize || "18px",
-                    fontWeight: element.props?.titleFontWeight || "600",
-                    color: element.styles?.color || "#ffffff",
-                    textAlign: element.props?.titlePosition || "center"
-                  }}
-                >
-                  {element.content}
-                </p>
-                <p
-                  className="text-muted-foreground"
-                  style={{
-                    fontSize: element.props?.textFontSize || "14px",
-                    fontWeight: element.props?.textFontWeight || "400",
-                    color: element.styles?.color || "#ffffff",
-                    textAlign: element.props?.textPosition || "center"
-                  }}
-                >
-                  {element.props?.copyright || "© 2024 Your Company"}
-                </p>
-              </div>
-            </div>
-          )}
-          {element.type === "header" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center px-4" style={elementStyles}>
-              <div className="w-full" style={{ fontFamily: element.props?.fontFamily || "inherit" }}>
-                <h1
-                  className="mb-1"
-                  style={{
-                    fontSize: element.props?.titleFontSize || "24px",
-                    fontWeight: element.props?.titleFontWeight || "700",
-                    textAlign: element.props?.titlePosition || "center"
-                  }}
-                >
-                  {element.content}
-                </h1>
-                <p
-                  className="text-muted-foreground"
-                  style={{
-                    fontSize: element.props?.subtitleFontSize || "16px",
-                    fontWeight: element.props?.subtitleFontWeight || "400",
-                    textAlign: element.props?.subtitlePosition || "center"
-                  }}
-                >
-                  {element.props?.subtitle || "Welcome to our website"}
-                </p>
-              </div>
-            </div>
-          )}
-          {element.type === "sidebar" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-              <div className="space-y-3" style={{ fontFamily: element.props?.fontFamily || "inherit" }}>
-                <div
-                  className="font-medium"
-                  style={{
-                    fontSize: element.props?.titleFontSize || "14px",
-                    fontWeight: element.props?.titleFontWeight || "500",
-                    textAlign: element.props?.titlePosition || "left"
-                  }}
-                >
-                  {element.content || "Menu"}
-                </div>
-                <div className="space-y-2">
-                  {(element.props?.sidebarItems || ["Dashboard", "Settings", "Profile", "Logout"]).map((item: string, index: number) => (
+                <div className="w-full h-full flex flex-col">
+                  {element.props?.address && (
                     <div
-                      key={index}
-                      className="text-muted-foreground"
+                      className="p-2 bg-muted/50 text-sm border-b border-border"
                       style={{
-                        fontSize: element.props?.itemFontSize || "12px",
-                        fontWeight: element.props?.itemFontWeight || "400",
-                        textAlign: element.props?.itemPosition || "left"
+                        fontFamily: element.props?.addressFontFamily || 'inherit',
+                        fontSize: element.props?.addressFontSize ? `${element.props.addressFontSize}px` : '12px',
+                        fontWeight: element.props?.addressFontWeight || '400',
+                        color: element.props?.addressTextColor || 'inherit'
                       }}
                     >
-                      • {item}
+                      <div className="flex items-start gap-2">
+                        <svg className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="flex-1">{element.props.address}</span>
+                      </div>
                     </div>
+                  )}
+                  <div className="flex-1 bg-muted flex items-center justify-center">
+                    {element.props?.mapUrl ? (
+                      <iframe
+                        src={element.props.mapUrl}
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title={element.content || "Map Location"}
+                      />
+                    ) : (
+                      <div className="text-center p-4">
+                        <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                          <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Add Map URL to display map</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "newsletter" && (() => {
+              // Calculate scale factor for auto-scaling
+              const originalPosition = element.position || { x: 0, y: 0, width: 200, height: 50 }
+              const currentPosition = {
+                width: transientRef.current.get(element.id)?.width ?? originalPosition.width,
+                height: transientRef.current.get(element.id)?.height ?? originalPosition.height,
+              }
+              const scaleX = (currentPosition.width || 200) / (originalPosition.width || 200)
+              const scaleY = (currentPosition.height || 50) / (originalPosition.height || 50)
+              const scaleFactor = element.props?.autoScale !== false ? Math.min(scaleX, scaleY) : 1
+
+              return (
+                <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+                  <div className="text-center">
+                    <h3
+                      className="font-semibold text-sm mb-2"
+                      style={{
+                        fontFamily: element.props?.titleFontFamily || 'inherit',
+                        fontSize: `${(element.props?.titleFontSize || 14) * scaleFactor}px`,
+                        fontWeight: element.props?.titleFontWeight || '600',
+                        color: element.props?.titleTextColor || 'inherit'
+                      }}
+                    >
+                      {element.content || 'Subscribe to Newsletter'}
+                    </h3>
+                    <p
+                      className="text-xs text-muted-foreground mb-3"
+                      style={{
+                        fontFamily: element.props?.subtitleFontFamily || 'inherit',
+                        fontSize: `${(element.props?.subtitleFontSize || 12) * scaleFactor}px`,
+                        fontWeight: element.props?.subtitleFontWeight || '400',
+                        color: element.props?.subtitleTextColor || 'inherit'
+                      }}
+                    >
+                      {element.props?.subtitle || 'Get updates delivered to your inbox'}
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        placeholder={element.props?.inputPlaceholder || 'Enter email'}
+                        className="flex-1 px-2 py-1 text-xs border border-border rounded bg-background"
+                        style={{
+                          fontSize: `${12 * scaleFactor}px`,
+                          padding: `${4 * scaleFactor}px ${8 * scaleFactor}px`
+                        }}
+                      />
+                      <button
+                        className="px-3 py-1 text-xs rounded"
+                        style={{
+                          fontFamily: element.props?.buttonFontFamily || 'inherit',
+                          fontSize: `${(element.props?.buttonFontSize || 12) * scaleFactor}px`,
+                          fontWeight: element.props?.buttonFontWeight || '500',
+                          color: element.props?.buttonTextColor || '#ffffff',
+                          backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
+                          padding: `${4 * scaleFactor}px ${12 * scaleFactor}px`
+                        }}
+                      >
+                        {element.props?.buttonText || 'Subscribe'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()
+          }
+          {
+            element.type === "team" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg overflow-hidden" style={elementStyles}>
+                <div
+                  className="bg-muted flex items-center justify-center overflow-hidden"
+                  style={{
+                    height: `${element.props?.imageHeight || 40}%`
+                  }}
+                >
+                  {element.props?.memberImage ? (
+                    <img
+                      src={element.props.memberImage}
+                      alt={element.content || "Team Member"}
+                      className="w-full h-full object-cover"
+                      style={{
+                        borderRadius: element.props?.imageBorderRadius ? `${element.props.imageBorderRadius}px` : '0px'
+                      }}
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                <div className="p-3 text-center">
+                  <h3
+                    className="font-semibold text-sm mb-1"
+                    style={{
+                      fontFamily: element.props?.nameFontFamily || 'inherit',
+                      fontSize: element.props?.nameFontSize ? `${element.props.nameFontSize}px` : '14px',
+                      fontWeight: element.props?.nameFontWeight || '600',
+                      color: element.props?.nameTextColor || 'inherit'
+                    }}
+                  >
+                    {element.content || 'Team Member'}
+                  </h3>
+                  <p
+                    className="text-xs text-muted-foreground"
+                    style={{
+                      fontFamily: element.props?.roleFontFamily || 'inherit',
+                      fontSize: element.props?.roleFontSize ? `${element.props.roleFontSize}px` : '12px',
+                      fontWeight: element.props?.roleFontWeight || '400',
+                      color: element.props?.roleTextColor || 'inherit'
+                    }}
+                  >
+                    {element.props?.role || 'Team Member'}
+                  </p>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "testimonial" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg shadow-lg p-4" style={elementStyles}>
+                <div className="text-center">
+                  <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h4v10h-10z" />
+                    </svg>
+                  </div>
+                  <p
+                    className="text-sm italic mb-2"
+                    style={{
+                      fontFamily: element.props?.reviewFontFamily || 'inherit',
+                      fontSize: element.props?.reviewFontSize ? `${element.props.reviewFontSize}px` : '14px',
+                      fontWeight: element.props?.reviewFontWeight || '400',
+                      color: element.props?.reviewTextColor || 'inherit'
+                    }}
+                  >
+                    "{element.content || 'Customer Review'}"
+                  </p>
+                  <div
+                    className="text-xs text-muted-foreground"
+                    style={{
+                      fontFamily: element.props?.nameFontFamily || 'inherit',
+                      fontSize: element.props?.nameFontSize ? `${element.props.nameFontSize}px` : '12px',
+                      fontWeight: element.props?.nameFontWeight || '600',
+                      color: element.props?.nameTextColor || 'inherit'
+                    }}
+                  >
+                    {element.props?.customerName || 'Customer Name'}
+                  </div>
+                  {element.props?.customerTitle && (
+                    <div
+                      className="text-xs text-muted-foreground/80 mt-1"
+                      style={{
+                        fontFamily: element.props?.titleFontFamily || 'inherit',
+                        fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : '10px',
+                        fontWeight: element.props?.titleFontWeight || '400',
+                        color: element.props?.titleTextColor || 'inherit'
+                      }}
+                    >
+                      {element.props.customerTitle}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "grid" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+                <div className="grid grid-cols-2 gap-2 h-full">
+                  <div className="bg-muted rounded p-2 text-xs text-center">Item 1</div>
+                  <div className="bg-muted rounded p-2 text-xs text-center">Item 2</div>
+                  <div className="bg-muted rounded p-2 text-xs text-center">Item 3</div>
+                  <div className="bg-muted rounded p-2 text-xs text-center">Item 4</div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "navigation" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center px-4" style={{
+                ...elementStyles,
+                justifyContent: element.props?.logoPosition === "center" ? "center" :
+                  element.props?.logoPosition === "right" ? "flex-end" : "space-between"
+              }}>
+                {element.props?.logoType === "image" && element.props?.logoImageUrl ? (
+                  <img
+                    src={element.props.logoImageUrl}
+                    alt="Logo"
+                    className="object-contain"
+                    style={{
+                      height: element.props?.autoScale ?
+                        `${Math.min(Number.parseInt(element.props?.logoImageHeight) || 32, (element.position?.height || 50) - 20)}px` :
+                        element.props?.logoImageHeight || '32px',
+                      width: element.props?.autoScale ?
+                        `${Math.min(Number.parseInt(element.props?.logoImageWidth) || 120, (element.position?.width || 300) * 0.4)}px` :
+                        element.props?.logoImageWidth || '120px',
+                      maxHeight: element.props?.logoImageHeight || '32px',
+                      maxWidth: element.props?.logoImageWidth || '120px'
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                ) : (
+                  <div
+                    className="font-semibold text-sm"
+                    style={{
+                      fontSize: element.props?.logoFontSize || '16px',
+                      fontWeight: element.props?.logoFontWeight || '600',
+                      fontFamily: element.props?.logoFontFamily || 'inherit'
+                    }}
+                  >
+                    {element.props?.logo || 'Logo'}
+                  </div>
+                )}
+                <div className="flex gap-4">
+                  {(element.props?.menuItems || ['Home', 'About', 'Contact']).map((item: string, index: number) => (
+                    <span
+                      key={index}
+                      className="text-sm"
+                      style={{
+                        fontSize: element.props?.menuItemFontSize || '14px',
+                        fontWeight: element.props?.menuItemFontWeight || '400',
+                        fontFamily: element.props?.menuItemFontFamily || 'inherit'
+                      }}
+                    >
+                      {item}
+                    </span>
                   ))}
                 </div>
               </div>
-            </div>
-          )}
-          {element.type === "form" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-              <div className="space-y-3 h-full flex flex-col">
-                <h3
-                  className="font-semibold flex-shrink-0"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || 'inherit',
-                    fontSize: element.props?.titleFontSize || '24px',
-                    fontWeight: element.props?.titleFontWeight || '600',
-                    fontStyle: element.props?.titleFontStyle || 'normal',
-                    textDecoration: element.props?.titleTextDecoration || 'none',
-                    textAlign: (element.props?.titleTextAlign as React.CSSProperties['textAlign']) || 'left',
-                    color: element.props?.titleColor || '#ffffff'
-                  }}
-                >
-                  {element.content}
-                </h3>
-                <div className="space-y-2 flex-1 flex flex-col">
-                  <input
-                    type="text"
-                    placeholder={element.props?.nameLabel !== undefined ? element.props.nameLabel : "Name"}
-                    className="w-full border flex-shrink-0"
-                    style={element.props?.enableScaling ? {
-                      fontFamily: element.props?.inputFontFamily || 'inherit',
-                      padding: `${Math.max(4, (element.position?.height || 200) * 0.02)}px ${Math.max(8, (element.position?.width || 300) * 0.03)}px`,
-                      fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
-                      color: element.props?.inputTextColor || '#ffffff',
-                      borderRadius: element.props?.inputBorderRadius || '4px',
-                      borderColor: element.props?.inputBorderColor || '#374151',
-                      backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
-                    } : {
-                      fontFamily: element.props?.inputFontFamily || 'inherit',
-                      padding: element.props?.inputPadding || '8px 12px',
-                      fontSize: element.props?.inputFontSize || '12px',
-                      color: element.props?.inputTextColor || '#ffffff',
-                      borderRadius: element.props?.inputBorderRadius || '4px',
-                      borderColor: element.props?.inputBorderColor || '#374151',
-                      backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
-                    }}
-                  />
-                  <input
-                    type="email"
-                    placeholder={element.props?.emailLabel !== undefined ? element.props.emailLabel : "Email"}
-                    className="w-full border flex-shrink-0"
-                    style={element.props?.enableScaling ? {
-                      fontFamily: element.props?.inputFontFamily || 'inherit',
-                      padding: `${Math.max(4, (element.position?.height || 200) * 0.02)}px ${Math.max(8, (element.position?.width || 300) * 0.03)}px`,
-                      fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
-                      color: element.props?.inputTextColor || '#ffffff',
-                      borderRadius: element.props?.inputBorderRadius || '4px',
-                      borderColor: element.props?.inputBorderColor || '#374151',
-                      backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
-                    } : {
-                      fontFamily: element.props?.inputFontFamily || 'inherit',
-                      padding: element.props?.inputPadding || '8px 12px',
-                      fontSize: element.props?.inputFontSize || '12px',
-                      color: element.props?.inputTextColor || '#ffffff',
-                      borderRadius: element.props?.inputBorderRadius || '4px',
-                      borderColor: element.props?.inputBorderColor || '#374151',
-                      backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
-                    }}
-                  />
-                  <textarea
-                    placeholder={element.props?.messageLabel !== undefined ? element.props.messageLabel : "Message"}
-                    className="w-full border resize-none flex-1"
-                    style={element.props?.enableScaling ? {
-                      fontFamily: element.props?.inputFontFamily || 'inherit',
-                      padding: `${Math.max(4, (element.position?.height || 200) * 0.02)}px ${Math.max(8, (element.position?.width || 300) * 0.03)}px`,
-                      fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
-                      color: element.props?.inputTextColor || '#ffffff',
-                      minHeight: `${Math.max(40, (element.position?.height || 200) * 0.2)}px`,
-                      borderRadius: element.props?.inputBorderRadius || '4px',
-                      borderColor: element.props?.inputBorderColor || '#374151',
-                      backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
-                    } : {
-                      fontFamily: element.props?.inputFontFamily || 'inherit',
-                      padding: element.props?.inputPadding || '8px 12px',
-                      fontSize: element.props?.inputFontSize || '12px',
-                      color: element.props?.inputTextColor || '#ffffff',
-                      minHeight: element.props?.textareaMinHeight || '64px',
-                      borderRadius: element.props?.inputBorderRadius || '4px',
-                      borderColor: element.props?.inputBorderColor || '#374151',
-                      backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
-                    }}
-                  />
-                  <button
-                    className="w-full rounded flex-shrink-0"
-                    style={element.props?.enableScaling ? {
-                      padding: `${Math.max(6, (element.position?.height || 200) * 0.03)}px ${Math.max(12, (element.position?.width || 300) * 0.04)}px`,
-                      fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
-                      borderRadius: element.props?.buttonBorderRadius || '4px',
-                      backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
-                      color: element.props?.buttonTextColor || '#ffffff',
-                      border: 'none',
-                      cursor: 'pointer'
-                    } : {
-                      padding: element.props?.buttonPadding || '8px 12px',
-                      fontSize: element.props?.buttonFontSize || '12px',
-                      borderRadius: element.props?.buttonBorderRadius || '4px',
-                      backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
-                      color: element.props?.buttonTextColor || '#ffffff',
-                      border: 'none',
-                      cursor: 'pointer'
+            )
+          }
+          {
+            element.type === "footer" && (
+              <div className="text-card-foreground w-full h-full bg-muted border border-border rounded-lg flex flex-col justify-center px-4" style={elementStyles}>
+                <div className="w-full" style={{ fontFamily: element.props?.fontFamily || "inherit" }}>
+                  <p
+                    className="mb-1"
+                    style={{
+                      fontSize: element.props?.titleFontSize || "18px",
+                      fontWeight: element.props?.titleFontWeight || "600",
+                      color: element.styles?.color || "#ffffff",
+                      textAlign: element.props?.titlePosition || "center"
                     }}
                   >
-                    {element.props?.buttonText !== undefined ? element.props.buttonText : "Submit"}
-                  </button>
+                    {element.content}
+                  </p>
+                  <p
+                    className="text-muted-foreground"
+                    style={{
+                      fontSize: element.props?.textFontSize || "14px",
+                      fontWeight: element.props?.textFontWeight || "400",
+                      color: element.styles?.color || "#ffffff",
+                      textAlign: element.props?.textPosition || "center"
+                    }}
+                  >
+                    {element.props?.copyright || "© 2024 Your Company"}
+                  </p>
                 </div>
               </div>
-            </div>
-          )}
+            )
+          }
+          {
+            element.type === "header" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center px-4" style={elementStyles}>
+                <div className="w-full" style={{ fontFamily: element.props?.fontFamily || "inherit" }}>
+                  <h1
+                    className="mb-1"
+                    style={{
+                      fontSize: element.props?.titleFontSize || "24px",
+                      fontWeight: element.props?.titleFontWeight || "700",
+                      textAlign: element.props?.titlePosition || "center"
+                    }}
+                  >
+                    {element.content}
+                  </h1>
+                  <p
+                    className="text-muted-foreground"
+                    style={{
+                      fontSize: element.props?.subtitleFontSize || "16px",
+                      fontWeight: element.props?.subtitleFontWeight || "400",
+                      textAlign: element.props?.subtitlePosition || "center"
+                    }}
+                  >
+                    {element.props?.subtitle || "Welcome to our website"}
+                  </p>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "sidebar" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+                <div className="space-y-3" style={{ fontFamily: element.props?.fontFamily || "inherit" }}>
+                  <div
+                    className="font-medium"
+                    style={{
+                      fontSize: element.props?.titleFontSize || "14px",
+                      fontWeight: element.props?.titleFontWeight || "500",
+                      textAlign: element.props?.titlePosition || "left"
+                    }}
+                  >
+                    {element.content || "Menu"}
+                  </div>
+                  <div className="space-y-2">
+                    {(element.props?.sidebarItems || ["Dashboard", "Settings", "Profile", "Logout"]).map((item: string, index: number) => (
+                      <div
+                        key={index}
+                        className="text-muted-foreground"
+                        style={{
+                          fontSize: element.props?.itemFontSize || "12px",
+                          fontWeight: element.props?.itemFontWeight || "400",
+                          textAlign: element.props?.itemPosition || "left"
+                        }}
+                      >
+                        • {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "form" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+                <div className="space-y-3 h-full flex flex-col">
+                  <h3
+                    className="font-semibold flex-shrink-0"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || 'inherit',
+                      fontSize: element.props?.titleFontSize || '24px',
+                      fontWeight: element.props?.titleFontWeight || '600',
+                      fontStyle: element.props?.titleFontStyle || 'normal',
+                      textDecoration: element.props?.titleTextDecoration || 'none',
+                      textAlign: (element.props?.titleTextAlign as React.CSSProperties['textAlign']) || 'left',
+                      color: element.props?.titleColor || '#ffffff'
+                    }}
+                  >
+                    {element.content}
+                  </h3>
+                  <div className="space-y-2 flex-1 flex flex-col">
+                    <input
+                      type="text"
+                      placeholder={element.props?.nameLabel !== undefined ? element.props.nameLabel : "Name"}
+                      className="w-full border flex-shrink-0"
+                      style={element.props?.enableScaling ? {
+                        fontFamily: element.props?.inputFontFamily || 'inherit',
+                        padding: `${Math.max(4, (element.position?.height || 200) * 0.02)}px ${Math.max(8, (element.position?.width || 300) * 0.03)}px`,
+                        fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
+                        color: element.props?.inputTextColor || '#ffffff',
+                        borderRadius: element.props?.inputBorderRadius || '4px',
+                        borderColor: element.props?.inputBorderColor || '#374151',
+                        backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
+                      } : {
+                        fontFamily: element.props?.inputFontFamily || 'inherit',
+                        padding: element.props?.inputPadding || '8px 12px',
+                        fontSize: element.props?.inputFontSize || '12px',
+                        color: element.props?.inputTextColor || '#ffffff',
+                        borderRadius: element.props?.inputBorderRadius || '4px',
+                        borderColor: element.props?.inputBorderColor || '#374151',
+                        backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
+                      }}
+                    />
+                    <input
+                      type="email"
+                      placeholder={element.props?.emailLabel !== undefined ? element.props.emailLabel : "Email"}
+                      className="w-full border flex-shrink-0"
+                      style={element.props?.enableScaling ? {
+                        fontFamily: element.props?.inputFontFamily || 'inherit',
+                        padding: `${Math.max(4, (element.position?.height || 200) * 0.02)}px ${Math.max(8, (element.position?.width || 300) * 0.03)}px`,
+                        fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
+                        color: element.props?.inputTextColor || '#ffffff',
+                        borderRadius: element.props?.inputBorderRadius || '4px',
+                        borderColor: element.props?.inputBorderColor || '#374151',
+                        backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
+                      } : {
+                        fontFamily: element.props?.inputFontFamily || 'inherit',
+                        padding: element.props?.inputPadding || '8px 12px',
+                        fontSize: element.props?.inputFontSize || '12px',
+                        color: element.props?.inputTextColor || '#ffffff',
+                        borderRadius: element.props?.inputBorderRadius || '4px',
+                        borderColor: element.props?.inputBorderColor || '#374151',
+                        backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
+                      }}
+                    />
+                    <textarea
+                      placeholder={element.props?.messageLabel !== undefined ? element.props.messageLabel : "Message"}
+                      className="w-full border resize-none flex-1"
+                      style={element.props?.enableScaling ? {
+                        fontFamily: element.props?.inputFontFamily || 'inherit',
+                        padding: `${Math.max(4, (element.position?.height || 200) * 0.02)}px ${Math.max(8, (element.position?.width || 300) * 0.03)}px`,
+                        fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
+                        color: element.props?.inputTextColor || '#ffffff',
+                        minHeight: `${Math.max(40, (element.position?.height || 200) * 0.2)}px`,
+                        borderRadius: element.props?.inputBorderRadius || '4px',
+                        borderColor: element.props?.inputBorderColor || '#374151',
+                        backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
+                      } : {
+                        fontFamily: element.props?.inputFontFamily || 'inherit',
+                        padding: element.props?.inputPadding || '8px 12px',
+                        fontSize: element.props?.inputFontSize || '12px',
+                        color: element.props?.inputTextColor || '#ffffff',
+                        minHeight: element.props?.textareaMinHeight || '64px',
+                        borderRadius: element.props?.inputBorderRadius || '4px',
+                        borderColor: element.props?.inputBorderColor || '#374151',
+                        backgroundColor: element.props?.inputBackgroundColor || '#1f2937'
+                      }}
+                    />
+                    <button
+                      className="w-full rounded flex-shrink-0"
+                      style={element.props?.enableScaling ? {
+                        padding: `${Math.max(6, (element.position?.height || 200) * 0.03)}px ${Math.max(12, (element.position?.width || 300) * 0.04)}px`,
+                        fontSize: `${Math.max(10, (element.position?.height || 200) * 0.06)}px`,
+                        borderRadius: element.props?.buttonBorderRadius || '4px',
+                        backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
+                        color: element.props?.buttonTextColor || '#ffffff',
+                        border: 'none',
+                        cursor: 'pointer'
+                      } : {
+                        padding: element.props?.buttonPadding || '8px 12px',
+                        fontSize: element.props?.buttonFontSize || '12px',
+                        borderRadius: element.props?.buttonBorderRadius || '4px',
+                        backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
+                        color: element.props?.buttonTextColor || '#ffffff',
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {element.props?.buttonText !== undefined ? element.props.buttonText : "Submit"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          }
           {/* Advanced UI Components */}
-          {element.type === "calendar" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-              <div className="text-center">
+          {
+            element.type === "calendar" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
+                <div className="text-center">
+                  <h3
+                    className="font-semibold text-sm mb-3"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || 'inherit',
+                      fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : '14px',
+                      fontWeight: element.props?.titleFontWeight || '600',
+                      color: element.props?.titleTextColor || 'inherit'
+                    }}
+                  >
+                    {element.props?.title || "Calendar"}
+                  </h3>
+                  <div className="grid grid-cols-7 gap-1 text-xs">
+                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                      <div key={i} className="p-1 text-center font-medium text-muted-foreground">{day}</div>
+                    ))}
+                    {Array.from({ length: 28 }, (_, i) => (
+                      <div key={i} className="p-1 text-center hover:bg-muted rounded">{i + 1}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "search-bar" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder={element.content}
+                    className="w-full px-3 py-2 pl-8 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    style={{
+                      fontFamily: element.props?.fontFamily || 'inherit',
+                      fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '16px',
+                      fontWeight: element.props?.fontWeight || 'normal',
+                      color: element.props?.textColor || 'var(--color-foreground)'
+                    }}
+                  />
+                  <svg className="absolute left-2 top-2.5 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "filter" && (
+              <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
                 <h3
                   className="font-semibold text-sm mb-3"
                   style={{
                     fontFamily: element.props?.titleFontFamily || 'inherit',
                     fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : '14px',
                     fontWeight: element.props?.titleFontWeight || '600',
-                    color: element.props?.titleTextColor || 'inherit'
+                    color: element.props?.titleTextColor || 'var(--color-foreground)'
                   }}
                 >
-                  {element.props?.title || "Calendar"}
+                  {element.props?.title || element.content}
                 </h3>
-                <div className="grid grid-cols-7 gap-1 text-xs">
-                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                    <div key={i} className="p-1 text-center font-medium text-muted-foreground">{day}</div>
-                  ))}
-                  {Array.from({ length: 28 }, (_, i) => (
-                    <div key={i} className="p-1 text-center hover:bg-muted rounded">{i + 1}</div>
+                <div className="space-y-2">
+                  {(element.props?.options || [
+                    { id: "option1", label: "Option 1", checked: false },
+                    { id: "option2", label: "Option 2", checked: false },
+                    { id: "option3", label: "Option 3", checked: false }
+                  ]).map((option: any, index: number) => (
+                    <label key={option.id || index} className="flex items-center gap-2 text-xs cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="rounded border-border bg-background text-primary focus:ring-primary"
+                        checked={option.checked || false}
+                        onChange={(e) => {
+                          const newOptions = [...(element.props?.options || [])];
+                          newOptions[index] = { ...option, checked: e.target.checked };
+                          onUpdateElement(element.id, {
+                            props: {
+                              ...element.props,
+                              options: newOptions
+                            }
+                          });
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontFamily: element.props?.optionFontFamily || 'inherit',
+                          fontSize: element.props?.optionFontSize ? `${element.props.optionFontSize}px` : '12px',
+                          fontWeight: element.props?.optionFontWeight || 'normal',
+                          color: element.props?.optionTextColor || 'var(--color-foreground)'
+                        }}
+                      >
+                        {option.label}
+                      </span>
+                    </label>
                   ))}
                 </div>
               </div>
-            </div>
-          )}
-          {element.type === "search-bar" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder={element.content}
-                  className="w-full px-3 py-2 pl-8 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  style={{
-                    fontFamily: element.props?.fontFamily || 'inherit',
-                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '16px',
-                    fontWeight: element.props?.fontWeight || 'normal',
-                    color: element.props?.textColor || 'var(--color-foreground)'
-                  }}
-                />
-                <svg className="absolute left-2 top-2.5 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </div>
-          )}
-          {element.type === "filter" && (
-            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={elementStyles}>
-              <h3
-                className="font-semibold text-sm mb-3"
-                style={{
-                  fontFamily: element.props?.titleFontFamily || 'inherit',
-                  fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : '14px',
-                  fontWeight: element.props?.titleFontWeight || '600',
-                  color: element.props?.titleTextColor || 'var(--color-foreground)'
-                }}
-              >
-                {element.props?.title || element.content}
-              </h3>
-              <div className="space-y-2">
-                {(element.props?.options || [
-                  { id: "option1", label: "Option 1", checked: false },
-                  { id: "option2", label: "Option 2", checked: false },
-                  { id: "option3", label: "Option 3", checked: false }
-                ]).map((option: any, index: number) => (
-                  <label key={option.id || index} className="flex items-center gap-2 text-xs cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="rounded border-border bg-background text-primary focus:ring-primary"
-                      checked={option.checked || false}
-                      onChange={(e) => {
-                        const newOptions = [...(element.props?.options || [])];
-                        newOptions[index] = { ...option, checked: e.target.checked };
-                        onUpdateElement(element.id, {
-                          props: {
-                            ...element.props,
-                            options: newOptions
-                          }
-                        });
-                      }}
-                    />
-                    <span
-                      style={{
-                        fontFamily: element.props?.optionFontFamily || 'inherit',
-                        fontSize: element.props?.optionFontSize ? `${element.props.optionFontSize}px` : '12px',
-                        fontWeight: element.props?.optionFontWeight || 'normal',
-                        color: element.props?.optionTextColor || 'var(--color-foreground)'
-                      }}
-                    >
-                      {option.label}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-          {element.type === "breadcrumb" && (
-            <div className="w-full h-full flex items-center" style={elementStyles}>
-              <nav className="flex items-center space-x-1 text-sm">
-                {(element.props?.items || [
-                  { id: "home", label: "Home", href: "/", isLast: false },
-                  { id: "about", label: "About", href: "/about", isLast: false },
-                  { id: "contact", label: "Contact", href: "/contact", isLast: true }
-                ]).map((item: any, index: number, array: any[]) => (
-                  <div key={item.id || index} className="flex items-center">
-                    <span
-                      className={item.isLast ? "" : "hover:underline cursor-pointer"}
-                      style={{
-                        fontFamily: element.props?.fontFamily || 'inherit',
-                        fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                        fontWeight: element.props?.fontWeight || 'normal',
-                        color: item.isLast
-                          ? (element.props?.lastItemColor || 'var(--color-muted-foreground)')
-                          : (element.props?.textColor || 'var(--color-primary)')
-                      }}
-                    >
-                      {item.label}
-                    </span>
-                    {index < array.length - 1 && (
+            )
+          }
+          {
+            element.type === "breadcrumb" && (
+              <div className="w-full h-full flex items-center" style={elementStyles}>
+                <nav className="flex items-center space-x-1 text-sm">
+                  {(element.props?.items || [
+                    { id: "home", label: "Home", href: "/", isLast: false },
+                    { id: "about", label: "About", href: "/about", isLast: false },
+                    { id: "contact", label: "Contact", href: "/contact", isLast: true }
+                  ]).map((item: any, index: number, array: any[]) => (
+                    <div key={item.id || index} className="flex items-center">
                       <span
+                        className={item.isLast ? "" : "hover:underline cursor-pointer"}
                         style={{
                           fontFamily: element.props?.fontFamily || 'inherit',
                           fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
                           fontWeight: element.props?.fontWeight || 'normal',
-                          color: element.props?.separatorColor || 'var(--color-muted-foreground)'
-                        }}
-                      >
-                        {element.props?.separator || "/"}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </nav>
-            </div>
-          )}
-          {element.type === "pagination" && (
-            <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-              <nav className="flex items-center space-x-1">
-                {(element.props?.items || [
-                  { id: "prev", label: "←", type: "prev", isActive: false },
-                  { id: "1", label: "1", type: "page", isActive: true },
-                  { id: "2", label: "2", type: "page", isActive: false },
-                  { id: "3", label: "3", type: "page", isActive: false },
-                  { id: "ellipsis", label: "...", type: "ellipsis", isActive: false },
-                  { id: "10", label: "10", type: "page", isActive: false },
-                  { id: "next", label: "→", type: "next", isActive: false }
-                ]).map((item: any, index: number) => (
-                  <div key={item.id || index}>
-                    {item.type === "ellipsis" ? (
-                      <span
-                        className="px-2 py-1 text-xs text-muted-foreground"
-                        style={{
-                          fontFamily: element.props?.fontFamily || 'inherit',
-                          fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '12px',
-                          fontWeight: element.props?.fontWeight || 'normal',
-                          color: element.props?.textColor || 'var(--color-muted-foreground)'
+                          color: item.isLast
+                            ? (element.props?.lastItemColor || 'var(--color-muted-foreground)')
+                            : (element.props?.textColor || 'var(--color-primary)')
                         }}
                       >
                         {item.label}
                       </span>
-                    ) : (
-                      <button
-                        className={`px-2 py-1 text-xs border rounded hover:bg-muted ${item.isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "border-border"
-                          }`}
-                        style={{
-                          fontFamily: element.props?.fontFamily || 'inherit',
-                          fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '12px',
-                          fontWeight: element.props?.fontWeight || 'normal',
-                          color: item.isActive
-                            ? (element.props?.activeTextColor || 'var(--color-primary-foreground)')
-                            : (element.props?.textColor || 'var(--color-foreground)'),
-                          backgroundColor: item.isActive
-                            ? (element.props?.activeBgColor || 'var(--color-primary)')
-                            : 'transparent',
-                          borderColor: element.props?.borderColor || 'var(--color-border)'
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!item.isActive) {
-                            e.currentTarget.style.backgroundColor = element.props?.hoverBgColor || 'var(--color-muted)';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!item.isActive) {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }
-                        }}
-                      >
-                        {item.label}
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </nav>
-            </div>
-          )}
-          {element.type === "spinner" && (
-            <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <span className="ml-2 text-sm">{element.content}</span>
-            </div>
-          )}
-          {element.type === "skeleton" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="animate-pulse space-y-3">
-                <div className="h-4 bg-muted rounded w-3/4"></div>
-                <div className="h-4 bg-muted rounded w-1/2"></div>
-                <div className="h-4 bg-muted rounded w-5/6"></div>
+                      {index < array.length - 1 && (
+                        <span
+                          style={{
+                            fontFamily: element.props?.fontFamily || 'inherit',
+                            fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                            fontWeight: element.props?.fontWeight || 'normal',
+                            color: element.props?.separatorColor || 'var(--color-muted-foreground)'
+                          }}
+                        >
+                          {element.props?.separator || "/"}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </nav>
               </div>
-            </div>
-          )}
-          {element.type === "alert" && (
-            <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                <span
-                  className="text-sm font-medium"
-                  style={{
-                    fontFamily: element.props?.fontFamily || 'inherit',
-                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                    fontWeight: element.props?.fontWeight || 'medium',
-                    color: element.props?.textColor || 'var(--color-destructive-foreground)'
-                  }}
-                >
-                  {element.content}
-                </span>
+            )
+          }
+          {
+            element.type === "pagination" && (
+              <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+                <nav className="flex items-center space-x-1">
+                  {(element.props?.items || [
+                    { id: "prev", label: "←", type: "prev", isActive: false },
+                    { id: "1", label: "1", type: "page", isActive: true },
+                    { id: "2", label: "2", type: "page", isActive: false },
+                    { id: "3", label: "3", type: "page", isActive: false },
+                    { id: "ellipsis", label: "...", type: "ellipsis", isActive: false },
+                    { id: "10", label: "10", type: "page", isActive: false },
+                    { id: "next", label: "→", type: "next", isActive: false }
+                  ]).map((item: any, index: number) => (
+                    <div key={item.id || index}>
+                      {item.type === "ellipsis" ? (
+                        <span
+                          className="px-2 py-1 text-xs text-muted-foreground"
+                          style={{
+                            fontFamily: element.props?.fontFamily || 'inherit',
+                            fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '12px',
+                            fontWeight: element.props?.fontWeight || 'normal',
+                            color: element.props?.textColor || 'var(--color-muted-foreground)'
+                          }}
+                        >
+                          {item.label}
+                        </span>
+                      ) : (
+                        <button
+                          className={`px-2 py-1 text-xs border rounded hover:bg-muted ${item.isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "border-border"
+                            }`}
+                          style={{
+                            fontFamily: element.props?.fontFamily || 'inherit',
+                            fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '12px',
+                            fontWeight: element.props?.fontWeight || 'normal',
+                            color: item.isActive
+                              ? (element.props?.activeTextColor || 'var(--color-primary-foreground)')
+                              : (element.props?.textColor || 'var(--color-foreground)'),
+                            backgroundColor: item.isActive
+                              ? (element.props?.activeBgColor || 'var(--color-primary)')
+                              : 'transparent',
+                            borderColor: element.props?.borderColor || 'var(--color-border)'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!item.isActive) {
+                              e.currentTarget.style.backgroundColor = element.props?.hoverBgColor || 'var(--color-muted)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!item.isActive) {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            }
+                          }}
+                        >
+                          {item.label}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </nav>
               </div>
-            </div>
-          )}
-          {element.type === "toast" && (
-            <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-              <div className="flex items-center gap-2">
-                <svg
-                  className="w-4 h-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  style={{
-                    color: element.props?.iconColor || 'currentColor'
-                  }}
-                >
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span
-                  className="text-sm"
-                  style={{
-                    fontFamily: element.props?.fontFamily || 'inherit',
-                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                    fontWeight: element.props?.fontWeight || 'normal',
-                    color: element.props?.textColor || 'var(--color-foreground)'
-                  }}
-                >
-                  {element.content}
-                </span>
+            )
+          }
+          {
+            element.type === "spinner" && (
+              <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <span className="ml-2 text-sm">{element.content}</span>
               </div>
-            </div>
-          )}
-          {/* Content & Text Components */}
-          {element.type === "code-block" && (
-            <div className="w-full h-full relative" style={elementStyles}>
-              <pre className="w-full h-full p-4 bg-muted rounded-lg border border-border overflow-auto">
-                <code
-                  className={`text-sm font-mono language-${element.props?.language || 'javascript'}`}
-                  data-language={element.props?.language || 'javascript'}
-                  style={{
-                    fontFamily: element.props?.fontFamily || 'inherit',
-                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                    fontWeight: element.props?.fontWeight || 'normal',
-                    color: element.props?.textColor || 'var(--color-foreground)'
-                  }}
-                >
-                  {element.content}
-                </code>
-              </pre>
-              {/* Language indicator */}
-              <div className="absolute top-2 right-2 px-2 py-1 bg-primary/10 text-primary text-xs rounded-md font-medium">
-                {element.props?.language || 'javascript'}
-              </div>
-            </div>
-          )}
-          {element.type === "markdown" && (
-            <div className="w-full h-full overflow-auto" style={elementStyles}>
-              <div
-                className="prose prose-sm max-w-none"
-                style={{
-                  fontFamily: element.props?.fontFamily || 'inherit',
-                  fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                  fontWeight: element.props?.fontWeight || 'normal',
-                  color: element.props?.textColor || 'var(--color-foreground)'
-                }}
-              >
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: parseMarkdown(element.content)
-                  }}
-                  style={{
-                    '--heading-color': element.props?.headingColor || 'var(--color-foreground)',
-                    '--link-color': element.props?.linkColor || 'var(--color-primary)',
-                    '--code-color': element.props?.codeColor || 'var(--color-muted-foreground)',
-                    '--code-bg-color': element.props?.codeBgColor || 'var(--color-muted)'
-                  } as React.CSSProperties}
-                />
-              </div>
-            </div>
-          )}
-          {element.type === "rich-text" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="space-y-2 h-full flex flex-col">
-                {/* Toolbar */}
-                <div className="flex gap-1 p-2 bg-muted rounded border border-border flex-shrink-0">
-                  <button
-                    className={`px-2 py-1 text-xs rounded hover:bg-muted transition-colors ${element.props?.bold ? 'bg-primary text-primary-foreground' : 'bg-background'
-                      }`}
-                    onClick={() => onUpdateElement(element.id, {
-                      props: { ...element.props, bold: !element.props?.bold }
-                    })}
-                  >
-                    B
-                  </button>
-                  <button
-                    className={`px-2 py-1 text-xs rounded hover:bg-muted transition-colors ${element.props?.italic ? 'bg-primary text-primary-foreground' : 'bg-background'
-                      }`}
-                    onClick={() => onUpdateElement(element.id, {
-                      props: { ...element.props, italic: !element.props?.italic }
-                    })}
-                  >
-                    I
-                  </button>
-                  <button
-                    className={`px-2 py-1 text-xs rounded hover:bg-muted transition-colors ${element.props?.underline ? 'bg-primary text-primary-foreground' : 'bg-background'
-                      }`}
-                    onClick={() => onUpdateElement(element.id, {
-                      props: { ...element.props, underline: !element.props?.underline }
-                    })}
-                  >
-                    U
-                  </button>
-                </div>
-
-                {/* Editable Content Area */}
-                <div
-                  className="p-2 border border-border rounded bg-background flex-1 text-sm overflow-auto"
-                  contentEditable
-                  suppressContentEditableWarning={true}
-                  onInput={(e) => {
-                    const newContent = e.currentTarget.textContent || "";
-                    onUpdateElement(element.id, { content: newContent });
-                  }}
-                  style={{
-                    fontFamily: element.props?.fontFamily || 'inherit',
-                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                    fontWeight: element.props?.bold ? 'bold' : (element.props?.fontWeight || 'normal'),
-                    color: element.props?.textColor || 'var(--color-foreground)',
-                    backgroundColor: element.props?.backgroundColor || 'var(--color-background)',
-                    fontStyle: element.props?.italic ? 'italic' : 'normal',
-                    textDecoration: element.props?.underline ? 'underline' : 'none'
-                  }}
-                >
-                  {element.content}
+            )
+          }
+          {
+            element.type === "skeleton" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="animate-pulse space-y-3">
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-4 bg-muted rounded w-1/2"></div>
+                  <div className="h-4 bg-muted rounded w-5/6"></div>
                 </div>
               </div>
-            </div>
-          )}
-          {element.type === "typography" && (
-            <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-              <div className="text-center">
-                <h1
-                  className="mb-2"
-                  style={{
-                    fontFamily: element.props?.headingFontFamily || 'inherit',
-                    fontSize: element.props?.headingFontSize ? `${element.props.headingFontSize}px` : '24px',
-                    fontWeight: element.props?.headingFontWeight || 'bold',
-                    color: element.props?.headingColor || 'var(--color-foreground)'
-                  }}
-                >
-                  {element.props?.heading || "Typography"}
-                </h1>
-                <p
-                  className="text-sm"
-                  style={{
-                    fontFamily: element.props?.subtitleFontFamily || 'inherit',
-                    fontSize: element.props?.subtitleFontSize ? `${element.props.subtitleFontSize}px` : '14px',
-                    fontWeight: element.props?.subtitleFontWeight || 'normal',
-                    color: element.props?.subtitleColor || 'var(--color-muted-foreground)'
-                  }}
-                >
-                  {element.props?.subtitle || "Font styles and sizes"}
-                </p>
-              </div>
-            </div>
-          )}
-          {element.type === "link" && (
-            <div className="w-full h-full flex items-center" style={elementStyles}>
-              <a
-                href={element.props?.url || "#"}
-                className={`hover:opacity-80 transition-opacity ${element.props?.underline === false ? 'no-underline' : ''}`}
-                style={{
-                  fontFamily: element.props?.fontFamily || 'inherit',
-                  fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                  fontWeight: element.props?.fontWeight || 'normal',
-                  color: element.props?.textColor || 'var(--color-primary)',
-                  backgroundColor: element.props?.backgroundColor || 'transparent',
-                  textDecoration: element.props?.underline !== false ? 'underline' : 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                {element.content}
-              </a>
-            </div>
-          )}
-          {element.type === "tag" && (
-            <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-              <span
-                className="inline-flex items-center font-medium"
-                style={{
-                  fontFamily: element.props?.fontFamily || 'inherit',
-                  fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '12px',
-                  fontWeight: element.props?.fontWeight || '500',
-                  color: element.props?.textColor || 'var(--color-primary-foreground)',
-                  backgroundColor: element.props?.backgroundColor || 'var(--color-primary)',
-                  borderRadius: element.props?.borderRadius || '9999px',
-                  padding: element.props?.padding || '0.25rem 0.75rem'
-                }}
-              >
-                {element.content}
-              </span>
-            </div>
-          )}
-          {element.type === "label" && (
-            <div className="w-full h-full flex items-center" style={elementStyles}>
-              <span
-                className="inline-flex items-center font-medium"
-                style={{
-                  fontFamily: element.props?.fontFamily || 'inherit',
-                  fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '12px',
-                  fontWeight: element.props?.fontWeight || '500',
-                  color: element.props?.textColor || 'var(--color-foreground)',
-                  backgroundColor: element.props?.backgroundColor || 'var(--color-muted)',
-                  borderRadius: element.props?.borderRadius || '0.25rem',
-                  padding: element.props?.padding || '0.25rem 0.5rem'
-                }}
-              >
-                {element.content}
-              </span>
-            </div>
-          )}
-          {/* File & Media Components */}
-          {element.type === "file-upload" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div
-                className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
-                style={{
-                  fontFamily: element.props?.fontFamily || 'inherit',
-                  fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                  fontWeight: element.props?.fontWeight || 'normal',
-                  color: element.props?.textColor || 'var(--color-foreground)',
-                  backgroundColor: element.props?.backgroundColor || 'var(--color-background)',
-                  borderColor: element.props?.borderColor || 'var(--color-border)',
-                  borderRadius: element.props?.borderRadius || '0.5rem',
-                  padding: element.props?.padding || '0.75rem',
-                  borderStyle: element.props?.borderStyle || 'dashed',
-                  borderWidth: element.props?.borderWidth || '2px',
-                  border: `${element.props?.borderWidth || '2px'} ${element.props?.borderStyle || 'dashed'} ${element.props?.borderColor || 'var(--color-border)'}`
-                }}
-              >
-                <svg
-                  className="w-8 h-8 mb-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  style={{ color: element.props?.textColor || 'var(--color-muted-foreground)' }}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                <span
-                  className="text-sm"
-                  style={{
-                    fontFamily: element.props?.fontFamily || 'inherit',
-                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                    fontWeight: element.props?.fontWeight || 'normal',
-                    color: element.props?.textColor || 'var(--color-muted-foreground)'
-                  }}
-                >
-                  {element.content}
-                </span>
-              </div>
-            </div>
-          )}
-          {element.type === "file-download" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div
-                className="w-full h-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
-                style={{
-                  fontFamily: element.props?.fontFamily || 'inherit',
-                  fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                  fontWeight: element.props?.fontWeight || 'normal',
-                  color: element.props?.textColor || 'var(--color-primary-foreground)',
-                  backgroundColor: element.props?.backgroundColor || 'var(--color-primary)',
-                  borderRadius: element.props?.borderRadius || '8px',
-                  padding: element.props?.padding || '0.75rem'
-                }}
-              >
+            )
+          }
+          {
+            element.type === "alert" && (
+              <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
                 <div className="flex items-center gap-2">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    style={{
-                      color: element.props?.iconColor || 'var(--color-primary-foreground)',
-                      width: element.props?.iconSize ? `${element.props.iconSize}px` : '16px',
-                      height: element.props?.iconSize ? `${element.props.iconSize}px` : '16px'
-                    }}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
                   <span
                     className="text-sm font-medium"
                     style={{
                       fontFamily: element.props?.fontFamily || 'inherit',
                       fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                      fontWeight: element.props?.fontWeight || 'normal',
-                      color: element.props?.textColor || 'var(--color-primary-foreground)'
+                      fontWeight: element.props?.fontWeight || 'medium',
+                      color: element.props?.textColor || 'var(--color-destructive-foreground)'
                     }}
                   >
                     {element.content}
                   </span>
                 </div>
               </div>
-            </div>
-          )}
-          {element.type === "pdf-viewer" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div
-                className="w-full h-full flex flex-col items-center justify-center"
-                style={{
-                  fontFamily: element.props?.fontFamily || 'inherit',
-                  fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                  fontWeight: element.props?.fontWeight || 'normal',
-                  color: element.props?.textColor || 'var(--color-foreground)',
-                  backgroundColor: element.props?.backgroundColor || 'var(--color-card)',
-                  borderColor: element.props?.borderColor || 'var(--color-border)',
-                  borderRadius: element.props?.borderRadius || '0.5rem',
-                  padding: element.props?.padding || '1rem',
-                  border: `1px solid ${element.props?.borderColor || 'var(--color-border)'}`
-                }}
-              >
-                {element.props?.pdfUrl || element.props?.uploadedFile ? (
-                  <div className="w-full h-full flex flex-col">
-                    <div className="flex items-center justify-between mb-2">
-                      <span
-                        className="text-sm font-medium"
-                        style={{
-                          fontFamily: element.props?.fontFamily || 'inherit',
-                          fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                          fontWeight: element.props?.fontWeight || 'normal',
-                          color: element.props?.textColor || 'var(--color-foreground)'
-                        }}
-                      >
-                        {element.props?.fileName || "PDF Document"}
-                      </span>
-                      <button
-                        className="text-xs text-muted-foreground hover:text-foreground"
-                        onClick={() => {
-                          if (element.props?.uploadedFile) {
-                            const url = URL.createObjectURL(element.props.uploadedFile);
-                            window.open(url, '_blank');
-                          } else if (element.props?.pdfUrl) {
-                            window.open(element.props.pdfUrl, '_blank');
-                          }
-                        }}
-                        style={{
-                          fontFamily: element.props?.fontFamily || 'inherit',
-                          fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
-                          fontWeight: element.props?.fontWeight || 'normal',
-                          color: element.props?.textColor || 'var(--color-muted-foreground)'
-                        }}
-                      >
-                        Open in New Tab
-                      </button>
-                    </div>
-                    <iframe
-                      src={element.props?.uploadedFile ? URL.createObjectURL(element.props.uploadedFile) : element.props?.pdfUrl}
-                      className="w-full flex-1 border-0 rounded"
-                      style={{ borderRadius: element.props?.borderRadius || '0.5rem' }}
-                      title={element.props?.fileName || "PDF Document"}
-                    />
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <svg
-                      className="w-12 h-12 text-muted-foreground mb-2 mx-auto"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      style={{ color: element.props?.textColor || 'var(--color-muted-foreground)' }}
+            )
+          }
+          {
+            element.type === "toast" && (
+              <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    style={{
+                      color: element.props?.iconColor || 'currentColor'
+                    }}
+                  >
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span
+                    className="text-sm"
+                    style={{
+                      fontFamily: element.props?.fontFamily || 'inherit',
+                      fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                      fontWeight: element.props?.fontWeight || 'normal',
+                      color: element.props?.textColor || 'var(--color-foreground)'
+                    }}
+                  >
+                    {element.content}
+                  </span>
+                </div>
+              </div>
+            )
+          }
+          {/* Content & Text Components */}
+          {
+            element.type === "code-block" && (
+              <div className="w-full h-full relative" style={elementStyles}>
+                <pre className="w-full h-full p-4 bg-muted rounded-lg border border-border overflow-auto">
+                  <code
+                    className={`text-sm font-mono language-${element.props?.language || 'javascript'}`}
+                    data-language={element.props?.language || 'javascript'}
+                    style={{
+                      fontFamily: element.props?.fontFamily || 'inherit',
+                      fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                      fontWeight: element.props?.fontWeight || 'normal',
+                      color: element.props?.textColor || 'var(--color-foreground)'
+                    }}
+                  >
+                    {element.content}
+                  </code>
+                </pre>
+                {/* Language indicator */}
+                <div className="absolute top-2 right-2 px-2 py-1 bg-primary/10 text-primary text-xs rounded-md font-medium">
+                  {element.props?.language || 'javascript'}
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "markdown" && (
+              <div className="w-full h-full overflow-auto" style={elementStyles}>
+                <div
+                  className="prose prose-sm max-w-none"
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                    fontWeight: element.props?.fontWeight || 'normal',
+                    color: element.props?.textColor || 'var(--color-foreground)'
+                  }}
+                >
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: parseMarkdown(element.content)
+                    }}
+                    style={{
+                      '--heading-color': element.props?.headingColor || 'var(--color-foreground)',
+                      '--link-color': element.props?.linkColor || 'var(--color-primary)',
+                      '--code-color': element.props?.codeColor || 'var(--color-muted-foreground)',
+                      '--code-bg-color': element.props?.codeBgColor || 'var(--color-muted)'
+                    } as React.CSSProperties}
+                  />
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "rich-text" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="space-y-2 h-full flex flex-col">
+                  {/* Toolbar */}
+                  <div className="flex gap-1 p-2 bg-muted rounded border border-border flex-shrink-0">
+                    <button
+                      className={`px-2 py-1 text-xs rounded hover:bg-muted transition-colors ${element.props?.bold ? 'bg-primary text-primary-foreground' : 'bg-background'
+                        }`}
+                      onClick={() => onUpdateElement(element.id, {
+                        props: { ...element.props, bold: !element.props?.bold }
+                      })}
                     >
-                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                    </svg>
-                    {element.props?.showFileName !== false && (
-                      <span
-                        className="text-sm font-medium block"
-                        style={{
-                          fontFamily: element.props?.fontFamily || 'inherit',
-                          fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                          fontWeight: element.props?.fontWeight || 'normal',
-                          color: element.props?.textColor || 'var(--color-foreground)'
-                        }}
-                      >
-                        {element.props?.fileName || "PDF Document"}
-                      </span>
-                    )}
-                    <span
-                      className="text-xs text-muted-foreground mt-1 block"
+                      B
+                    </button>
+                    <button
+                      className={`px-2 py-1 text-xs rounded hover:bg-muted transition-colors ${element.props?.italic ? 'bg-primary text-primary-foreground' : 'bg-background'
+                        }`}
+                      onClick={() => onUpdateElement(element.id, {
+                        props: { ...element.props, italic: !element.props?.italic }
+                      })}
+                    >
+                      I
+                    </button>
+                    <button
+                      className={`px-2 py-1 text-xs rounded hover:bg-muted transition-colors ${element.props?.underline ? 'bg-primary text-primary-foreground' : 'bg-background'
+                        }`}
+                      onClick={() => onUpdateElement(element.id, {
+                        props: { ...element.props, underline: !element.props?.underline }
+                      })}
+                    >
+                      U
+                    </button>
+                  </div>
+
+                  {/* Editable Content Area */}
+                  <div
+                    className="p-2 border border-border rounded bg-background flex-1 text-sm overflow-auto"
+                    contentEditable
+                    suppressContentEditableWarning={true}
+                    onInput={(e) => {
+                      const newContent = e.currentTarget.textContent || "";
+                      onUpdateElement(element.id, { content: newContent });
+                    }}
+                    style={{
+                      fontFamily: element.props?.fontFamily || 'inherit',
+                      fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                      fontWeight: element.props?.bold ? 'bold' : (element.props?.fontWeight || 'normal'),
+                      color: element.props?.textColor || 'var(--color-foreground)',
+                      backgroundColor: element.props?.backgroundColor || 'var(--color-background)',
+                      fontStyle: element.props?.italic ? 'italic' : 'normal',
+                      textDecoration: element.props?.underline ? 'underline' : 'none'
+                    }}
+                  >
+                    {element.content}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "typography" && (
+              <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+                <div className="text-center">
+                  <h1
+                    className="mb-2"
+                    style={{
+                      fontFamily: element.props?.headingFontFamily || 'inherit',
+                      fontSize: element.props?.headingFontSize ? `${element.props.headingFontSize}px` : '24px',
+                      fontWeight: element.props?.headingFontWeight || 'bold',
+                      color: element.props?.headingColor || 'var(--color-foreground)'
+                    }}
+                  >
+                    {element.props?.heading || "Typography"}
+                  </h1>
+                  <p
+                    className="text-sm"
+                    style={{
+                      fontFamily: element.props?.subtitleFontFamily || 'inherit',
+                      fontSize: element.props?.subtitleFontSize ? `${element.props.subtitleFontSize}px` : '14px',
+                      fontWeight: element.props?.subtitleFontWeight || 'normal',
+                      color: element.props?.subtitleColor || 'var(--color-muted-foreground)'
+                    }}
+                  >
+                    {element.props?.subtitle || "Font styles and sizes"}
+                  </p>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "link" && (
+              <div className="w-full h-full flex items-center" style={elementStyles}>
+                <a
+                  href={element.props?.url || "#"}
+                  className={`hover:opacity-80 transition-opacity ${element.props?.underline === false ? 'no-underline' : ''}`}
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                    fontWeight: element.props?.fontWeight || 'normal',
+                    color: element.props?.textColor || 'var(--color-primary)',
+                    backgroundColor: element.props?.backgroundColor || 'transparent',
+                    textDecoration: element.props?.underline !== false ? 'underline' : 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {element.content}
+                </a>
+              </div>
+            )
+          }
+          {
+            element.type === "tag" && (
+              <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+                <span
+                  className="inline-flex items-center font-medium"
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '12px',
+                    fontWeight: element.props?.fontWeight || '500',
+                    color: element.props?.textColor || 'var(--color-primary-foreground)',
+                    backgroundColor: element.props?.backgroundColor || 'var(--color-primary)',
+                    borderRadius: element.props?.borderRadius || '9999px',
+                    padding: element.props?.padding || '0.25rem 0.75rem'
+                  }}
+                >
+                  {element.content}
+                </span>
+              </div>
+            )
+          }
+          {
+            element.type === "label" && (
+              <div className="w-full h-full flex items-center" style={elementStyles}>
+                <span
+                  className="inline-flex items-center font-medium"
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '12px',
+                    fontWeight: element.props?.fontWeight || '500',
+                    color: element.props?.textColor || 'var(--color-foreground)',
+                    backgroundColor: element.props?.backgroundColor || 'var(--color-muted)',
+                    borderRadius: element.props?.borderRadius || '0.25rem',
+                    padding: element.props?.padding || '0.25rem 0.5rem'
+                  }}
+                >
+                  {element.content}
+                </span>
+              </div>
+            )
+          }
+          {/* File & Media Components */}
+          {
+            element.type === "file-upload" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div
+                  className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                    fontWeight: element.props?.fontWeight || 'normal',
+                    color: element.props?.textColor || 'var(--color-foreground)',
+                    backgroundColor: element.props?.backgroundColor || 'var(--color-background)',
+                    borderColor: element.props?.borderColor || 'var(--color-border)',
+                    borderRadius: element.props?.borderRadius || '0.5rem',
+                    padding: element.props?.padding || '0.75rem',
+                    borderStyle: element.props?.borderStyle || 'dashed',
+                    borderWidth: element.props?.borderWidth || '2px',
+                    border: `${element.props?.borderWidth || '2px'} ${element.props?.borderStyle || 'dashed'} ${element.props?.borderColor || 'var(--color-border)'}`
+                  }}
+                >
+                  <svg
+                    className="w-8 h-8 mb-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    style={{ color: element.props?.textColor || 'var(--color-muted-foreground)' }}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <span
+                    className="text-sm"
+                    style={{
+                      fontFamily: element.props?.fontFamily || 'inherit',
+                      fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                      fontWeight: element.props?.fontWeight || 'normal',
+                      color: element.props?.textColor || 'var(--color-muted-foreground)'
+                    }}
+                  >
+                    {element.content}
+                  </span>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "file-download" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div
+                  className="w-full h-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                    fontWeight: element.props?.fontWeight || 'normal',
+                    color: element.props?.textColor || 'var(--color-primary-foreground)',
+                    backgroundColor: element.props?.backgroundColor || 'var(--color-primary)',
+                    borderRadius: element.props?.borderRadius || '8px',
+                    padding: element.props?.padding || '0.75rem'
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                       style={{
-                        fontFamily: element.props?.fontFamily || 'inherit',
-                        fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
-                        fontWeight: element.props?.fontWeight || 'normal',
-                        color: element.props?.textColor || 'var(--color-muted-foreground)'
+                        color: element.props?.iconColor || 'var(--color-primary-foreground)',
+                        width: element.props?.iconSize ? `${element.props.iconSize}px` : '16px',
+                        height: element.props?.iconSize ? `${element.props.iconSize}px` : '16px'
                       }}
                     >
-                      PDF Viewer
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span
+                      className="text-sm font-medium"
+                      style={{
+                        fontFamily: element.props?.fontFamily || 'inherit',
+                        fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                        fontWeight: element.props?.fontWeight || 'normal',
+                        color: element.props?.textColor || 'var(--color-primary-foreground)'
+                      }}
+                    >
+                      {element.content}
                     </span>
-                    {element.props?.showUploadButton !== false && (
-                      <div className="mt-3">
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "pdf-viewer" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div
+                  className="w-full h-full flex flex-col items-center justify-center"
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                    fontWeight: element.props?.fontWeight || 'normal',
+                    color: element.props?.textColor || 'var(--color-foreground)',
+                    backgroundColor: element.props?.backgroundColor || 'var(--color-card)',
+                    borderColor: element.props?.borderColor || 'var(--color-border)',
+                    borderRadius: element.props?.borderRadius || '0.5rem',
+                    padding: element.props?.padding || '1rem',
+                    border: `1px solid ${element.props?.borderColor || 'var(--color-border)'}`
+                  }}
+                >
+                  {element.props?.pdfUrl || element.props?.uploadedFile ? (
+                    <div className="w-full h-full flex flex-col">
+                      <div className="flex items-center justify-between mb-2">
                         <span
-                          className="text-xs text-muted-foreground"
+                          className="text-sm font-medium"
+                          style={{
+                            fontFamily: element.props?.fontFamily || 'inherit',
+                            fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                            fontWeight: element.props?.fontWeight || 'normal',
+                            color: element.props?.textColor || 'var(--color-foreground)'
+                          }}
+                        >
+                          {element.props?.fileName || "PDF Document"}
+                        </span>
+                        <button
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            if (element.props?.uploadedFile) {
+                              const url = URL.createObjectURL(element.props.uploadedFile);
+                              window.open(url, '_blank');
+                            } else if (element.props?.pdfUrl) {
+                              window.open(element.props.pdfUrl, '_blank');
+                            }
+                          }}
                           style={{
                             fontFamily: element.props?.fontFamily || 'inherit',
                             fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
@@ -6668,55 +6755,41 @@ export function BuilderCanvas({
                             color: element.props?.textColor || 'var(--color-muted-foreground)'
                           }}
                         >
-                          Upload PDF URL or file in properties panel
-                        </span>
+                          Open in New Tab
+                        </button>
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          {element.type === "document" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div
-                className="w-full h-full flex flex-col items-center justify-center"
-                style={{
-                  fontFamily: element.props?.fontFamily || 'inherit',
-                  fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                  fontWeight: element.props?.fontWeight || 'normal',
-                  color: element.props?.textColor || 'var(--color-foreground)',
-                  backgroundColor: element.props?.backgroundColor || 'var(--color-card)',
-                  borderColor: element.props?.borderColor || 'var(--color-border)',
-                  borderRadius: element.props?.borderRadius || '0.5rem',
-                  padding: element.props?.padding || '1rem',
-                  border: `1px solid ${element.props?.borderColor || 'var(--color-border)'}`
-                }}
-              >
-                {element.props?.documentUrl || element.props?.uploadedFile ? (
-                  <div className="w-full h-full flex flex-col">
-                    <div className="flex items-center justify-between mb-2">
-                      <span
-                        className="text-sm font-medium"
-                        style={{
-                          fontFamily: element.props?.fontFamily || 'inherit',
-                          fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                          fontWeight: element.props?.fontWeight || 'normal',
-                          color: element.props?.textColor || 'var(--color-foreground)'
-                        }}
+                      <iframe
+                        src={element.props?.uploadedFile ? URL.createObjectURL(element.props.uploadedFile) : element.props?.pdfUrl}
+                        className="w-full flex-1 border-0 rounded"
+                        style={{ borderRadius: element.props?.borderRadius || '0.5rem' }}
+                        title={element.props?.fileName || "PDF Document"}
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <svg
+                        className="w-12 h-12 text-muted-foreground mb-2 mx-auto"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        style={{ color: element.props?.textColor || 'var(--color-muted-foreground)' }}
                       >
-                        {element.props?.fileName || "Document Viewer"}
-                      </span>
-                      <button
-                        className="text-xs text-muted-foreground hover:text-foreground"
-                        onClick={() => {
-                          if (element.props?.uploadedFile) {
-                            const url = URL.createObjectURL(element.props.uploadedFile);
-                            window.open(url, '_blank');
-                          } else if (element.props?.documentUrl) {
-                            window.open(element.props.documentUrl, '_blank');
-                          }
-                        }}
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                      </svg>
+                      {element.props?.showFileName !== false && (
+                        <span
+                          className="text-sm font-medium block"
+                          style={{
+                            fontFamily: element.props?.fontFamily || 'inherit',
+                            fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                            fontWeight: element.props?.fontWeight || 'normal',
+                            color: element.props?.textColor || 'var(--color-foreground)'
+                          }}
+                        >
+                          {element.props?.fileName || "PDF Document"}
+                        </span>
+                      )}
+                      <span
+                        className="text-xs text-muted-foreground mt-1 block"
                         style={{
                           fontFamily: element.props?.fontFamily || 'inherit',
                           fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
@@ -6724,42 +6797,12 @@ export function BuilderCanvas({
                           color: element.props?.textColor || 'var(--color-muted-foreground)'
                         }}
                       >
-                        Open in New Tab
-                      </button>
-                    </div>
-                    <div className="flex-1 flex items-center justify-center">
-                      {element.props?.documentType === 'pdf' ||
-                        (element.props?.uploadedFile && element.props.uploadedFile.type === 'application/pdf') ||
-                        (element.props?.documentUrl && element.props.documentUrl.toLowerCase().includes('.pdf')) ? (
-                        <iframe
-                          src={element.props?.uploadedFile ? URL.createObjectURL(element.props.uploadedFile) : element.props?.documentUrl}
-                          className="w-full h-full border-0 rounded"
-                          style={{ borderRadius: element.props?.borderRadius || '0.5rem' }}
-                          title={element.props?.fileName || "Document Viewer"}
-                        />
-                      ) : (
-                        <div className="text-center">
-                          <svg
-                            className="w-16 h-16 text-muted-foreground mb-2 mx-auto"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                            style={{ color: element.props?.textColor || 'var(--color-muted-foreground)' }}
-                          >
-                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                          </svg>
+                        PDF Viewer
+                      </span>
+                      {element.props?.showUploadButton !== false && (
+                        <div className="mt-3">
                           <span
-                            className="text-sm font-medium block"
-                            style={{
-                              fontFamily: element.props?.fontFamily || 'inherit',
-                              fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                              fontWeight: element.props?.fontWeight || 'normal',
-                              color: element.props?.textColor || 'var(--color-foreground)'
-                            }}
-                          >
-                            {element.props?.fileName || "Document Viewer"}
-                          </span>
-                          <span
-                            className="text-xs text-muted-foreground mt-1 block"
+                            className="text-xs text-muted-foreground"
                             style={{
                               fontFamily: element.props?.fontFamily || 'inherit',
                               fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
@@ -6767,50 +6810,57 @@ export function BuilderCanvas({
                               color: element.props?.textColor || 'var(--color-muted-foreground)'
                             }}
                           >
-                            Document preview not available
+                            Upload PDF URL or file in properties panel
                           </span>
                         </div>
                       )}
                     </div>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <svg
-                      className="w-10 h-10 text-muted-foreground mb-2 mx-auto"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      style={{ color: element.props?.textColor || 'var(--color-muted-foreground)' }}
-                    >
-                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                    </svg>
-                    {element.props?.showFileName !== false && (
-                      <span
-                        className="text-sm font-medium block"
-                        style={{
-                          fontFamily: element.props?.fontFamily || 'inherit',
-                          fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                          fontWeight: element.props?.fontWeight || 'normal',
-                          color: element.props?.textColor || 'var(--color-foreground)'
-                        }}
-                      >
-                        {element.props?.fileName || "Document Viewer"}
-                      </span>
-                    )}
-                    <span
-                      className="text-xs text-muted-foreground mt-1 block"
-                      style={{
-                        fontFamily: element.props?.fontFamily || 'inherit',
-                        fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
-                        fontWeight: element.props?.fontWeight || 'normal',
-                        color: element.props?.textColor || 'var(--color-muted-foreground)'
-                      }}
-                    >
-                      Document Viewer
-                    </span>
-                    {element.props?.showUploadButton !== false && (
-                      <div className="mt-3">
+                  )}
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "document" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div
+                  className="w-full h-full flex flex-col items-center justify-center"
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                    fontWeight: element.props?.fontWeight || 'normal',
+                    color: element.props?.textColor || 'var(--color-foreground)',
+                    backgroundColor: element.props?.backgroundColor || 'var(--color-card)',
+                    borderColor: element.props?.borderColor || 'var(--color-border)',
+                    borderRadius: element.props?.borderRadius || '0.5rem',
+                    padding: element.props?.padding || '1rem',
+                    border: `1px solid ${element.props?.borderColor || 'var(--color-border)'}`
+                  }}
+                >
+                  {element.props?.documentUrl || element.props?.uploadedFile ? (
+                    <div className="w-full h-full flex flex-col">
+                      <div className="flex items-center justify-between mb-2">
                         <span
-                          className="text-xs text-muted-foreground"
+                          className="text-sm font-medium"
+                          style={{
+                            fontFamily: element.props?.fontFamily || 'inherit',
+                            fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                            fontWeight: element.props?.fontWeight || 'normal',
+                            color: element.props?.textColor || 'var(--color-foreground)'
+                          }}
+                        >
+                          {element.props?.fileName || "Document Viewer"}
+                        </span>
+                        <button
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            if (element.props?.uploadedFile) {
+                              const url = URL.createObjectURL(element.props.uploadedFile);
+                              window.open(url, '_blank');
+                            } else if (element.props?.documentUrl) {
+                              window.open(element.props.documentUrl, '_blank');
+                            }
+                          }}
                           style={{
                             fontFamily: element.props?.fontFamily || 'inherit',
                             fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
@@ -6818,313 +6868,417 @@ export function BuilderCanvas({
                             color: element.props?.textColor || 'var(--color-muted-foreground)'
                           }}
                         >
-                          Upload document URL or file in properties panel
-                        </span>
+                          Open in New Tab
+                        </button>
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          {element.type === "folder" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div
-                className="w-full h-full flex flex-col"
-                style={{
-                  fontFamily: element.props?.fontFamily || 'inherit',
-                  fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                  fontWeight: element.props?.fontWeight || 'normal',
-                  color: element.props?.textColor || 'var(--color-foreground)',
-                  backgroundColor: element.props?.backgroundColor || 'var(--color-card)',
-                  borderColor: element.props?.borderColor || 'var(--color-border)',
-                  borderRadius: element.props?.borderRadius || '0.5rem',
-                  padding: element.props?.padding || '1rem',
-                  border: `1px solid ${element.props?.borderColor || 'var(--color-border)'}`
-                }}
-              >
-                {/* Folder Header */}
-                <div className="flex items-center gap-2 mb-3">
-                  <svg
-                    className="w-6 h-6 text-muted-foreground"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    style={{ color: element.props?.textColor || 'var(--color-muted-foreground)' }}
-                  >
-                    <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-                  </svg>
-                  <span
-                    className="text-sm font-medium flex-1"
-                    style={{
-                      fontFamily: element.props?.fontFamily || 'inherit',
-                      fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
-                      fontWeight: element.props?.fontWeight || 'normal',
-                      color: element.props?.textColor || 'var(--color-foreground)'
-                    }}
-                  >
-                    {element.props?.folderName || "Folder Name"}
-                  </span>
-                  {element.props?.showItemCount !== false && (
-                    <span
-                      className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded"
-                      style={{
-                        fontFamily: element.props?.fontFamily || 'inherit',
-                        fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
-                        fontWeight: element.props?.fontWeight || 'normal',
-                        color: element.props?.textColor || 'var(--color-muted-foreground)'
-                      }}
-                    >
-                      {element.props?.items?.length || 0} items
-                    </span>
-                  )}
-                </div>
-
-                {/* Folder Items */}
-                <div className="flex-1 overflow-y-auto">
-                  {element.props?.items && element.props.items.length > 0 ? (
-                    <div className="space-y-1">
-                      {element.props.items.map((item: any) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center gap-2 p-1 hover:bg-muted rounded text-xs"
+                      <div className="flex-1 flex items-center justify-center">
+                        {element.props?.documentType === 'pdf' ||
+                          (element.props?.uploadedFile && element.props.uploadedFile.type === 'application/pdf') ||
+                          (element.props?.documentUrl && element.props.documentUrl.toLowerCase().includes('.pdf')) ? (
+                          <iframe
+                            src={element.props?.uploadedFile ? URL.createObjectURL(element.props.uploadedFile) : element.props?.documentUrl}
+                            className="w-full h-full border-0 rounded"
+                            style={{ borderRadius: element.props?.borderRadius || '0.5rem' }}
+                            title={element.props?.fileName || "Document Viewer"}
+                          />
+                        ) : (
+                          <div className="text-center">
+                            <svg
+                              className="w-16 h-16 text-muted-foreground mb-2 mx-auto"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                              style={{ color: element.props?.textColor || 'var(--color-muted-foreground)' }}
+                            >
+                              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                            </svg>
+                            <span
+                              className="text-sm font-medium block"
+                              style={{
+                                fontFamily: element.props?.fontFamily || 'inherit',
+                                fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                                fontWeight: element.props?.fontWeight || 'normal',
+                                color: element.props?.textColor || 'var(--color-foreground)'
+                              }}
+                            >
+                              {element.props?.fileName || "Document Viewer"}
+                            </span>
+                            <span
+                              className="text-xs text-muted-foreground mt-1 block"
+                              style={{
+                                fontFamily: element.props?.fontFamily || 'inherit',
+                                fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                                fontWeight: element.props?.fontWeight || 'normal',
+                                color: element.props?.textColor || 'var(--color-muted-foreground)'
+                              }}
+                            >
+                              Document preview not available
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <svg
+                        className="w-10 h-10 text-muted-foreground mb-2 mx-auto"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        style={{ color: element.props?.textColor || 'var(--color-muted-foreground)' }}
+                      >
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                      </svg>
+                      {element.props?.showFileName !== false && (
+                        <span
+                          className="text-sm font-medium block"
                           style={{
                             fontFamily: element.props?.fontFamily || 'inherit',
-                            fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                            fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
                             fontWeight: element.props?.fontWeight || 'normal',
                             color: element.props?.textColor || 'var(--color-foreground)'
                           }}
                         >
-                          {/* File/Folder Icon */}
-                          {item.type === 'folder' ? (
-                            <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-                            </svg>
-                          ) : item.icon === 'pdf' ? (
-                            <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                            </svg>
-                          ) : item.icon === 'image' ? (
-                            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                            </svg>
-                          ) : (
-                            <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                            </svg>
-                          )}
-
-                          {/* File/Folder Name */}
-                          <span className="flex-1 truncate">{item.name}</span>
-
-                          {/* Delete Button */}
-                          {element.props?.allowDeleteItems !== false && (
-                            <button
-                              className="text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Note: This would need to be handled by parent component
-                                console.log('Delete item:', item.id);
-                              }}
-                            >
-                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                              </svg>
-                            </button>
-                          )}
+                          {element.props?.fileName || "Document Viewer"}
+                        </span>
+                      )}
+                      <span
+                        className="text-xs text-muted-foreground mt-1 block"
+                        style={{
+                          fontFamily: element.props?.fontFamily || 'inherit',
+                          fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                          fontWeight: element.props?.fontWeight || 'normal',
+                          color: element.props?.textColor || 'var(--color-muted-foreground)'
+                        }}
+                      >
+                        Document Viewer
+                      </span>
+                      {element.props?.showUploadButton !== false && (
+                        <div className="mt-3">
+                          <span
+                            className="text-xs text-muted-foreground"
+                            style={{
+                              fontFamily: element.props?.fontFamily || 'inherit',
+                              fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                              fontWeight: element.props?.fontWeight || 'normal',
+                              color: element.props?.textColor || 'var(--color-muted-foreground)'
+                            }}
+                          >
+                            Upload document URL or file in properties panel
+                          </span>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div
-                      className="text-center text-muted-foreground py-4"
-                      style={{
-                        fontFamily: element.props?.fontFamily || 'inherit',
-                        fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
-                        fontWeight: element.props?.fontWeight || 'normal',
-                        color: element.props?.textColor || 'var(--color-muted-foreground)'
-                      }}
-                    >
-                      Empty folder
+                      )}
                     </div>
                   )}
                 </div>
-
-                {/* Add Item Button */}
-                {element.props?.allowAddItems !== false && (
-                  <div className="mt-2 pt-2 border-t border-border">
-                    <button
-                      className="w-full text-xs text-muted-foreground hover:text-foreground py-1"
-                      onClick={() => {
-                        // Note: This would need to be handled by parent component
-                        console.log('Add new item to folder');
-                      }}
+              </div>
+            )
+          }
+          {
+            element.type === "folder" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div
+                  className="w-full h-full flex flex-col"
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                    fontWeight: element.props?.fontWeight || 'normal',
+                    color: element.props?.textColor || 'var(--color-foreground)',
+                    backgroundColor: element.props?.backgroundColor || 'var(--color-card)',
+                    borderColor: element.props?.borderColor || 'var(--color-border)',
+                    borderRadius: element.props?.borderRadius || '0.5rem',
+                    padding: element.props?.padding || '1rem',
+                    border: `1px solid ${element.props?.borderColor || 'var(--color-border)'}`
+                  }}
+                >
+                  {/* Folder Header */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg
+                      className="w-6 h-6 text-muted-foreground"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      style={{ color: element.props?.textColor || 'var(--color-muted-foreground)' }}
+                    >
+                      <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                    </svg>
+                    <span
+                      className="text-sm font-medium flex-1"
                       style={{
                         fontFamily: element.props?.fontFamily || 'inherit',
-                        fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                        fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
                         fontWeight: element.props?.fontWeight || 'normal',
-                        color: element.props?.textColor || 'var(--color-muted-foreground)'
+                        color: element.props?.textColor || 'var(--color-foreground)'
                       }}
                     >
-                      + Add Item
-                    </button>
+                      {element.props?.folderName || "Folder Name"}
+                    </span>
+                    {element.props?.showItemCount !== false && (
+                      <span
+                        className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded"
+                        style={{
+                          fontFamily: element.props?.fontFamily || 'inherit',
+                          fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                          fontWeight: element.props?.fontWeight || 'normal',
+                          color: element.props?.textColor || 'var(--color-muted-foreground)'
+                        }}
+                      >
+                        {element.props?.items?.length || 0} items
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Folder Items */}
+                  <div className="flex-1 overflow-y-auto">
+                    {element.props?.items && element.props.items.length > 0 ? (
+                      <div className="space-y-1">
+                        {element.props.items.map((item: any) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-2 p-1 hover:bg-muted rounded text-xs"
+                            style={{
+                              fontFamily: element.props?.fontFamily || 'inherit',
+                              fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                              fontWeight: element.props?.fontWeight || 'normal',
+                              color: element.props?.textColor || 'var(--color-foreground)'
+                            }}
+                          >
+                            {/* File/Folder Icon */}
+                            {item.type === 'folder' ? (
+                              <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                              </svg>
+                            ) : item.icon === 'pdf' ? (
+                              <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                              </svg>
+                            ) : item.icon === 'image' ? (
+                              <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                              </svg>
+                            )}
+
+                            {/* File/Folder Name */}
+                            <span className="flex-1 truncate">{item.name}</span>
+
+                            {/* Delete Button */}
+                            {element.props?.allowDeleteItems !== false && (
+                              <button
+                                className="text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Note: This would need to be handled by parent component
+                                  console.log('Delete item:', item.id);
+                                }}
+                              >
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        className="text-center text-muted-foreground py-4"
+                        style={{
+                          fontFamily: element.props?.fontFamily || 'inherit',
+                          fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                          fontWeight: element.props?.fontWeight || 'normal',
+                          color: element.props?.textColor || 'var(--color-muted-foreground)'
+                        }}
+                      >
+                        Empty folder
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add Item Button */}
+                  {element.props?.allowAddItems !== false && (
+                    <div className="mt-2 pt-2 border-t border-border">
+                      <button
+                        className="w-full text-xs text-muted-foreground hover:text-foreground py-1"
+                        onClick={() => {
+                          // Note: This would need to be handled by parent component
+                          console.log('Add new item to folder');
+                        }}
+                        style={{
+                          fontFamily: element.props?.fontFamily || 'inherit',
+                          fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                          fontWeight: element.props?.fontWeight || 'normal',
+                          color: element.props?.textColor || 'var(--color-muted-foreground)'
+                        }}
+                      >
+                        + Add Item
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "image-gallery" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full grid grid-cols-3 gap-2">
+                  {Array.from({ length: 6 }, (_, i) => (
+                    <div key={i} className="bg-muted rounded border border-border flex items-center justify-center">
+                      <svg className="w-6 h-6 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "video-gallery" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full grid grid-cols-2 gap-2">
+                  {Array.from({ length: 4 }, (_, i) => (
+                    <div key={i} className="bg-muted rounded border border-border flex items-center justify-center">
+                      <svg className="w-6 h-6 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                      </svg>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          }
+          {/* Feedback & Status Components */}
+          {
+            element.type === "loading" && (
+              <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+                {element.props?.loadingType === "spinner" ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <div
+                      className="animate-spin rounded-full"
+                      style={{
+                        width: element.props?.spinnerSize || '24px',
+                        height: element.props?.spinnerSize || '24px',
+                        background: `conic-gradient(from 0deg, transparent, ${element.props?.spinnerColor || '#3b82f6'}, transparent)`,
+                        animation: 'spin 1s linear infinite'
+                      }}
+                    ></div>
+                    <span
+                      className="text-sm font-medium"
+                      style={{
+                        fontSize: element.props?.textSize || '14px',
+                        color: element.props?.textColor || 'var(--color-foreground)'
+                      }}
+                    >
+                      {element.content || "Loading..."}
+                    </span>
+                  </div>
+                ) : element.props?.loadingType === "dots" ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex gap-1">
+                      {[0, 1, 2].map((i) => (
+                        <div
+                          key={i}
+                          className="rounded-full animate-pulse"
+                          style={{
+                            width: element.props?.dotSize || '8px',
+                            height: element.props?.dotSize || '8px',
+                            backgroundColor: element.props?.dotColor || 'var(--color-primary)',
+                            animationDelay: `${i * 0.2}s`,
+                            animationDuration: '1s'
+                          }}
+                        ></div>
+                      ))}
+                    </div>
+                    <span
+                      className="text-sm font-medium"
+                      style={{
+                        fontSize: element.props?.textSize || '14px',
+                        color: element.props?.textColor || 'var(--color-foreground)'
+                      }}
+                    >
+                      {element.content || "Loading..."}
+                    </span>
+                  </div>
+                ) : element.props?.loadingType === "pulse" ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <div
+                      className="rounded-full animate-pulse"
+                      style={{
+                        width: element.props?.pulseSize || '40px',
+                        height: element.props?.pulseSize || '40px',
+                        backgroundColor: element.props?.pulseColor || 'var(--color-primary)',
+                        opacity: 0.7
+                      }}
+                    ></div>
+                    <span
+                      className="text-sm font-medium"
+                      style={{
+                        fontSize: element.props?.textSize || '14px',
+                        color: element.props?.textColor || 'var(--color-foreground)'
+                      }}
+                    >
+                      {element.content || "Loading..."}
+                    </span>
+                  </div>
+                ) : element.props?.loadingType === "bars" ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex gap-1">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="animate-pulse"
+                          style={{
+                            width: element.props?.barWidth || '4px',
+                            height: element.props?.barHeight || '20px',
+                            backgroundColor: element.props?.barColor || 'var(--color-primary)',
+                            animationDelay: `${i * 0.1}s`,
+                            animationDuration: '0.8s'
+                          }}
+                        ></div>
+                      ))}
+                    </div>
+                    <span
+                      className="text-sm font-medium"
+                      style={{
+                        fontSize: element.props?.textSize || '14px',
+                        color: element.props?.textColor || 'var(--color-foreground)'
+                      }}
+                    >
+                      {element.content || "Loading..."}
+                    </span>
+                  </div>
+                ) : (
+                  // Default spinner
+                  <div className="flex flex-col items-center gap-3">
+                    <div
+                      className="animate-spin rounded-full"
+                      style={{
+                        width: element.props?.spinnerSize || '24px',
+                        height: element.props?.spinnerSize || '24px',
+                        background: `conic-gradient(from 0deg, transparent, ${element.props?.spinnerColor || '#3b82f6'}, transparent)`,
+                        animation: 'spin 1s linear infinite'
+                      }}
+                    ></div>
+                    <span
+                      className="text-sm font-medium"
+                      style={{
+                        fontSize: element.props?.textSize || '14px',
+                        color: element.props?.textColor || 'var(--color-foreground)'
+                      }}
+                    >
+                      {element.content || "Loading..."}
+                    </span>
                   </div>
                 )}
               </div>
-            </div>
-          )}
-          {element.type === "image-gallery" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full grid grid-cols-3 gap-2">
-                {Array.from({ length: 6 }, (_, i) => (
-                  <div key={i} className="bg-muted rounded border border-border flex items-center justify-center">
-                    <svg className="w-6 h-6 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {element.type === "video-gallery" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full grid grid-cols-2 gap-2">
-                {Array.from({ length: 4 }, (_, i) => (
-                  <div key={i} className="bg-muted rounded border border-border flex items-center justify-center">
-                    <svg className="w-6 h-6 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                    </svg>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {/* Feedback & Status Components */}
-          {element.type === "loading" && (
-            <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-              {element.props?.loadingType === "spinner" ? (
-                <div className="flex flex-col items-center gap-3">
-                  <div
-                    className="animate-spin rounded-full"
-                    style={{
-                      width: element.props?.spinnerSize || '24px',
-                      height: element.props?.spinnerSize || '24px',
-                      background: `conic-gradient(from 0deg, transparent, ${element.props?.spinnerColor || '#3b82f6'}, transparent)`,
-                      animation: 'spin 1s linear infinite'
-                    }}
-                  ></div>
-                  <span
-                    className="text-sm font-medium"
-                    style={{
-                      fontSize: element.props?.textSize || '14px',
-                      color: element.props?.textColor || 'var(--color-foreground)'
-                    }}
-                  >
-                    {element.content || "Loading..."}
-                  </span>
-                </div>
-              ) : element.props?.loadingType === "dots" ? (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="flex gap-1">
-                    {[0, 1, 2].map((i) => (
-                      <div
-                        key={i}
-                        className="rounded-full animate-pulse"
-                        style={{
-                          width: element.props?.dotSize || '8px',
-                          height: element.props?.dotSize || '8px',
-                          backgroundColor: element.props?.dotColor || 'var(--color-primary)',
-                          animationDelay: `${i * 0.2}s`,
-                          animationDuration: '1s'
-                        }}
-                      ></div>
-                    ))}
-                  </div>
-                  <span
-                    className="text-sm font-medium"
-                    style={{
-                      fontSize: element.props?.textSize || '14px',
-                      color: element.props?.textColor || 'var(--color-foreground)'
-                    }}
-                  >
-                    {element.content || "Loading..."}
-                  </span>
-                </div>
-              ) : element.props?.loadingType === "pulse" ? (
-                <div className="flex flex-col items-center gap-3">
-                  <div
-                    className="rounded-full animate-pulse"
-                    style={{
-                      width: element.props?.pulseSize || '40px',
-                      height: element.props?.pulseSize || '40px',
-                      backgroundColor: element.props?.pulseColor || 'var(--color-primary)',
-                      opacity: 0.7
-                    }}
-                  ></div>
-                  <span
-                    className="text-sm font-medium"
-                    style={{
-                      fontSize: element.props?.textSize || '14px',
-                      color: element.props?.textColor || 'var(--color-foreground)'
-                    }}
-                  >
-                    {element.content || "Loading..."}
-                  </span>
-                </div>
-              ) : element.props?.loadingType === "bars" ? (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="flex gap-1">
-                    {[0, 1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className="animate-pulse"
-                        style={{
-                          width: element.props?.barWidth || '4px',
-                          height: element.props?.barHeight || '20px',
-                          backgroundColor: element.props?.barColor || 'var(--color-primary)',
-                          animationDelay: `${i * 0.1}s`,
-                          animationDuration: '0.8s'
-                        }}
-                      ></div>
-                    ))}
-                  </div>
-                  <span
-                    className="text-sm font-medium"
-                    style={{
-                      fontSize: element.props?.textSize || '14px',
-                      color: element.props?.textColor || 'var(--color-foreground)'
-                    }}
-                  >
-                    {element.content || "Loading..."}
-                  </span>
-                </div>
-              ) : (
-                // Default spinner
-                <div className="flex flex-col items-center gap-3">
-                  <div
-                    className="animate-spin rounded-full"
-                    style={{
-                      width: element.props?.spinnerSize || '24px',
-                      height: element.props?.spinnerSize || '24px',
-                      background: `conic-gradient(from 0deg, transparent, ${element.props?.spinnerColor || '#3b82f6'}, transparent)`,
-                      animation: 'spin 1s linear infinite'
-                    }}
-                  ></div>
-                  <span
-                    className="text-sm font-medium"
-                    style={{
-                      fontSize: element.props?.textSize || '14px',
-                      color: element.props?.textColor || 'var(--color-foreground)'
-                    }}
-                  >
-                    {element.content || "Loading..."}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-          {element.type === "progress-ring" && (
-            <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-              <style jsx>{`
+            )
+          }
+          {
+            element.type === "progress-ring" && (
+              <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+                <style jsx>{`
           @keyframes progressRingPulse {
             0%, 100% { 
               stroke-width: ${element.props?.strokeWidth || '4'};
@@ -7136,1156 +7290,1215 @@ export function BuilderCanvas({
             }
           }
         `}</style>
-              <div className="relative">
-                <svg
-                  style={{
-                    width: element.props?.ringSize || '64px',
-                    height: element.props?.ringSize || '64px'
-                  }}
-                  className="transform -rotate-90"
-                  viewBox="0 0 100 100"
-                >
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="45"
-                    stroke={element.props?.backgroundColor || 'var(--color-muted)'}
-                    strokeWidth={element.props?.strokeWidth || '4'}
-                    fill="none"
-                  />
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="45"
-                    stroke={element.props?.progressColor || 'var(--color-primary)'}
-                    strokeWidth={element.props?.strokeWidth || '4'}
-                    fill="none"
-                    strokeDasharray={`${2 * Math.PI * 45}`}
-                    strokeDashoffset={`${2 * Math.PI * 45 * (1 - (element.props?.progress || 75) / 100)}`}
-                    strokeLinecap={element.props?.strokeLineCap || 'round'}
+                <div className="relative">
+                  <svg
                     style={{
-                      transition: element.props?.animate ? 'stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
-                      animation: element.props?.animate ? 'progressRingPulse 2s ease-in-out infinite' : 'none'
+                      width: element.props?.ringSize || '64px',
+                      height: element.props?.ringSize || '64px'
                     }}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
+                    className="transform -rotate-90"
+                    viewBox="0 0 100 100"
+                  >
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      stroke={element.props?.backgroundColor || 'var(--color-muted)'}
+                      strokeWidth={element.props?.strokeWidth || '4'}
+                      fill="none"
+                    />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      stroke={element.props?.progressColor || 'var(--color-primary)'}
+                      strokeWidth={element.props?.strokeWidth || '4'}
+                      fill="none"
+                      strokeDasharray={`${2 * Math.PI * 45}`}
+                      strokeDashoffset={`${2 * Math.PI * 45 * (1 - (element.props?.progress || 75) / 100)}`}
+                      strokeLinecap={element.props?.strokeLineCap || 'round'}
+                      style={{
+                        transition: element.props?.animate ? 'stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+                        animation: element.props?.animate ? 'progressRingPulse 2s ease-in-out infinite' : 'none'
+                      }}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span
+                      className="font-medium"
+                      style={{
+                        fontSize: element.props?.textSize || '14px',
+                        color: element.props?.textColor || 'var(--color-foreground)'
+                      }}
+                    >
+                      {element.props?.showPercentage ? `${element.props?.progress || 75}%` : `${element.props?.progress || 75}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "notification" && (
+              <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+                <div className="relative">
                   <span
-                    className="font-medium"
                     style={{
-                      fontSize: element.props?.textSize || '14px',
-                      color: element.props?.textColor || 'var(--color-foreground)'
+                      color: element.props?.iconColor || 'var(--color-muted-foreground)',
+                      fontSize: element.props?.iconSize || '24px'
                     }}
                   >
-                    {element.props?.showPercentage ? `${element.props?.progress || 75}%` : `${element.props?.progress || 75}`}
+                    {element.content || '🔔'}
+                  </span>
+                  <span
+                    className="absolute rounded-full flex items-center justify-center"
+                    style={{
+                      backgroundColor: element.props?.badgeColor || '#dc2626',
+                      color: element.props?.badgeTextColor || '#ffffff',
+                      fontSize: `${parseInt(element.props?.badgeSize?.replace('px', '') || '16') * 0.6}px`,
+                      fontWeight: element.props?.badgeTextWeight || '500',
+                      width: element.props?.badgeSize || '16px',
+                      height: element.props?.badgeSize || '16px',
+                      top: '-4px',
+                      right: '-4px'
+                    }}
+                  >
+                    {element.props?.badgeCount || '3'}
                   </span>
                 </div>
               </div>
-            </div>
-          )}
-          {element.type === "notification" && (
-            <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-              <div className="relative">
-                <span
-                  style={{
-                    color: element.props?.iconColor || 'var(--color-muted-foreground)',
-                    fontSize: element.props?.iconSize || '24px'
-                  }}
-                >
-                  {element.content || '🔔'}
-                </span>
-                <span
-                  className="absolute rounded-full flex items-center justify-center"
-                  style={{
-                    backgroundColor: element.props?.badgeColor || '#dc2626',
-                    color: element.props?.badgeTextColor || '#ffffff',
-                    fontSize: `${parseInt(element.props?.badgeSize?.replace('px', '') || '16') * 0.6}px`,
-                    fontWeight: element.props?.badgeTextWeight || '500',
-                    width: element.props?.badgeSize || '16px',
-                    height: element.props?.badgeSize || '16px',
-                    top: '-4px',
-                    right: '-4px'
-                  }}
-                >
-                  {element.props?.badgeCount || '3'}
-                </span>
-              </div>
-            </div>
-          )}
-          {element.type === "alert-banner" && (
-            <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                <span className="text-sm font-medium">{element.content}</span>
-              </div>
-            </div>
-          )}
-          {element.type === "success-message" && (
-            <div
-              className="w-full h-full flex items-center justify-center"
-              style={{
-                ...elementStyles,
-                backgroundColor: element.props?.backgroundColor || '#22c55e'
-              }}
-            >
-              <div className="flex items-center gap-2">
-                <svg
-                  style={{
-                    color: element.props?.iconColor || '#ffffff',
-                    width: element.props?.iconSize || '16px',
-                    height: element.props?.iconSize || '16px'
-                  }}
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span
-                  className="font-medium"
-                  style={{
-                    fontSize: element.props?.fontSize || '14px',
-                    fontFamily: element.props?.fontFamily || 'inherit',
-                    fontWeight: element.props?.fontWeight || '500',
-                    color: element.props?.textColor || '#ffffff'
-                  }}
-                >
-                  {element.content}
-                </span>
-              </div>
-            </div>
-          )}
-          {element.type === "error-message" && (
-            <div
-              className="w-full h-full flex items-center justify-center"
-              style={{
-                ...elementStyles,
-                backgroundColor: element.props?.backgroundColor || '#dc2626'
-              }}
-            >
-              <div className="flex items-center gap-2">
-                <svg
-                  style={{
-                    color: element.props?.iconColor || '#ffffff',
-                    width: element.props?.iconSize || '16px',
-                    height: element.props?.iconSize || '16px'
-                  }}
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                <span
-                  className="font-medium"
-                  style={{
-                    fontSize: element.props?.fontSize || '14px',
-                    fontFamily: element.props?.fontFamily || 'inherit',
-                    fontWeight: element.props?.fontWeight || '500',
-                    color: element.props?.textColor || '#ffffff'
-                  }}
-                >
-                  {element.content}
-                </span>
-              </div>
-            </div>
-          )}
-          {element.type === "warning-message" && (
-            <div
-              className="w-full h-full flex items-center justify-center"
-              style={{
-                ...elementStyles,
-                backgroundColor: element.props?.backgroundColor || '#f59e0b'
-              }}
-            >
-              <div className="flex items-center gap-2">
-                <svg
-                  style={{
-                    color: element.props?.iconColor || '#ffffff',
-                    width: element.props?.iconSize || '16px',
-                    height: element.props?.iconSize || '16px'
-                  }}
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                <span
-                  className="font-medium"
-                  style={{
-                    fontSize: element.props?.fontSize || '14px',
-                    fontFamily: element.props?.fontFamily || 'inherit',
-                    fontWeight: element.props?.fontWeight || '500',
-                    color: element.props?.textColor || '#ffffff'
-                  }}
-                >
-                  {element.content}
-                </span>
-              </div>
-            </div>
-          )}
-          {/* Utility & Tools Components */}
-          {element.type === "divider" && (
-            <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
-              <div className="w-full h-px bg-border"></div>
-            </div>
-          )}
-          {element.type === "spacer" && (
-            <div
-              className="w-full h-full bg-muted/20 border border-dashed border-border rounded flex items-center justify-center"
-              style={elementStyles}
-            >
-              <span className="text-xs text-muted-foreground">Spacer</span>
-            </div>
-          )}
-          {element.type === "container" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="text-center">
-                  <h3 className="text-sm font-medium mb-2">{element.content}</h3>
-                  <p className="text-xs text-muted-foreground">Container wrapper</p>
+            )
+          }
+          {
+            element.type === "alert-banner" && (
+              <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-sm font-medium">{element.content}</span>
                 </div>
               </div>
-            </div>
-          )}
-          {element.type === "wrapper" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="text-center">
-                  <h3 className="text-sm font-medium mb-2">{element.content}</h3>
-                  <p className="text-xs text-muted-foreground">Element wrapper</p>
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "flexbox" && (
-            <div className="w-full h-full" style={elementStyles}>
+            )
+          }
+          {
+            element.type === "success-message" && (
               <div
-                className="w-full h-full flex"
+                className="w-full h-full flex items-center justify-center"
                 style={{
-                  flexDirection: element.props?.flexDirection || "row",
-                  justifyContent: element.props?.justifyContent || "center",
-                  alignItems: element.props?.alignItems || "center",
-                  gap: `${element.props?.gap || 8}px`,
-                  flexWrap: element.props?.flexWrap || "nowrap"
+                  ...elementStyles,
+                  backgroundColor: element.props?.backgroundColor || '#22c55e'
                 }}
               >
-                {(element.props?.items || [
-                  { id: "1", text: "Item 1", type: "box" },
-                  { id: "2", text: "Item 2", type: "box" },
-                  { id: "3", text: "Item 3", type: "box" }
-                ]).map((item: any) => (
-                  <div key={item.id} className="w-8 h-8 bg-primary/20 rounded flex items-center justify-center">
-                    <span className="text-xs">{item.text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {element.type === "grid-container" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full grid grid-cols-2 gap-2">
-                <div className="bg-primary/20 rounded flex items-center justify-center">
-                  <span className="text-xs">Item 1</span>
-                </div>
-                <div className="bg-primary/20 rounded flex items-center justify-center">
-                  <span className="text-xs">Item 2</span>
-                </div>
-                <div className="bg-primary/20 rounded flex items-center justify-center">
-                  <span className="text-xs">Item 3</span>
-                </div>
-                <div className="bg-primary/20 rounded flex items-center justify-center">
-                  <span className="text-xs">Item 4</span>
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "center" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="text-center">
-                  <h3 className="text-sm font-medium mb-2">{element.content}</h3>
-                  <p className="text-xs text-muted-foreground">Centered content</p>
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "stack" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div
-                className="w-full h-full flex flex-col"
-                style={{
-                  gap: `${element.props?.gap || 8}px`
-                }}
-              >
-                {(element.props?.items || [
-                  { id: "1", text: "Stack Item 1" },
-                  { id: "2", text: "Stack Item 2" },
-                  { id: "3", text: "Stack Item 3" }
-                ]).map((item: any) => (
-                  <div
-                    key={item.id}
-                    className="rounded p-2 text-center"
+                <div className="flex items-center gap-2">
+                  <svg
                     style={{
-                      backgroundColor: element.props?.backgroundColor ?
-                        `${element.props.backgroundColor}${Math.round((element.props?.backgroundOpacity || 20) * 2.55).toString(16).padStart(2, '0')}` :
-                        'rgba(59, 130, 246, 0.2)',
+                      color: element.props?.iconColor || '#ffffff',
+                      width: element.props?.iconSize || '16px',
+                      height: element.props?.iconSize || '16px'
+                    }}
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span
+                    className="font-medium"
+                    style={{
+                      fontSize: element.props?.fontSize || '14px',
                       fontFamily: element.props?.fontFamily || 'inherit',
-                      fontSize: `${element.props?.fontSize || 12}px`,
-                      fontWeight: element.props?.fontWeight || '400',
+                      fontWeight: element.props?.fontWeight || '500',
                       color: element.props?.textColor || '#ffffff'
                     }}
                   >
-                    <span>{item.text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {/* Business & Marketing Components */}
-          {element.type === "pricing-table" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full flex flex-col items-center justify-center">
-                <h3
-                  className="text-lg font-bold mb-4"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || 'inherit',
-                    fontSize: element.props?.titleFontSize || '18px',
-                    fontWeight: element.props?.titleFontWeight || '700',
-                    color: element.props?.titleColor || 'inherit'
-                  }}
-                >
-                  {element.content}
-                </h3>
-                <div className={`grid gap-4 w-full`} style={{
-                  gridTemplateColumns: `repeat(${(element.props?.plansArray || Array.from({ length: element.props?.plans || 3 }).map((_, i) => ({
-                    name: ['Basic', 'Pro', 'Enterprise'][i] || 'Plan ' + (i + 1),
-                    price: ['$9', '$29', '$99'][i] || '$0'
-                  }))).length}, minmax(0, 1fr))`
-                }}>
-                  {(element.props?.plansArray || Array.from({ length: element.props?.plans || 3 }).map((_, i) => ({
-                    name: ['Basic', 'Pro', 'Enterprise'][i] || 'Plan ' + (i + 1),
-                    price: ['$9', '$29', '$99'][i] || '$0'
-                  }))).map((plan: any, idx: number) => {
-                    const highlightedIndex = element.props?.highlightedPlan ?? 1
-                    return (
-                      <div
-                        key={idx}
-                        className={`rounded-lg p-3 text-center ${idx === highlightedIndex ? 'bg-primary/10 border-2 border-primary' : 'bg-muted'
-                          }`}
-                      >
-                        <div
-                          className="text-sm font-medium"
-                          style={{
-                            fontFamily: element.props?.planFontFamily || 'inherit',
-                            fontSize: element.props?.planNameSize || '14px',
-                            fontWeight: element.props?.planNameWeight || '500',
-                            color: element.props?.planNameColor || 'inherit'
-                          }}
-                        >
-                          {plan.name}
-                        </div>
-                        <div
-                          className="text-lg font-bold text-primary"
-                          style={{
-                            fontFamily: element.props?.planFontFamily || 'inherit',
-                            fontSize: element.props?.planPriceSize || '18px',
-                            fontWeight: element.props?.planPriceWeight || '700',
-                            color: element.props?.planPriceColor || 'hsl(var(--primary))'
-                          }}
-                        >
-                          {plan.price}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "feature-list" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full space-y-3">
-                <h3
-                  className="text-sm font-medium mb-3"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || 'inherit',
-                    fontSize: element.props?.titleFontSize || '14px',
-                    fontWeight: element.props?.titleFontWeight || '500',
-                    color: element.props?.titleColor || 'inherit'
-                  }}
-                >
-                  {element.content}
-                </h3>
-                <div className="space-y-2">
-                  {(element.props?.featuresArray || [
-                    { text: 'Feature 1' },
-                    { text: 'Feature 2' },
-                    { text: 'Feature 3' }
-                  ]).map((feature: any, idx: number) => {
-                    const iconType = element.props?.iconType || 'check'
-                    const iconColor = element.props?.iconColor || 'hsl(var(--primary))'
-
-                    return (
-                      <div key={idx} className="flex items-center gap-2 text-xs">
-                        {iconType === 'check' && (
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                        {iconType === 'star' && (
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        )}
-                        {iconType === 'circle' && (
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
-                            <circle cx="10" cy="10" r="8" />
-                          </svg>
-                        )}
-                        {iconType === 'arrow' && (
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
-                            <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                        {iconType === 'plus' && (
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
-                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                        {iconType === 'heart' && (
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
-                            <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                        <span
-                          style={{
-                            fontFamily: element.props?.featureFontFamily || 'inherit',
-                            fontSize: element.props?.featureFontSize || '12px',
-                            fontWeight: element.props?.featureFontWeight || '400',
-                            color: element.props?.featureColor || 'inherit'
-                          }}
-                        >
-                          {feature.text}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "faq" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full space-y-3">
-                <h3
-                  className="text-sm font-medium mb-3"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || 'inherit',
-                    fontSize: element.props?.titleFontSize || '14px',
-                    fontWeight: element.props?.titleFontWeight || '500',
-                    color: element.props?.titleColor || 'inherit'
-                  }}
-                >
-                  {element.content}
-                </h3>
-                <div className="space-y-2">
-                  {(element.props?.faqArray || [
-                    { question: 'What is this service?', answer: 'This is a comprehensive solution...' },
-                    { question: 'How does it work?', answer: 'It works by...' }
-                  ]).map((faq: any, idx: number) => (
-                    <div key={idx} className="border border-border rounded p-2">
-                      <div
-                        className="text-xs font-medium mb-1"
-                        style={{
-                          fontFamily: element.props?.questionFontFamily || 'inherit',
-                          fontSize: element.props?.questionFontSize || '12px',
-                          fontWeight: element.props?.questionFontWeight || '500',
-                          color: element.props?.questionColor || 'inherit'
-                        }}
-                      >
-                        Q: {faq.question}
-                      </div>
-                      <div
-                        className="text-xs text-muted-foreground"
-                        style={{
-                          fontFamily: element.props?.answerFontFamily || 'inherit',
-                          fontSize: element.props?.answerFontSize || '12px',
-                          fontWeight: element.props?.answerFontWeight || '400',
-                          color: element.props?.answerColor || 'inherit'
-                        }}
-                      >
-                        A: {faq.answer}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "blog-post" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full space-y-3">
-                {/* Blog Image */}
-                {element.props?.imageUrl ? (
-                  <div
-                    className="w-full bg-muted rounded mb-3 bg-cover bg-center"
-                    style={{
-                      height: element.props?.imageHeight || "80px",
-                      backgroundImage: `url(${element.props?.imageUrl})`
-                    }}
-                  ></div>
-                ) : (
-                  <div
-                    className="w-full bg-muted rounded mb-3"
-                    style={{
-                      height: element.props?.imageHeight || "80px"
-                    }}
-                  ></div>
-                )}
-
-                {/* Blog Title */}
-                <h3
-                  className="text-sm font-medium"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || "inherit",
-                    fontSize: element.props?.titleFontSize || "14px",
-                    fontWeight: element.props?.titleFontWeight || "500",
-                    color: element.props?.titleColor || "#ffffff"
-                  }}
-                >
-                  {element.props?.title || element.content || "Blog Article"}
-                </h3>
-
-                {/* Blog Content */}
-                <p
-                  className="text-xs text-muted-foreground line-clamp-3"
-                  style={{
-                    fontFamily: element.props?.contentFontFamily || "inherit",
-                    fontSize: element.props?.contentFontSize || "12px",
-                    fontWeight: element.props?.contentFontWeight || "400",
-                    color: element.props?.contentColor || "#a1a1aa"
-                  }}
-                >
-                  {element.props?.blogContent || "This is a sample blog post content that demonstrates how the blog post component would look..."}
-                </p>
-
-                {/* Blog Meta (Author & Date) */}
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span
-                    style={{
-                      fontFamily: element.props?.metaFontFamily || "inherit",
-                      fontSize: element.props?.metaFontSize || "12px",
-                      fontWeight: element.props?.metaFontWeight || "400",
-                      color: element.props?.metaColor || "#a1a1aa"
-                    }}
-                  >
-                    By {element.props?.author || "Author"}
-                  </span>
-                  <span>•</span>
-                  <span
-                    style={{
-                      fontFamily: element.props?.metaFontFamily || "inherit",
-                      fontSize: element.props?.metaFontSize || "12px",
-                      fontWeight: element.props?.metaFontWeight || "400",
-                      color: element.props?.metaColor || "#a1a1aa"
-                    }}
-                  >
-                    {element.props?.date || "Dec 2024"}
+                    {element.content}
                   </span>
                 </div>
               </div>
-            </div>
-          )}
-          {element.type === "case-study" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full space-y-3">
-                {/* Case Study Image */}
-                {element.props?.imageUrl ? (
-                  <div
-                    className="w-full bg-muted rounded mb-3 bg-cover bg-center"
+            )
+          }
+          {
+            element.type === "error-message" && (
+              <div
+                className="w-full h-full flex items-center justify-center"
+                style={{
+                  ...elementStyles,
+                  backgroundColor: element.props?.backgroundColor || '#dc2626'
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <svg
                     style={{
-                      height: element.props?.imageHeight || "64px",
-                      backgroundImage: `url(${element.props?.imageUrl})`
+                      color: element.props?.iconColor || '#ffffff',
+                      width: element.props?.iconSize || '16px',
+                      height: element.props?.iconSize || '16px'
                     }}
-                  ></div>
-                ) : (
-                  <div
-                    className="w-full bg-muted rounded mb-3"
-                    style={{
-                      height: element.props?.imageHeight || "64px"
-                    }}
-                  ></div>
-                )}
-
-                {/* Case Study Title */}
-                <h3
-                  className="text-sm font-medium"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || "inherit",
-                    fontSize: element.props?.titleFontSize || "18px",
-                    fontWeight: element.props?.titleFontWeight || "600",
-                    color: element.props?.titleColor || "#ffffff"
-                  }}
-                >
-                  {element.props?.title || element.content || "Case Study"}
-                </h3>
-
-                {/* Case Study Description */}
-                <p
-                  className="text-xs text-muted-foreground"
-                  style={{
-                    fontFamily: element.props?.descriptionFontFamily || "inherit",
-                    fontSize: element.props?.descriptionFontSize || "14px",
-                    fontWeight: element.props?.descriptionFontWeight || "400",
-                    color: element.props?.descriptionColor || "#a1a1aa"
-                  }}
-                >
-                  {element.props?.description || "Success story showcasing results and outcomes..."}
-                </p>
-
-                {/* Case Study Metrics */}
-                <div className="flex gap-2">
-                  {(element.props?.metricsArray || [
-                    { label: '+50% Growth' },
-                    { label: 'ROI: 300%' }
-                  ]).map((metric: any, idx: number) => (
-                    <div
-                      key={idx}
-                      className="bg-primary/20 rounded px-2 py-1 text-xs"
-                      style={{
-                        fontFamily: element.props?.metricFontFamily || "inherit",
-                        fontSize: element.props?.metricFontSize || "13px",
-                        fontWeight: element.props?.metricFontWeight || "500",
-                        color: element.props?.metricColor || "#ffffff"
-                      }}
-                    >
-                      {metric.label}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "cta" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full flex flex-col items-center justify-center text-center">
-                {/* CTA Title */}
-                <h3
-                  className="text-lg font-bold mb-2"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || "inherit",
-                    fontSize: element.props?.titleFontSize || "18px",
-                    fontWeight: element.props?.titleFontWeight || "700",
-                    color: element.props?.titleColor || "#ffffff"
-                  }}
-                >
-                  {element.props?.title || element.content || "Call to Action"}
-                </h3>
-
-                {/* CTA Description */}
-                <p
-                  className="text-sm mb-4 opacity-90"
-                  style={{
-                    fontFamily: element.props?.descriptionFontFamily || "inherit",
-                    fontSize: element.props?.descriptionFontSize || "14px",
-                    fontWeight: element.props?.descriptionFontWeight || "400",
-                    color: element.props?.descriptionColor || "#ffffff",
-                    opacity: element.props?.descriptionOpacity || 0.9
-                  }}
-                >
-                  {element.props?.description || "Get started today and transform your business"}
-                </p>
-
-                {/* CTA Button */}
-                <button
-                  className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-80 transition-all"
-                  style={{
-                    fontFamily: element.props?.buttonFontFamily || "inherit",
-                    fontSize: element.props?.buttonFontSize || "14px",
-                    fontWeight: element.props?.buttonFontWeight || "500",
-                    backgroundColor: element.props?.buttonBgColor || "var(--color-background)",
-                    color: element.props?.buttonTextColor || "var(--color-primary)"
-                  }}
-                >
-                  {element.props?.buttonText || "Get Started"}
-                </button>
-              </div>
-            </div>
-          )}
-          {element.type === "hero" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full flex flex-col items-center justify-center text-center">
-                <h1
-                  className="mb-3"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || 'Inter',
-                    fontSize: `${element.props?.titleFontSize || 24}px`,
-                    fontWeight: element.props?.titleFontWeight || '700',
-                    color: element.props?.titleColor || '#ffffff'
-                  }}
-                >
-                  {element.props?.title || "Welcome to Our Platform"}
-                </h1>
-                <p
-                  className="mb-6 max-w-md"
-                  style={{
-                    fontFamily: element.props?.descriptionFontFamily || 'Inter',
-                    fontSize: `${element.props?.descriptionFontSize || 14}px`,
-                    fontWeight: element.props?.descriptionFontWeight || '400',
-                    color: element.props?.descriptionColor || '#ffffff',
-                    opacity: 0.8
-                  }}
-                >
-                  {element.props?.description || "Build amazing websites with our drag-and-drop builder. No coding required."}
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    className="px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
-                    style={{
-                      fontFamily: element.props?.primaryButtonFontFamily || 'Inter',
-                      fontSize: `${element.props?.primaryButtonFontSize || 14}px`,
-                      fontWeight: element.props?.primaryButtonFontWeight || '500',
-                      backgroundColor: element.props?.primaryButtonBgColor || 'var(--color-primary)',
-                      color: element.props?.primaryButtonTextColor || '#ffffff'
-                    }}
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
                   >
-                    {element.props?.primaryButtonText || "Get Started"}
-                  </button>
-                  <button
-                    className="px-4 py-2 rounded-lg transition-colors"
-                    style={{
-                      fontFamily: element.props?.secondaryButtonFontFamily || 'Inter',
-                      fontSize: `${element.props?.secondaryButtonFontSize || 14}px`,
-                      fontWeight: element.props?.secondaryButtonFontWeight || '500',
-                      backgroundColor: element.props?.secondaryButtonBgColor || 'transparent',
-                      color: element.props?.secondaryButtonTextColor || '#ffffff',
-                      border: `1px solid ${element.props?.secondaryButtonBorderColor || 'var(--color-border)'}`
-                    }}
-                  >
-                    {element.props?.secondaryButtonText || "Learn More"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "about" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full space-y-3">
-                <h3
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || 'Inter',
-                    fontSize: `${element.props?.titleFontSize || 18}px`,
-                    fontWeight: element.props?.titleFontWeight || '700',
-                    color: element.props?.titleColor || '#ffffff'
-                  }}
-                >
-                  {element.props?.title || "About Us"}
-                </h3>
-                <p
-                  style={{
-                    fontFamily: element.props?.descriptionFontFamily || 'Inter',
-                    fontSize: `${element.props?.descriptionFontSize || 14}px`,
-                    fontWeight: element.props?.descriptionFontWeight || '400',
-                    color: element.props?.descriptionColor || '#ffffff',
-                    opacity: 0.8
-                  }}
-                >
-                  {element.props?.description || "We are a team of passionate developers and designers creating amazing digital experiences."}
-                </p>
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  {(() => {
-                    const defaultStats = [
-                      { value: '100+', label: 'Projects' },
-                      { value: '50+', label: 'Clients' }
-                    ]
-                    const stats = element.props?.statsArray || defaultStats
-                    return stats.map((stat: any, index: number) => (
-                      <div key={index} className="text-center">
-                        <div
-                          style={{
-                            fontFamily: element.props?.statValueFontFamily || 'Inter',
-                            fontSize: `${element.props?.statValueFontSize || 18}px`,
-                            fontWeight: element.props?.statValueFontWeight || '700',
-                            color: element.props?.statValueColor || 'var(--color-primary)'
-                          }}
-                        >
-                          {stat.value}
-                        </div>
-                        <div
-                          style={{
-                            fontFamily: element.props?.statLabelFontFamily || 'Inter',
-                            fontSize: `${element.props?.statLabelFontSize || 12}px`,
-                            fontWeight: element.props?.statLabelFontWeight || '400',
-                            color: element.props?.statLabelColor || '#a1a1aa'
-                          }}
-                        >
-                          {stat.label}
-                        </div>
-                      </div>
-                    ))
-                  })()}
-                </div>
-              </div>
-            </div>
-          )}
-          {/* Forms & Validation Components */}
-          {element.type === "contact-form" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full space-y-3">
-                <h3 className="text-sm font-medium">{element.content}</h3>
-                <div className="space-y-2">
-                  <input type="text" placeholder="Name" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-                  <input type="email" placeholder="Email" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-                  <textarea placeholder="Message" className="w-full px-2 py-1 text-xs border border-border rounded bg-background h-16 resize-none"></textarea>
-                  <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Send Message</button>
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "newsletter-signup" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full flex flex-col items-center justify-center space-y-3">
-                <h3
-                  className="w-full"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || 'inherit',
-                    fontSize: element.props?.titleFontSize || '14px',
-                    fontWeight: element.props?.titleFontWeight || '500',
-                    textAlign: element.props?.titleAlign || 'center',
-                    color: element.props?.titleColor || '#ffffff'
-                  }}
-                >
-                  {element.content}
-                </h3>
-                <p
-                  className="w-full"
-                  style={{
-                    fontFamily: element.props?.descriptionFontFamily || 'inherit',
-                    fontSize: element.props?.descriptionFontSize || '12px',
-                    fontWeight: element.props?.descriptionFontWeight || '400',
-                    color: element.props?.descriptionColor || '#9ca3af',
-                    textAlign: element.props?.titleAlign || 'center'
-                  }}
-                >
-                  {element.props?.description || "Stay updated with our latest news"}
-                </p>
-                <div className="flex gap-2 w-full">
-                  <input
-                    type="email"
-                    placeholder={element.props?.emailPlaceholder || "Enter email"}
-                    className="flex-1 border"
-                    style={{
-                      padding: element.props?.inputPadding || '8px 12px',
-                      fontSize: element.props?.inputFontSize || '12px',
-                      borderRadius: element.props?.inputBorderRadius || '4px',
-                      borderColor: element.props?.inputBorderColor || '#374151',
-                      backgroundColor: element.props?.inputBackgroundColor || '#1f2937',
-                      color: element.props?.inputTextColor || '#ffffff'
-                    }}
-                  />
-                  <button
-                    className="rounded"
-                    style={{
-                      padding: element.props?.buttonPadding || '8px 12px',
-                      fontSize: element.props?.buttonFontSize || '12px',
-                      borderRadius: element.props?.buttonBorderRadius || '4px',
-                      backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
-                      color: element.props?.buttonTextColor || '#ffffff',
-                      border: 'none',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {element.props?.buttonText || "Subscribe"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "login-form" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full space-y-3">
-                <h3
-                  className="w-full"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || 'inherit',
-                    fontSize: element.props?.titleFontSize || '14px',
-                    fontWeight: element.props?.titleFontWeight || '500',
-                    textAlign: element.props?.titleAlign || 'left',
-                    color: element.props?.titleColor || '#ffffff'
-                  }}
-                >
-                  {element.content}
-                </h3>
-                <div className="space-y-2">
-                  <input
-                    type="email"
-                    placeholder={element.props?.emailPlaceholder || "Email"}
-                    className="w-full border"
-                    style={getFormInputStyles(element)}
-                  />
-                  <input
-                    type="password"
-                    placeholder={element.props?.passwordPlaceholder || "Password"}
-                    className="w-full border"
-                    style={getFormInputStyles(element)}
-                  />
-                  <button
-                    className="w-full rounded"
-                    style={getFormButtonStyles(element)}
-                  >
-                    {element.props?.submitText || "Login"}
-                  </button>
-                  <div className="text-xs text-center text-muted-foreground">{element.props?.forgotPasswordText || "Forgot password?"}</div>
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "registration-form" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full space-y-2">
-                <h3
-                  className="w-full"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || 'inherit',
-                    fontSize: element.props?.titleFontSize || '14px',
-                    fontWeight: element.props?.titleFontWeight || '500',
-                    textAlign: element.props?.titleAlign || 'left',
-                    color: element.props?.titleColor || '#ffffff'
-                  }}
-                >
-                  {element.content}
-                </h3>
-                <div className="space-y-1">
-                  <input type="text" placeholder={element.props?.fullNamePlaceholder || "Full Name"} className="w-full border" style={getFormInputStyles(element)} />
-                  <input type="email" placeholder={element.props?.emailPlaceholder || "Email"} className="w-full border" style={getFormInputStyles(element)} />
-                  <input type="password" placeholder={element.props?.passwordPlaceholder || "Password"} className="w-full border" style={getFormInputStyles(element)} />
-                  <input type="password" placeholder={element.props?.confirmPasswordPlaceholder || "Confirm Password"} className="w-full border" style={getFormInputStyles(element)} />
-                  <button className="w-full rounded" style={getFormButtonStyles(element)}>
-                    {element.props?.submitText || "Register"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "survey-form" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full space-y-3">
-                <h3
-                  className="w-full"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || 'inherit',
-                    fontSize: element.props?.titleFontSize || '14px',
-                    fontWeight: element.props?.titleFontWeight || '500',
-                    textAlign: element.props?.titleAlign || 'left',
-                    color: element.props?.titleColor || '#ffffff'
-                  }}
-                >
-                  {element.content}
-                </h3>
-                <div className="space-y-2">
-                  <div
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <span
                     className="font-medium"
                     style={{
-                      fontFamily: element.props?.questionFontFamily || 'inherit',
-                      fontSize: element.props?.questionFontSize || '12px',
-                      fontWeight: element.props?.questionFontWeight || '500',
-                      color: element.props?.questionColor || '#ffffff'
+                      fontSize: element.props?.fontSize || '14px',
+                      fontFamily: element.props?.fontFamily || 'inherit',
+                      fontWeight: element.props?.fontWeight || '500',
+                      color: element.props?.textColor || '#ffffff'
                     }}
                   >
-                    {element.props?.question || "How satisfied are you?"}
+                    {element.content}
+                  </span>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "warning-message" && (
+              <div
+                className="w-full h-full flex items-center justify-center"
+                style={{
+                  ...elementStyles,
+                  backgroundColor: element.props?.backgroundColor || '#f59e0b'
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <svg
+                    style={{
+                      color: element.props?.iconColor || '#ffffff',
+                      width: element.props?.iconSize || '16px',
+                      height: element.props?.iconSize || '16px'
+                    }}
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <span
+                    className="font-medium"
+                    style={{
+                      fontSize: element.props?.fontSize || '14px',
+                      fontFamily: element.props?.fontFamily || 'inherit',
+                      fontWeight: element.props?.fontWeight || '500',
+                      color: element.props?.textColor || '#ffffff'
+                    }}
+                  >
+                    {element.content}
+                  </span>
+                </div>
+              </div>
+            )
+          }
+          {/* Utility & Tools Components */}
+          {
+            element.type === "divider" && (
+              <div className="w-full h-full flex items-center justify-center" style={elementStyles}>
+                <div className="w-full h-px bg-border"></div>
+              </div>
+            )
+          }
+          {
+            element.type === "spacer" && (
+              <div
+                className="w-full h-full bg-muted/20 border border-dashed border-border rounded flex items-center justify-center"
+                style={elementStyles}
+              >
+                <span className="text-xs text-muted-foreground">Spacer</span>
+              </div>
+            )
+          }
+          {
+            element.type === "container" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="text-center">
+                    <h3 className="text-sm font-medium mb-2">{element.content}</h3>
+                    <p className="text-xs text-muted-foreground">Container wrapper</p>
                   </div>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map(i => (
-                      <button
-                        key={i}
-                        className="border rounded hover:bg-muted"
-                        style={{
-                          fontFamily: element.props?.ratingButtonFontFamily || 'inherit',
-                          width: element.props?.ratingButtonSize || '24px',
-                          height: element.props?.ratingButtonSize || '24px',
-                          fontSize: element.props?.ratingButtonFontSize || '12px',
-                          fontWeight: element.props?.ratingButtonFontWeight || '400',
-                          borderColor: element.props?.ratingButtonBorderColor || '#374151',
-                          backgroundColor: element.props?.ratingButtonBackgroundColor || '#1f2937',
-                          color: element.props?.ratingButtonTextColor || '#ffffff'
-                        }}
-                      >
-                        {i}
-                      </button>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "wrapper" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="text-center">
+                    <h3 className="text-sm font-medium mb-2">{element.content}</h3>
+                    <p className="text-xs text-muted-foreground">Element wrapper</p>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "flexbox" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div
+                  className="w-full h-full flex"
+                  style={{
+                    flexDirection: element.props?.flexDirection || "row",
+                    justifyContent: element.props?.justifyContent || "center",
+                    alignItems: element.props?.alignItems || "center",
+                    gap: `${element.props?.gap || 8}px`,
+                    flexWrap: element.props?.flexWrap || "nowrap"
+                  }}
+                >
+                  {(element.props?.items || [
+                    { id: "1", text: "Item 1", type: "box" },
+                    { id: "2", text: "Item 2", type: "box" },
+                    { id: "3", text: "Item 3", type: "box" }
+                  ]).map((item: any) => (
+                    <div key={item.id} className="w-8 h-8 bg-primary/20 rounded flex items-center justify-center">
+                      <span className="text-xs">{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "grid-container" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full grid grid-cols-2 gap-2">
+                  <div className="bg-primary/20 rounded flex items-center justify-center">
+                    <span className="text-xs">Item 1</span>
+                  </div>
+                  <div className="bg-primary/20 rounded flex items-center justify-center">
+                    <span className="text-xs">Item 2</span>
+                  </div>
+                  <div className="bg-primary/20 rounded flex items-center justify-center">
+                    <span className="text-xs">Item 3</span>
+                  </div>
+                  <div className="bg-primary/20 rounded flex items-center justify-center">
+                    <span className="text-xs">Item 4</span>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "center" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="text-center">
+                    <h3 className="text-sm font-medium mb-2">{element.content}</h3>
+                    <p className="text-xs text-muted-foreground">Centered content</p>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "stack" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div
+                  className="w-full h-full flex flex-col"
+                  style={{
+                    gap: `${element.props?.gap || 8}px`
+                  }}
+                >
+                  {(element.props?.items || [
+                    { id: "1", text: "Stack Item 1" },
+                    { id: "2", text: "Stack Item 2" },
+                    { id: "3", text: "Stack Item 3" }
+                  ]).map((item: any) => (
+                    <div
+                      key={item.id}
+                      className="rounded p-2 text-center"
+                      style={{
+                        backgroundColor: element.props?.backgroundColor ?
+                          `${element.props.backgroundColor}${Math.round((element.props?.backgroundOpacity || 20) * 2.55).toString(16).padStart(2, '0')}` :
+                          'rgba(59, 130, 246, 0.2)',
+                        fontFamily: element.props?.fontFamily || 'inherit',
+                        fontSize: `${element.props?.fontSize || 12}px`,
+                        fontWeight: element.props?.fontWeight || '400',
+                        color: element.props?.textColor || '#ffffff'
+                      }}
+                    >
+                      <span>{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          }
+          {/* Business & Marketing Components */}
+          {
+            element.type === "pricing-table" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full flex flex-col items-center justify-center">
+                  <h3
+                    className="text-lg font-bold mb-4"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || 'inherit',
+                      fontSize: element.props?.titleFontSize || '18px',
+                      fontWeight: element.props?.titleFontWeight || '700',
+                      color: element.props?.titleColor || 'inherit'
+                    }}
+                  >
+                    {element.content}
+                  </h3>
+                  <div className={`grid gap-4 w-full`} style={{
+                    gridTemplateColumns: `repeat(${(element.props?.plansArray || Array.from({ length: element.props?.plans || 3 }).map((_, i) => ({
+                      name: ['Basic', 'Pro', 'Enterprise'][i] || 'Plan ' + (i + 1),
+                      price: ['$9', '$29', '$99'][i] || '$0'
+                    }))).length}, minmax(0, 1fr))`
+                  }}>
+                    {(element.props?.plansArray || Array.from({ length: element.props?.plans || 3 }).map((_, i) => ({
+                      name: ['Basic', 'Pro', 'Enterprise'][i] || 'Plan ' + (i + 1),
+                      price: ['$9', '$29', '$99'][i] || '$0'
+                    }))).map((plan: any, idx: number) => {
+                      const highlightedIndex = element.props?.highlightedPlan ?? 1
+                      return (
+                        <div
+                          key={idx}
+                          className={`rounded-lg p-3 text-center ${idx === highlightedIndex ? 'bg-primary/10 border-2 border-primary' : 'bg-muted'
+                            }`}
+                        >
+                          <div
+                            className="text-sm font-medium"
+                            style={{
+                              fontFamily: element.props?.planFontFamily || 'inherit',
+                              fontSize: element.props?.planNameSize || '14px',
+                              fontWeight: element.props?.planNameWeight || '500',
+                              color: element.props?.planNameColor || 'inherit'
+                            }}
+                          >
+                            {plan.name}
+                          </div>
+                          <div
+                            className="text-lg font-bold text-primary"
+                            style={{
+                              fontFamily: element.props?.planFontFamily || 'inherit',
+                              fontSize: element.props?.planPriceSize || '18px',
+                              fontWeight: element.props?.planPriceWeight || '700',
+                              color: element.props?.planPriceColor || 'hsl(var(--primary))'
+                            }}
+                          >
+                            {plan.price}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "feature-list" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full space-y-3">
+                  <h3
+                    className="text-sm font-medium mb-3"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || 'inherit',
+                      fontSize: element.props?.titleFontSize || '14px',
+                      fontWeight: element.props?.titleFontWeight || '500',
+                      color: element.props?.titleColor || 'inherit'
+                    }}
+                  >
+                    {element.content}
+                  </h3>
+                  <div className="space-y-2">
+                    {(element.props?.featuresArray || [
+                      { text: 'Feature 1' },
+                      { text: 'Feature 2' },
+                      { text: 'Feature 3' }
+                    ]).map((feature: any, idx: number) => {
+                      const iconType = element.props?.iconType || 'check'
+                      const iconColor = element.props?.iconColor || 'hsl(var(--primary))'
+
+                      return (
+                        <div key={idx} className="flex items-center gap-2 text-xs">
+                          {iconType === 'check' && (
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                          {iconType === 'star' && (
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          )}
+                          {iconType === 'circle' && (
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
+                              <circle cx="10" cy="10" r="8" />
+                            </svg>
+                          )}
+                          {iconType === 'arrow' && (
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
+                              <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                          {iconType === 'plus' && (
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
+                              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                          {iconType === 'heart' && (
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" style={{ color: iconColor }}>
+                              <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                          <span
+                            style={{
+                              fontFamily: element.props?.featureFontFamily || 'inherit',
+                              fontSize: element.props?.featureFontSize || '12px',
+                              fontWeight: element.props?.featureFontWeight || '400',
+                              color: element.props?.featureColor || 'inherit'
+                            }}
+                          >
+                            {feature.text}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "faq" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full space-y-3">
+                  <h3
+                    className="text-sm font-medium mb-3"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || 'inherit',
+                      fontSize: element.props?.titleFontSize || '14px',
+                      fontWeight: element.props?.titleFontWeight || '500',
+                      color: element.props?.titleColor || 'inherit'
+                    }}
+                  >
+                    {element.content}
+                  </h3>
+                  <div className="space-y-2">
+                    {(element.props?.faqArray || [
+                      { question: 'What is this service?', answer: 'This is a comprehensive solution...' },
+                      { question: 'How does it work?', answer: 'It works by...' }
+                    ]).map((faq: any, idx: number) => (
+                      <div key={idx} className="border border-border rounded p-2">
+                        <div
+                          className="text-xs font-medium mb-1"
+                          style={{
+                            fontFamily: element.props?.questionFontFamily || 'inherit',
+                            fontSize: element.props?.questionFontSize || '12px',
+                            fontWeight: element.props?.questionFontWeight || '500',
+                            color: element.props?.questionColor || 'inherit'
+                          }}
+                        >
+                          Q: {faq.question}
+                        </div>
+                        <div
+                          className="text-xs text-muted-foreground"
+                          style={{
+                            fontFamily: element.props?.answerFontFamily || 'inherit',
+                            fontSize: element.props?.answerFontSize || '12px',
+                            fontWeight: element.props?.answerFontWeight || '400',
+                            color: element.props?.answerColor || 'inherit'
+                          }}
+                        >
+                          A: {faq.answer}
+                        </div>
+                      </div>
                     ))}
                   </div>
-                  <textarea
-                    placeholder={element.props?.commentsPlaceholder || "Additional comments"}
-                    className="w-full border resize-none"
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "blog-post" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full space-y-3">
+                  {/* Blog Image */}
+                  {element.props?.imageUrl ? (
+                    <div
+                      className="w-full bg-muted rounded mb-3 bg-cover bg-center"
+                      style={{
+                        height: element.props?.imageHeight || "80px",
+                        backgroundImage: `url(${element.props?.imageUrl})`
+                      }}
+                    ></div>
+                  ) : (
+                    <div
+                      className="w-full bg-muted rounded mb-3"
+                      style={{
+                        height: element.props?.imageHeight || "80px"
+                      }}
+                    ></div>
+                  )}
+
+                  {/* Blog Title */}
+                  <h3
+                    className="text-sm font-medium"
                     style={{
-                      fontFamily: element.props?.textareaFontFamily || 'inherit',
-                      padding: element.props?.textareaPadding || '8px 12px',
-                      fontSize: element.props?.textareaFontSize || '12px',
-                      fontWeight: element.props?.textareaFontWeight || '400',
-                      borderRadius: element.props?.textareaBorderRadius || '4px',
-                      borderColor: element.props?.textareaBorderColor || '#374151',
-                      backgroundColor: element.props?.textareaBackgroundColor || '#1f2937',
-                      color: element.props?.textareaTextColor || '#ffffff',
-                      height: element.props?.textareaHeight || '48px'
-                    }}
-                  />
-                  <button
-                    className="w-full rounded"
-                    style={getFormButtonStyles(element)}
-                  >
-                    {element.props?.submitText || "Submit"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "order-form" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full space-y-3">
-                <h3
-                  className="w-full"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || 'inherit',
-                    fontSize: element.props?.titleFontSize || '14px',
-                    fontWeight: element.props?.titleFontWeight || '500',
-                    textAlign: element.props?.titleAlign || 'left',
-                    color: element.props?.titleColor || '#ffffff'
-                  }}
-                >
-                  {element.content}
-                </h3>
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    placeholder={element.props?.productPlaceholder || "Product Name"}
-                    className="w-full border"
-                    style={getFormInputStyles(element)}
-                  />
-                  <input
-                    type="number"
-                    placeholder={element.props?.quantityPlaceholder || "Quantity"}
-                    className="w-full border"
-                    style={getFormInputStyles(element)}
-                  />
-                  <input
-                    type="text"
-                    placeholder={element.props?.addressPlaceholder || "Shipping Address"}
-                    className="w-full border"
-                    style={getFormInputStyles(element)}
-                  />
-                  <button
-                    className="w-full rounded"
-                    style={getFormButtonStyles(element)}
-                  >
-                    {element.props?.submitText || "Place Order"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "booking-form" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full space-y-3">
-                <h3
-                  className="w-full"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || 'inherit',
-                    fontSize: element.props?.titleFontSize || '14px',
-                    fontWeight: element.props?.titleFontWeight || '500',
-                    textAlign: element.props?.titleAlign || 'left',
-                    color: element.props?.titleColor || '#ffffff'
-                  }}
-                >
-                  {element.content}
-                </h3>
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    placeholder={element.props?.servicePlaceholder || "Service"}
-                    className="w-full border"
-                    style={getFormInputStyles(element)}
-                  />
-                  <input
-                    type="date"
-                    className="w-full border"
-                    style={getFormInputStyles(element)}
-                  />
-                  <input
-                    type="time"
-                    className="w-full border"
-                    style={getFormInputStyles(element)}
-                  />
-                  <button
-                    className="w-full rounded"
-                    style={getFormButtonStyles(element)}
-                  >
-                    {element.props?.submitText || "Book Now"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {element.type === "feedback-form" && (
-            <div className="w-full h-full" style={elementStyles}>
-              <div className="w-full h-full space-y-3">
-                <h3
-                  className="w-full"
-                  style={{
-                    fontFamily: element.props?.titleFontFamily || 'inherit',
-                    fontSize: element.props?.titleFontSize || '14px',
-                    fontWeight: element.props?.titleFontWeight || '500',
-                    textAlign: element.props?.titleAlign || 'left',
-                    color: element.props?.titleColor || '#ffffff'
-                  }}
-                >
-                  {element.content}
-                </h3>
-                <div className="space-y-2">
-                  <select
-                    className="w-full border"
-                    style={{
-                      fontFamily: element.props?.selectFontFamily || 'inherit',
-                      padding: element.props?.selectPadding || '8px 12px',
-                      fontSize: element.props?.selectFontSize || '12px',
-                      fontWeight: element.props?.selectFontWeight || '400',
-                      borderRadius: element.props?.selectBorderRadius || '4px',
-                      borderColor: element.props?.selectBorderColor || '#374151',
-                      backgroundColor: element.props?.selectBackgroundColor || '#1f2937',
-                      color: element.props?.selectTextColor || '#ffffff'
+                      fontFamily: element.props?.titleFontFamily || "inherit",
+                      fontSize: element.props?.titleFontSize || "14px",
+                      fontWeight: element.props?.titleFontWeight || "500",
+                      color: element.props?.titleColor || "#ffffff"
                     }}
                   >
-                    <option>Select Category</option>
-                    <option>Bug Report</option>
-                    <option>Feature Request</option>
-                    <option>General Feedback</option>
-                  </select>
-                  <textarea
-                    placeholder={element.props?.feedbackPlaceholder || "Your feedback"}
-                    className="w-full border resize-none"
+                    {element.props?.title || element.content || "Blog Article"}
+                  </h3>
+
+                  {/* Blog Content */}
+                  <p
+                    className="text-xs text-muted-foreground line-clamp-3"
                     style={{
-                      fontFamily: element.props?.textareaFontFamily || 'inherit',
-                      padding: element.props?.textareaPadding || '8px 12px',
-                      fontSize: element.props?.textareaFontSize || '12px',
-                      fontWeight: element.props?.textareaFontWeight || '400',
-                      borderRadius: element.props?.textareaBorderRadius || '4px',
-                      borderColor: element.props?.textareaBorderColor || '#374151',
-                      backgroundColor: element.props?.textareaBackgroundColor || '#1f2937',
-                      color: element.props?.textareaTextColor || '#ffffff',
-                      height: element.props?.textareaHeight || '64px'
+                      fontFamily: element.props?.contentFontFamily || "inherit",
+                      fontSize: element.props?.contentFontSize || "12px",
+                      fontWeight: element.props?.contentFontWeight || "400",
+                      color: element.props?.contentColor || "#a1a1aa"
                     }}
-                  />
-                  <button
-                    className="w-full rounded"
-                    style={getFormButtonStyles(element)}
                   >
-                    {element.props?.submitText || "Submit Feedback"}
+                    {element.props?.blogContent || "This is a sample blog post content that demonstrates how the blog post component would look..."}
+                  </p>
+
+                  {/* Blog Meta (Author & Date) */}
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span
+                      style={{
+                        fontFamily: element.props?.metaFontFamily || "inherit",
+                        fontSize: element.props?.metaFontSize || "12px",
+                        fontWeight: element.props?.metaFontWeight || "400",
+                        color: element.props?.metaColor || "#a1a1aa"
+                      }}
+                    >
+                      By {element.props?.author || "Author"}
+                    </span>
+                    <span>•</span>
+                    <span
+                      style={{
+                        fontFamily: element.props?.metaFontFamily || "inherit",
+                        fontSize: element.props?.metaFontSize || "12px",
+                        fontWeight: element.props?.metaFontWeight || "400",
+                        color: element.props?.metaColor || "#a1a1aa"
+                      }}
+                    >
+                      {element.props?.date || "Dec 2024"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "case-study" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full space-y-3">
+                  {/* Case Study Image */}
+                  {element.props?.imageUrl ? (
+                    <div
+                      className="w-full bg-muted rounded mb-3 bg-cover bg-center"
+                      style={{
+                        height: element.props?.imageHeight || "64px",
+                        backgroundImage: `url(${element.props?.imageUrl})`
+                      }}
+                    ></div>
+                  ) : (
+                    <div
+                      className="w-full bg-muted rounded mb-3"
+                      style={{
+                        height: element.props?.imageHeight || "64px"
+                      }}
+                    ></div>
+                  )}
+
+                  {/* Case Study Title */}
+                  <h3
+                    className="text-sm font-medium"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || "inherit",
+                      fontSize: element.props?.titleFontSize || "18px",
+                      fontWeight: element.props?.titleFontWeight || "600",
+                      color: element.props?.titleColor || "#ffffff"
+                    }}
+                  >
+                    {element.props?.title || element.content || "Case Study"}
+                  </h3>
+
+                  {/* Case Study Description */}
+                  <p
+                    className="text-xs text-muted-foreground"
+                    style={{
+                      fontFamily: element.props?.descriptionFontFamily || "inherit",
+                      fontSize: element.props?.descriptionFontSize || "14px",
+                      fontWeight: element.props?.descriptionFontWeight || "400",
+                      color: element.props?.descriptionColor || "#a1a1aa"
+                    }}
+                  >
+                    {element.props?.description || "Success story showcasing results and outcomes..."}
+                  </p>
+
+                  {/* Case Study Metrics */}
+                  <div className="flex gap-2">
+                    {(element.props?.metricsArray || [
+                      { label: '+50% Growth' },
+                      { label: 'ROI: 300%' }
+                    ]).map((metric: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="bg-primary/20 rounded px-2 py-1 text-xs"
+                        style={{
+                          fontFamily: element.props?.metricFontFamily || "inherit",
+                          fontSize: element.props?.metricFontSize || "13px",
+                          fontWeight: element.props?.metricFontWeight || "500",
+                          color: element.props?.metricColor || "#ffffff"
+                        }}
+                      >
+                        {metric.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "cta" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full flex flex-col items-center justify-center text-center">
+                  {/* CTA Title */}
+                  <h3
+                    className="text-lg font-bold mb-2"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || "inherit",
+                      fontSize: element.props?.titleFontSize || "18px",
+                      fontWeight: element.props?.titleFontWeight || "700",
+                      color: element.props?.titleColor || "#ffffff"
+                    }}
+                  >
+                    {element.props?.title || element.content || "Call to Action"}
+                  </h3>
+
+                  {/* CTA Description */}
+                  <p
+                    className="text-sm mb-4 opacity-90"
+                    style={{
+                      fontFamily: element.props?.descriptionFontFamily || "inherit",
+                      fontSize: element.props?.descriptionFontSize || "14px",
+                      fontWeight: element.props?.descriptionFontWeight || "400",
+                      color: element.props?.descriptionColor || "#ffffff",
+                      opacity: element.props?.descriptionOpacity || 0.9
+                    }}
+                  >
+                    {element.props?.description || "Get started today and transform your business"}
+                  </p>
+
+                  {/* CTA Button */}
+                  <button
+                    className="px-4 py-2 rounded-lg text-sm font-medium hover:opacity-80 transition-all"
+                    style={{
+                      fontFamily: element.props?.buttonFontFamily || "inherit",
+                      fontSize: element.props?.buttonFontSize || "14px",
+                      fontWeight: element.props?.buttonFontWeight || "500",
+                      backgroundColor: element.props?.buttonBgColor || "var(--color-background)",
+                      color: element.props?.buttonTextColor || "var(--color-primary)"
+                    }}
+                  >
+                    {element.props?.buttonText || "Get Started"}
                   </button>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )
+          }
+          {
+            element.type === "hero" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full flex flex-col items-center justify-center text-center">
+                  <h1
+                    className="mb-3"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || 'Inter',
+                      fontSize: `${element.props?.titleFontSize || 24}px`,
+                      fontWeight: element.props?.titleFontWeight || '700',
+                      color: element.props?.titleColor || '#ffffff'
+                    }}
+                  >
+                    {element.props?.title || "Welcome to Our Platform"}
+                  </h1>
+                  <p
+                    className="mb-6 max-w-md"
+                    style={{
+                      fontFamily: element.props?.descriptionFontFamily || 'Inter',
+                      fontSize: `${element.props?.descriptionFontSize || 14}px`,
+                      fontWeight: element.props?.descriptionFontWeight || '400',
+                      color: element.props?.descriptionColor || '#ffffff',
+                      opacity: 0.8
+                    }}
+                  >
+                    {element.props?.description || "Build amazing websites with our drag-and-drop builder. No coding required."}
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      className="px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                      style={{
+                        fontFamily: element.props?.primaryButtonFontFamily || 'Inter',
+                        fontSize: `${element.props?.primaryButtonFontSize || 14}px`,
+                        fontWeight: element.props?.primaryButtonFontWeight || '500',
+                        backgroundColor: element.props?.primaryButtonBgColor || 'var(--color-primary)',
+                        color: element.props?.primaryButtonTextColor || '#ffffff'
+                      }}
+                    >
+                      {element.props?.primaryButtonText || "Get Started"}
+                    </button>
+                    <button
+                      className="px-4 py-2 rounded-lg transition-colors"
+                      style={{
+                        fontFamily: element.props?.secondaryButtonFontFamily || 'Inter',
+                        fontSize: `${element.props?.secondaryButtonFontSize || 14}px`,
+                        fontWeight: element.props?.secondaryButtonFontWeight || '500',
+                        backgroundColor: element.props?.secondaryButtonBgColor || 'transparent',
+                        color: element.props?.secondaryButtonTextColor || '#ffffff',
+                        border: `1px solid ${element.props?.secondaryButtonBorderColor || 'var(--color-border)'}`
+                      }}
+                    >
+                      {element.props?.secondaryButtonText || "Learn More"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "about" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full space-y-3">
+                  <h3
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || 'Inter',
+                      fontSize: `${element.props?.titleFontSize || 18}px`,
+                      fontWeight: element.props?.titleFontWeight || '700',
+                      color: element.props?.titleColor || '#ffffff'
+                    }}
+                  >
+                    {element.props?.title || "About Us"}
+                  </h3>
+                  <p
+                    style={{
+                      fontFamily: element.props?.descriptionFontFamily || 'Inter',
+                      fontSize: `${element.props?.descriptionFontSize || 14}px`,
+                      fontWeight: element.props?.descriptionFontWeight || '400',
+                      color: element.props?.descriptionColor || '#ffffff',
+                      opacity: 0.8
+                    }}
+                  >
+                    {element.props?.description || "We are a team of passionate developers and designers creating amazing digital experiences."}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    {(() => {
+                      const defaultStats = [
+                        { value: '100+', label: 'Projects' },
+                        { value: '50+', label: 'Clients' }
+                      ]
+                      const stats = element.props?.statsArray || defaultStats
+                      return stats.map((stat: any, index: number) => (
+                        <div key={index} className="text-center">
+                          <div
+                            style={{
+                              fontFamily: element.props?.statValueFontFamily || 'Inter',
+                              fontSize: `${element.props?.statValueFontSize || 18}px`,
+                              fontWeight: element.props?.statValueFontWeight || '700',
+                              color: element.props?.statValueColor || 'var(--color-primary)'
+                            }}
+                          >
+                            {stat.value}
+                          </div>
+                          <div
+                            style={{
+                              fontFamily: element.props?.statLabelFontFamily || 'Inter',
+                              fontSize: `${element.props?.statLabelFontSize || 12}px`,
+                              fontWeight: element.props?.statLabelFontWeight || '400',
+                              color: element.props?.statLabelColor || '#a1a1aa'
+                            }}
+                          >
+                            {stat.label}
+                          </div>
+                        </div>
+                      ))
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {/* Forms & Validation Components */}
+          {
+            element.type === "contact-form" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full space-y-3">
+                  <h3 className="text-sm font-medium">{element.content}</h3>
+                  <div className="space-y-2">
+                    <input type="text" placeholder="Name" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+                    <input type="email" placeholder="Email" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
+                    <textarea placeholder="Message" className="w-full px-2 py-1 text-xs border border-border rounded bg-background h-16 resize-none"></textarea>
+                    <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Send Message</button>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "newsletter-signup" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full flex flex-col items-center justify-center space-y-3">
+                  <h3
+                    className="w-full"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || 'inherit',
+                      fontSize: element.props?.titleFontSize || '14px',
+                      fontWeight: element.props?.titleFontWeight || '500',
+                      textAlign: element.props?.titleAlign || 'center',
+                      color: element.props?.titleColor || '#ffffff'
+                    }}
+                  >
+                    {element.content}
+                  </h3>
+                  <p
+                    className="w-full"
+                    style={{
+                      fontFamily: element.props?.descriptionFontFamily || 'inherit',
+                      fontSize: element.props?.descriptionFontSize || '12px',
+                      fontWeight: element.props?.descriptionFontWeight || '400',
+                      color: element.props?.descriptionColor || '#9ca3af',
+                      textAlign: element.props?.titleAlign || 'center'
+                    }}
+                  >
+                    {element.props?.description || "Stay updated with our latest news"}
+                  </p>
+                  <div className="flex gap-2 w-full">
+                    <input
+                      type="email"
+                      placeholder={element.props?.emailPlaceholder || "Enter email"}
+                      className="flex-1 border"
+                      style={{
+                        padding: element.props?.inputPadding || '8px 12px',
+                        fontSize: element.props?.inputFontSize || '12px',
+                        borderRadius: element.props?.inputBorderRadius || '4px',
+                        borderColor: element.props?.inputBorderColor || '#374151',
+                        backgroundColor: element.props?.inputBackgroundColor || '#1f2937',
+                        color: element.props?.inputTextColor || '#ffffff'
+                      }}
+                    />
+                    <button
+                      className="rounded"
+                      style={{
+                        padding: element.props?.buttonPadding || '8px 12px',
+                        fontSize: element.props?.buttonFontSize || '12px',
+                        borderRadius: element.props?.buttonBorderRadius || '4px',
+                        backgroundColor: element.props?.buttonBackgroundColor || '#3b82f6',
+                        color: element.props?.buttonTextColor || '#ffffff',
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {element.props?.buttonText || "Subscribe"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "login-form" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full space-y-3">
+                  <h3
+                    className="w-full"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || 'inherit',
+                      fontSize: element.props?.titleFontSize || '14px',
+                      fontWeight: element.props?.titleFontWeight || '500',
+                      textAlign: element.props?.titleAlign || 'left',
+                      color: element.props?.titleColor || '#ffffff'
+                    }}
+                  >
+                    {element.content}
+                  </h3>
+                  <div className="space-y-2">
+                    <input
+                      type="email"
+                      placeholder={element.props?.emailPlaceholder || "Email"}
+                      className="w-full border"
+                      style={getFormInputStyles(element)}
+                    />
+                    <input
+                      type="password"
+                      placeholder={element.props?.passwordPlaceholder || "Password"}
+                      className="w-full border"
+                      style={getFormInputStyles(element)}
+                    />
+                    <button
+                      className="w-full rounded"
+                      style={getFormButtonStyles(element)}
+                    >
+                      {element.props?.submitText || "Login"}
+                    </button>
+                    <div className="text-xs text-center text-muted-foreground">{element.props?.forgotPasswordText || "Forgot password?"}</div>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "registration-form" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full space-y-2">
+                  <h3
+                    className="w-full"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || 'inherit',
+                      fontSize: element.props?.titleFontSize || '14px',
+                      fontWeight: element.props?.titleFontWeight || '500',
+                      textAlign: element.props?.titleAlign || 'left',
+                      color: element.props?.titleColor || '#ffffff'
+                    }}
+                  >
+                    {element.content}
+                  </h3>
+                  <div className="space-y-1">
+                    <input type="text" placeholder={element.props?.fullNamePlaceholder || "Full Name"} className="w-full border" style={getFormInputStyles(element)} />
+                    <input type="email" placeholder={element.props?.emailPlaceholder || "Email"} className="w-full border" style={getFormInputStyles(element)} />
+                    <input type="password" placeholder={element.props?.passwordPlaceholder || "Password"} className="w-full border" style={getFormInputStyles(element)} />
+                    <input type="password" placeholder={element.props?.confirmPasswordPlaceholder || "Confirm Password"} className="w-full border" style={getFormInputStyles(element)} />
+                    <button className="w-full rounded" style={getFormButtonStyles(element)}>
+                      {element.props?.submitText || "Register"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "survey-form" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full space-y-3">
+                  <h3
+                    className="w-full"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || 'inherit',
+                      fontSize: element.props?.titleFontSize || '14px',
+                      fontWeight: element.props?.titleFontWeight || '500',
+                      textAlign: element.props?.titleAlign || 'left',
+                      color: element.props?.titleColor || '#ffffff'
+                    }}
+                  >
+                    {element.content}
+                  </h3>
+                  <div className="space-y-2">
+                    <div
+                      className="font-medium"
+                      style={{
+                        fontFamily: element.props?.questionFontFamily || 'inherit',
+                        fontSize: element.props?.questionFontSize || '12px',
+                        fontWeight: element.props?.questionFontWeight || '500',
+                        color: element.props?.questionColor || '#ffffff'
+                      }}
+                    >
+                      {element.props?.question || "How satisfied are you?"}
+                    </div>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <button
+                          key={i}
+                          className="border rounded hover:bg-muted"
+                          style={{
+                            fontFamily: element.props?.ratingButtonFontFamily || 'inherit',
+                            width: element.props?.ratingButtonSize || '24px',
+                            height: element.props?.ratingButtonSize || '24px',
+                            fontSize: element.props?.ratingButtonFontSize || '12px',
+                            fontWeight: element.props?.ratingButtonFontWeight || '400',
+                            borderColor: element.props?.ratingButtonBorderColor || '#374151',
+                            backgroundColor: element.props?.ratingButtonBackgroundColor || '#1f2937',
+                            color: element.props?.ratingButtonTextColor || '#ffffff'
+                          }}
+                        >
+                          {i}
+                        </button>
+                      ))}
+                    </div>
+                    <textarea
+                      placeholder={element.props?.commentsPlaceholder || "Additional comments"}
+                      className="w-full border resize-none"
+                      style={{
+                        fontFamily: element.props?.textareaFontFamily || 'inherit',
+                        padding: element.props?.textareaPadding || '8px 12px',
+                        fontSize: element.props?.textareaFontSize || '12px',
+                        fontWeight: element.props?.textareaFontWeight || '400',
+                        borderRadius: element.props?.textareaBorderRadius || '4px',
+                        borderColor: element.props?.textareaBorderColor || '#374151',
+                        backgroundColor: element.props?.textareaBackgroundColor || '#1f2937',
+                        color: element.props?.textareaTextColor || '#ffffff',
+                        height: element.props?.textareaHeight || '48px'
+                      }}
+                    />
+                    <button
+                      className="w-full rounded"
+                      style={getFormButtonStyles(element)}
+                    >
+                      {element.props?.submitText || "Submit"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "order-form" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full space-y-3">
+                  <h3
+                    className="w-full"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || 'inherit',
+                      fontSize: element.props?.titleFontSize || '14px',
+                      fontWeight: element.props?.titleFontWeight || '500',
+                      textAlign: element.props?.titleAlign || 'left',
+                      color: element.props?.titleColor || '#ffffff'
+                    }}
+                  >
+                    {element.content}
+                  </h3>
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder={element.props?.productPlaceholder || "Product Name"}
+                      className="w-full border"
+                      style={getFormInputStyles(element)}
+                    />
+                    <input
+                      type="number"
+                      placeholder={element.props?.quantityPlaceholder || "Quantity"}
+                      className="w-full border"
+                      style={getFormInputStyles(element)}
+                    />
+                    <input
+                      type="text"
+                      placeholder={element.props?.addressPlaceholder || "Shipping Address"}
+                      className="w-full border"
+                      style={getFormInputStyles(element)}
+                    />
+                    <button
+                      className="w-full rounded"
+                      style={getFormButtonStyles(element)}
+                    >
+                      {element.props?.submitText || "Place Order"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "booking-form" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full space-y-3">
+                  <h3
+                    className="w-full"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || 'inherit',
+                      fontSize: element.props?.titleFontSize || '14px',
+                      fontWeight: element.props?.titleFontWeight || '500',
+                      textAlign: element.props?.titleAlign || 'left',
+                      color: element.props?.titleColor || '#ffffff'
+                    }}
+                  >
+                    {element.content}
+                  </h3>
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder={element.props?.servicePlaceholder || "Service"}
+                      className="w-full border"
+                      style={getFormInputStyles(element)}
+                    />
+                    <input
+                      type="date"
+                      className="w-full border"
+                      style={getFormInputStyles(element)}
+                    />
+                    <input
+                      type="time"
+                      className="w-full border"
+                      style={getFormInputStyles(element)}
+                    />
+                    <button
+                      className="w-full rounded"
+                      style={getFormButtonStyles(element)}
+                    >
+                      {element.props?.submitText || "Book Now"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          {
+            element.type === "feedback-form" && (
+              <div className="w-full h-full" style={elementStyles}>
+                <div className="w-full h-full space-y-3">
+                  <h3
+                    className="w-full"
+                    style={{
+                      fontFamily: element.props?.titleFontFamily || 'inherit',
+                      fontSize: element.props?.titleFontSize || '14px',
+                      fontWeight: element.props?.titleFontWeight || '500',
+                      textAlign: element.props?.titleAlign || 'left',
+                      color: element.props?.titleColor || '#ffffff'
+                    }}
+                  >
+                    {element.content}
+                  </h3>
+                  <div className="space-y-2">
+                    <select
+                      className="w-full border"
+                      style={{
+                        fontFamily: element.props?.selectFontFamily || 'inherit',
+                        padding: element.props?.selectPadding || '8px 12px',
+                        fontSize: element.props?.selectFontSize || '12px',
+                        fontWeight: element.props?.selectFontWeight || '400',
+                        borderRadius: element.props?.selectBorderRadius || '4px',
+                        borderColor: element.props?.selectBorderColor || '#374151',
+                        backgroundColor: element.props?.selectBackgroundColor || '#1f2937',
+                        color: element.props?.selectTextColor || '#ffffff'
+                      }}
+                    >
+                      <option>Select Category</option>
+                      <option>Bug Report</option>
+                      <option>Feature Request</option>
+                      <option>General Feedback</option>
+                    </select>
+                    <textarea
+                      placeholder={element.props?.feedbackPlaceholder || "Your feedback"}
+                      className="w-full border resize-none"
+                      style={{
+                        fontFamily: element.props?.textareaFontFamily || 'inherit',
+                        padding: element.props?.textareaPadding || '8px 12px',
+                        fontSize: element.props?.textareaFontSize || '12px',
+                        fontWeight: element.props?.textareaFontWeight || '400',
+                        borderRadius: element.props?.textareaBorderRadius || '4px',
+                        borderColor: element.props?.textareaBorderColor || '#374151',
+                        backgroundColor: element.props?.textareaBackgroundColor || '#1f2937',
+                        color: element.props?.textareaTextColor || '#ffffff',
+                        height: element.props?.textareaHeight || '64px'
+                      }}
+                    />
+                    <button
+                      className="w-full rounded"
+                      style={getFormButtonStyles(element)}
+                    >
+                      {element.props?.submitText || "Submit Feedback"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+        </div >
 
         {/* Element label and controls */}
         {isSelected && RESIZABLE_TYPES.has(element.type) && (
@@ -8406,7 +8619,7 @@ export function BuilderCanvas({
             return Math.max(acc, x + w)
           }, 0)
           // Add padding so right alignment does not sit exactly at edge
-            return Math.max(fallback, maxRight + 200)
+          return Math.max(fallback, maxRight + 200)
         })(),
       }}
     >
@@ -9230,3 +9443,5 @@ function TabsComponent({ element }: { element: BuilderElement }) {
     </div>
   )
 }
+
+

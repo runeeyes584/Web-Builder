@@ -82,7 +82,7 @@ export function ProjectManagerComponent({ pages, onLoadProject, currentProjectNa
 
     try {
       setLoading(true)
-      
+
       // Check if updating existing project or creating new one
       if (currentProjectId) {
         // UPDATE existing project - save all pages
@@ -112,7 +112,7 @@ export function ProjectManagerComponent({ pages, onLoadProject, currentProjectNa
             }))
             onLoadProject(updatedPages) // Reload with database IDs
           }
-          
+
           setSaveDialogOpen(false)
           toast({
             title: "Success",
@@ -137,7 +137,7 @@ export function ProjectManagerComponent({ pages, onLoadProject, currentProjectNa
 
         if (response.success && response.data) {
           setCurrentProjectId(response.data.id) // Save project ID for future updates
-          
+
           // Update pages with real database IDs
           if (response.data.pages && response.data.pages.length > 0) {
             const updatedPages: BuilderPage[] = response.data.pages.map((dbPage: any, index: number) => ({
@@ -150,12 +150,12 @@ export function ProjectManagerComponent({ pages, onLoadProject, currentProjectNa
             }))
             onLoadProject(updatedPages) // Reload with database IDs
           }
-          
+
           setSaveDialogOpen(false)
-          
+
           // Notify parent component about project change
           onProjectChange?.(response.data.id, projectName.trim(), response.data.is_public)
-          
+
           toast({
             title: "Success",
             description: `Project "${projectName}" created successfully`,
@@ -185,7 +185,7 @@ export function ProjectManagerComponent({ pages, onLoadProject, currentProjectNa
       metadata: page.json_structure?.metadata || { title: page.name },
       order: index,
     }))
-    
+
     // Ensure at least one page exists
     if (loadedPages.length === 0) {
       loadedPages.push({
@@ -196,14 +196,14 @@ export function ProjectManagerComponent({ pages, onLoadProject, currentProjectNa
         metadata: { title: "Main Page" },
       })
     }
-    
+
     onLoadProject(loadedPages)
     setCurrentProjectId(project.id) // Set current project ID
     setProjectName(project.name)    // Set project name
-    
+
     // Notify parent component about project change
     onProjectChange?.(project.id, project.name, project.is_public)
-    
+
     setLoadDialogOpen(false)
     toast({
       title: "Success",
@@ -217,8 +217,55 @@ export function ProjectManagerComponent({ pages, onLoadProject, currentProjectNa
     try {
       setLoading(true)
       const response = await projectsApi.delete(id)
-      
+
       if (response.success) {
+        // Check if we're deleting the currently open project
+        if (currentProjectId === id) {
+          // Reset to a new project with default template
+          setCurrentProjectId(null)
+          setProjectName("Untitled Project")
+
+          // Create default page with sample elements
+          const defaultPage: BuilderPage = {
+            id: `page-${Date.now()}`,
+            name: "Main Page",
+            elements: [
+              {
+                id: "1",
+                type: "heading",
+                content: "Welcome to Your Website",
+                styles: { fontSize: "2rem", marginBottom: "1rem" },
+                responsiveStyles: {
+                  desktop: { fontSize: "2rem" },
+                  tablet: { fontSize: "1.75rem" },
+                  mobile: { fontSize: "1.5rem" },
+                },
+                position: { x: 50, y: 50, width: 400, height: 60 },
+              },
+              {
+                id: "2",
+                type: "paragraph",
+                content: "This is a sample paragraph. Click to edit or drag new elements from the sidebar.",
+                styles: { marginBottom: "1rem", color: "var(--color-muted-foreground)" },
+                responsiveStyles: {
+                  desktop: { fontSize: "1rem", lineHeight: "1.6" },
+                  tablet: { fontSize: "0.95rem", lineHeight: "1.5" },
+                  mobile: { fontSize: "0.9rem", lineHeight: "1.4" },
+                },
+                position: { x: 50, y: 130, width: 500, height: 80 },
+              },
+            ],
+            order: 0,
+            metadata: { title: "Main Page" },
+          }
+
+          // Load the default project
+          onLoadProject([defaultPage])
+
+          // Notify parent component to reset project state
+          onProjectChange?.("", "Untitled Project", false)
+        }
+
         toast({
           title: "Success",
           description: `Project "${name}" deleted successfully`,
@@ -246,7 +293,7 @@ export function ProjectManagerComponent({ pages, onLoadProject, currentProjectNa
       metadata: page.json_structure?.metadata || { title: page.name },
       order: index,
     }))
-    
+
     const exportData = {
       id: project.id,
       name: project.name,
@@ -284,7 +331,7 @@ export function ProjectManagerComponent({ pages, onLoadProject, currentProjectNa
 
       // Support both old format (single page) and new format (multi-page)
       let importedPages: BuilderPage[] = []
-      
+
       if (importedData.pages && Array.isArray(importedData.pages)) {
         // New multi-page format
         importedPages = importedData.pages
@@ -341,13 +388,81 @@ export function ProjectManagerComponent({ pages, onLoadProject, currentProjectNa
     }
   }
 
+  const handleNewProject = () => {
+    if (currentProjectId && hasUnsavedChanges) {
+      if (!confirm("You have unsaved changes. Are you sure you want to start a new project?")) {
+        return
+      }
+    }
+
+    // Reset to a new project with default template
+    setCurrentProjectId(null)
+    setProjectName("Untitled Project")
+
+    // Create default page with sample elements
+    const defaultPage: BuilderPage = {
+      id: `page-${Date.now()}`,
+      name: "Main Page",
+      elements: [
+        {
+          id: "1",
+          type: "heading",
+          content: "Welcome to Your Website",
+          styles: { fontSize: "2rem", marginBottom: "1rem" },
+          responsiveStyles: {
+            desktop: { fontSize: "2rem" },
+            tablet: { fontSize: "1.75rem" },
+            mobile: { fontSize: "1.5rem" },
+          },
+          position: { x: 50, y: 50, width: 400, height: 60 },
+        },
+        {
+          id: "2",
+          type: "paragraph",
+          content: "This is a sample paragraph. Click to edit or drag new elements from the sidebar.",
+          styles: { marginBottom: "1rem", color: "var(--color-muted-foreground)" },
+          responsiveStyles: {
+            desktop: { fontSize: "1rem", lineHeight: "1.6" },
+            tablet: { fontSize: "0.95rem", lineHeight: "1.5" },
+            mobile: { fontSize: "0.9rem", lineHeight: "1.4" },
+          },
+          position: { x: 50, y: 130, width: 500, height: 80 },
+        },
+      ],
+      order: 0,
+      metadata: { title: "Main Page" },
+    }
+
+    // Load the default project
+    onLoadProject([defaultPage])
+
+    // Notify parent component to reset project state
+    onProjectChange?.("", "Untitled Project", false)
+
+    toast({
+      title: "Success",
+      description: "New project created",
+    })
+  }
+
   return (
     <div className="flex items-center gap-2">
+      {/* New Project */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleNewProject}
+        title="Start a new project"
+      >
+        <FolderOpen className="h-4 w-4 mr-2" />
+        New
+      </Button>
+
       {/* Save Project */}
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
         <DialogTrigger asChild>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             className={(!currentProjectId || hasUnsavedChanges) ? "" : "opacity-50"}
             title={!currentProjectId ? "Save new project" : hasUnsavedChanges ? "Save changes" : "No changes to save"}
