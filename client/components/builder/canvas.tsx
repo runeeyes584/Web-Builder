@@ -9,6 +9,7 @@ import type { Breakpoint, BuilderElement, RegionsLayout } from "@/lib/builder-ty
 import { Copy, Trash2 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDrop } from "react-dnd"
+import { ElementContextMenu } from "./element-context-menu"
 
 // Simple Markdown parser
 const parseMarkdown = (text: string) => {
@@ -397,6 +398,9 @@ export function BuilderCanvas({
   const [submergedSectionIndex, setSubmergedSectionIndex] = useState<number | null>(null)
   const [isHeaderSubmerged, setIsHeaderSubmerged] = useState(false)
   const [isFooterSubmerged, setIsFooterSubmerged] = useState(false)
+
+  // Track if context menu is currently open to prevent exiting interactive mode
+  const contextMenuOpenRef = useRef(false)
 
   // Helper function to determine which region an element belongs to based on its Y position
   const getElementRegion = useCallback((elementY: number): { type: 'header' | 'section' | 'footer', sectionIndex?: number, regionTop: number, regionHeight: number } => {
@@ -2291,6 +2295,22 @@ export function BuilderCanvas({
       originalHeight: defaultPosition.height,
     }
 
+    // Calculate default z-index based on existing elements in the same region
+    const elementY = defaultPosition.y
+    const elementRegion = getElementRegion(elementY)
+    const elementsInRegion = elements.filter(el => {
+      if (!el.position) return false
+      const elRegion = getElementRegion(el.position.y)
+      if (!elRegion || !elementRegion) return false
+      if (elementRegion.type === 'section' && elRegion.type === 'section') {
+        return elRegion.sectionIndex === elementRegion.sectionIndex
+      }
+      return elRegion.type === elementRegion.type
+    })
+    const maxZIndex = elementsInRegion.length > 0
+      ? Math.max(...elementsInRegion.map(el => el.props?.zIndex ?? 0), 0)
+      : 0
+
     return {
       id,
       type: type as BuilderElement["type"],
@@ -2301,6 +2321,8 @@ export function BuilderCanvas({
       props: {
         ...elementTemplates[type]?.props,
         ...originalDimensions,
+        zIndex: maxZIndex + 1, // New elements appear on top
+        rotation: 0, // Default rotation
       },
       animations: elementTemplates[type]?.animations,
     }
@@ -2536,6 +2558,15 @@ export function BuilderCanvas({
 
     const element = elements.find((el) => el.id === elementId)
     if (!element?.position) return
+
+    // Check if element is locked - prevent dragging if locked
+    if (element.props?.locked) {
+      e.preventDefault()
+      e.stopPropagation()
+      // Still allow selection of locked elements
+      onElementSelect(elementId, e.shiftKey || e.metaKey || e.ctrlKey)
+      return
+    }
 
     e.preventDefault()
     e.stopPropagation()
@@ -2872,10 +2903,19 @@ export function BuilderCanvas({
     direction: "e" | "s" | "se" | "n" | "w" | "ne" | "nw" | "sw"
   ) => {
     if (!canEdit) return // Block resizing for viewers
-    e.preventDefault()
-    e.stopPropagation()
+
+    // Check if element is locked - prevent resizing if locked
     const element = elements.find((el) => el.id === elementId)
     if (!element?.position) return
+    if (element.props?.locked) {
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
+
+    e.preventDefault()
+    e.stopPropagation()
+
     setIsResizing(elementId)
     const startPos = { ...element.position }
     if (!canvasEl) return
@@ -2994,10 +3034,19 @@ export function BuilderCanvas({
 
   const handleRotateMouseDown = (e: React.MouseEvent, elementId: string) => {
     if (!canEdit) return // Block rotating for viewers
-    e.preventDefault()
-    e.stopPropagation()
+
+    // Check if element is locked - prevent rotating if locked
     const element = elements.find((el) => el.id === elementId)
     if (!element?.position) return
+    if (element.props?.locked) {
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
+
+    e.preventDefault()
+    e.stopPropagation()
+
     setIsRotating(elementId)
 
     if (!canvasEl) return
@@ -3066,6 +3115,12 @@ export function BuilderCanvas({
   }
 
   const handleCanvasClick = () => {
+    // Don't exit interactive mode if context menu was just open
+    if (contextMenuOpenRef.current) {
+      contextMenuOpenRef.current = false
+      return
+    }
+
     onElementSelect("")
     setFocusedRegion(null)
     setFocusedSectionIndex(null)
@@ -3367,6 +3422,10 @@ export function BuilderCanvas({
     const position = element.position || { x: 0, y: 0, width: 200, height: 50 }
     const transient = transientRef.current.get(element.id)
 
+    // Check if element is hidden
+    const isHidden = element.styles.display === "none"
+    const isLocked = element.props?.locked || false
+
     // Use transform for dragging (GPU-accelerated) and direct width/height for resizing
     const dx = transient?.x != null ? (transient.x - position.x) : 0
     const dy = transient?.y != null ? (transient.y - position.y) : 0
@@ -3376,9 +3435,27 @@ export function BuilderCanvas({
     // Get rotation (from transient during rotation, or from element props, or 0)
     const rotation = transient?.rotation ?? element.props?.rotation ?? 0
 
+    // Get z-index for layering
+    const zIndex = element.props?.zIndex ?? 0
+
     const isActiveMove = draggedElementId === element.id
     const isActiveResize = isResizing === element.id
     const isActiveRotate = isRotating === element.id
+
+    // Compute effective z-index when dragging groups (so children stay visible above their container)
+    const computedZIndex = (() => {
+      const group = dragGroupRef.current
+      // If this element is part of the current drag group
+      if (group && group.ids && group.ids.includes(element.id)) {
+        // If this is the main dragged element (container), put it slightly below its children
+        if (draggedElementId === element.id) return 9998
+        // Otherwise (child of dragged container) put above
+        return 9999
+      }
+
+      // Default behavior: elevate only the actively dragged element
+      return isActiveMove ? 9999 : zIndex
+    })()
 
     // Check if element is being dragged implicitly (via group/section) by checking transient state
     const isImplicitlyDragging = transient?.x != null || transient?.y != null
@@ -3399,11 +3476,11 @@ export function BuilderCanvas({
       <div
         key={element.id}
         className={`
-          absolute cursor-pointer rounded-md group
-          ${!isInteracting ? "animate-in fade-in duration-500" : ""}
-          ${isInteracting ? "transition-none" : "transition-colors duration-200"}
+          absolute rounded-md group
+          ${isActiveMove || isActiveResize || isActiveRotate ? "transition-none" : "transition-colors duration-200"}
           ${isSelected ? "ring-2 ring-primary bg-primary/20" : "hover:bg-primary/10"}
-          ${isInteracting ? "z-[100]" : "z-10"}
+          ${isHidden ? "opacity-30" : "opacity-100"}
+          ${isLocked ? "cursor-not-allowed" : "cursor-pointer"}
         `}
         style={{
           animationDelay: `${index * 100}ms`,
@@ -3411,6 +3488,8 @@ export function BuilderCanvas({
           top: position.y,
           width: finalWidth,
           height: finalHeight,
+          zIndex: computedZIndex, // Use computed z-index so children remain visible when container is dragged
+          display: isHidden ? "block" : undefined, // Show in editor even if display:none
           transform: (() => {
             const transforms = []
             if (dx !== 0 || dy !== 0) transforms.push(`translate(${dx}px, ${dy}px)`)
@@ -3423,6 +3502,15 @@ export function BuilderCanvas({
         onClick={(e) => handleElementClick(e, element.id)}
         onMouseDown={(e) => handleElementMouseDown(e, element.id)}
       >
+        {/* Lock indicator */}
+        {isLocked && (
+          <div className="absolute -top-2 -right-2 z-50 bg-yellow-500 text-white rounded-full p-1">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+        )}
+
         {/* Element content */}
         <div
           className={`w-full h-full ${element.type === 'select' && element.props?.previewMode ? 'overflow-visible' : 'overflow-hidden'}`}
@@ -8411,101 +8499,105 @@ export function BuilderCanvas({
         </div >
 
         {/* Element label and controls */}
-        {
-          isSelected && RESIZABLE_TYPES.has(element.type) && (
-            <>
-              <div className="absolute -top-6 left-0 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md flex items-center gap-1 z-20">
-                <span>{element.type}</span>
-                <span className="text-xs opacity-75">({currentBreakpoint})</span>
-              </div>
-              {canEdit && (
-                <>
-                  <div className="absolute -top-6 right-0 flex gap-1 z-20">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="h-6 w-6 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onDuplicateElement(element.id)
-                      }}
-                    >
-                      <Copy className="w-3 h-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="h-6 w-6 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onDeleteElement(element.id)
-                      }}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
-
-                  {/* Resize handles: corners */}
-                  <div
-                    className="absolute -top-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-nw-resize z-20"
-                    onMouseDown={(e) => handleResizeMouseDown(e, element.id, "nw")}
-                  />
-                  <div
-                    className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-ne-resize z-20"
-                    onMouseDown={(e) => handleResizeMouseDown(e, element.id, "ne")}
-                  />
-                  <div
-                    className="absolute -bottom-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-sw-resize z-20"
-                    onMouseDown={(e) => handleResizeMouseDown(e, element.id, "sw")}
-                  />
-                  <div
-                    className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-se-resize z-20"
-                    onMouseDown={(e) => handleResizeMouseDown(e, element.id, "se")}
-                  />
-
-                  {/* Resize handles: edges */}
-                  <div
-                    className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-2 bg-primary rounded cursor-n-resize z-20"
-                    onMouseDown={(e) => handleResizeMouseDown(e, element.id, "n")}
-                  />
-                  <div
-                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-2 bg-primary rounded cursor-s-resize z-20"
-                    onMouseDown={(e) => handleResizeMouseDown(e, element.id, "s")}
-                  />
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-3 bg-primary rounded cursor-w-resize z-20"
-                    onMouseDown={(e) => handleResizeMouseDown(e, element.id, "w")}
-                  />
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-3 bg-primary rounded cursor-e-resize z-20"
-                    onMouseDown={(e) => handleResizeMouseDown(e, element.id, "e")}
-                  />
-
-                  {/* Rotation handle - positioned above element */}
-                  <div
-                    className="absolute -top-8 left-1/2 -translate-x-1/2 cursor-grab active:cursor-grabbing z-20"
-                    onMouseDown={(e) => handleRotateMouseDown(e, element.id)}
-                    title="Rotate element"
+        {isSelected && RESIZABLE_TYPES.has(element.type) && (
+          <>
+            <div className="absolute -top-6 left-0 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md flex items-center gap-1 z-20">
+              <span>{element.type}</span>
+              <span className="text-xs opacity-75">({currentBreakpoint})</span>
+            </div>
+            {canEdit && (
+              <>
+                <div className="absolute -top-6 right-0 flex gap-1 z-20">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-6 w-6 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDuplicateElement(element.id)
+                    }}
                   >
-                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
-                      <svg className="w-4 h-4 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="h-6 w-6 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDeleteElement(element.id)
+                    }}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+
+                {/* Only show resize/rotate handles if element is not locked */}
+                {!isLocked && (
+                  <>
+                    {/* Resize handles: corners */}
+                    <div
+                      className="absolute -top-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-nw-resize z-20"
+                      onMouseDown={(e) => handleResizeMouseDown(e, element.id, "nw")}
+                    />
+                    <div
+                      className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-ne-resize z-20"
+                      onMouseDown={(e) => handleResizeMouseDown(e, element.id, "ne")}
+                    />
+                    <div
+                      className="absolute -bottom-1 -left-1 w-3 h-3 bg-primary rounded-full cursor-sw-resize z-20"
+                      onMouseDown={(e) => handleResizeMouseDown(e, element.id, "sw")}
+                    />
+                    <div
+                      className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full cursor-se-resize z-20"
+                      onMouseDown={(e) => handleResizeMouseDown(e, element.id, "se")}
+                    />
+
+                    {/* Resize handles: edges */}
+                    <div
+                      className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-2 bg-primary rounded cursor-n-resize z-20"
+                      onMouseDown={(e) => handleResizeMouseDown(e, element.id, "n")}
+                    />
+                    <div
+                      className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-2 bg-primary rounded cursor-s-resize z-20"
+                      onMouseDown={(e) => handleResizeMouseDown(e, element.id, "s")}
+                    />
+                    <div
+                      className="absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-3 bg-primary rounded cursor-w-resize z-20"
+                      onMouseDown={(e) => handleResizeMouseDown(e, element.id, "w")}
+                    />
+                    <div
+                      className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-3 bg-primary rounded cursor-e-resize z-20"
+                      onMouseDown={(e) => handleResizeMouseDown(e, element.id, "e")}
+                    />
+
+                    {/* Rotation handle - positioned above element */}
+                    <div
+                      className="absolute -top-8 left-1/2 -translate-x-1/2 cursor-grab active:cursor-grabbing z-20"
+                      onMouseDown={(e) => handleRotateMouseDown(e, element.id)}
+                      title="Rotate element"
+                    >
+                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                        <svg className="w-4 h-4 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      </div>
+                      {/* Connection line from handle to element */}
+                      <div className="absolute top-6 left-1/2 -translate-x-1/2 w-0.5 h-2 bg-primary"></div>
                     </div>
-                    {/* Connection line from handle to element */}
-                    <div className="absolute top-6 left-1/2 -translate-x-1/2 w-0.5 h-2 bg-primary"></div>
-                  </div>
-                </>
-              )}
-            </>
-          )
-        }
-      </div >
+                  </>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
     )
   }
 
   return (
     <div
+      id="builder-canvas"
       ref={setCanvasNode}
       className={`relative w-full h-full min-h-[800px] bg-gradient-to-br from-canvas via-canvas to-canvas/95 overflow-auto transition-all duration-300 ${isOver ? "bg-drop-zone/20" : ""}`}
       onClick={handleCanvasClick}
@@ -8515,6 +8607,18 @@ export function BuilderCanvas({
         width: `${100 / (zoom / 100)}%`,
         height: `${100 / (zoom / 100)}%`,
         minHeight: `${contentHeight}px`,
+        // Dynamically extend horizontal canvas so grid covers all placed elements
+        // This enables smooth horizontal scrolling when sidebars reduce visible width
+        minWidth: (() => {
+          const fallback = 1200
+          const maxRight = elements.reduce((acc, el) => {
+            const x = el.position?.x ?? 0
+            const w = el.position?.width ?? 0
+            return Math.max(acc, x + w)
+          }, 0)
+          // Add padding so right alignment does not sit exactly at edge
+          return Math.max(fallback, maxRight + 200)
+        })(),
       }}
     >
       {/* Partitions: interactive hover & boundaries (visible only when toggled) */}
@@ -8578,7 +8682,35 @@ export function BuilderCanvas({
 
       {/* Elements with animations */}
       {elements.map((element, index) => (
-        renderElement(element, index)
+        <div
+          key={element.id}
+          className="animate-in fade-in duration-500"
+          style={{ animationDelay: `${index * 100}ms` }}
+        >
+          <ElementContextMenu
+            element={element}
+            elements={elements}
+            selectedElements={selectedElements}
+            onElementSelect={onElementSelect}
+            onUpdateElement={onUpdateElement}
+            onDeleteElement={onDeleteElement}
+            onDuplicateElement={onDuplicateElement}
+            regions={onRegionsChange ? {
+              header: { top: 0, height: headerHeight },
+              sections: sections.map((s, idx) => ({
+                id: s.id,
+                index: idx,
+                top: headerHeight + sections.slice(0, idx).reduce((sum, sec) => sum + sec.height, 0),
+                height: s.height
+              })),
+              footer: { top: headerHeight + totalSectionsHeight, height: footerHeight }
+            } : undefined}
+            disabled={isPreviewMode || !canEdit}
+            contextMenuOpenRef={contextMenuOpenRef}
+          >
+            {renderElement(element)}
+          </ElementContextMenu>
+        </div>
       ))}
 
       {/* Enhanced Drop zone indicator */}
