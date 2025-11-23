@@ -767,9 +767,22 @@ export default function WebsiteBuilder() {
                 {/* Center Canvas */}
                 <ResizablePanel defaultSize={60} minSize={30}>
                   <div className="h-full bg-canvas canvas-grid overflow-hidden relative">
-                    <div className="h-full flex items-start justify-center p-8">
+                    {/* Enhanced glow effect background - adapts to theme */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      {/* Radial gradient overlay for spotlight effect */}
+                      <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/5 dark:to-white/5"></div>
+                    </div>
+                    
+                    <div className="h-full flex items-start justify-center p-8 relative z-10">
                       <div
-                        className={`${breakpointWidths[currentBreakpoint]} transition-all duration-300 bg-card border border-border rounded-lg shadow-lg min-h-[600px] h-full max-h-full overflow-auto custom-scrollbar`}
+                        className={`${breakpointWidths[currentBreakpoint]} transition-all duration-300 bg-card border border-border rounded-lg min-h-[600px] h-full max-h-full overflow-auto custom-scrollbar relative
+                          shadow-[0_0_80px_-12px_rgba(0,0,0,0.25)] dark:shadow-[0_0_80px_-12px_rgba(255,255,255,0.15)]
+                          ring-1 ring-black/5 dark:ring-white/10
+                          before:absolute before:inset-0 before:rounded-lg before:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] dark:before:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)] before:pointer-events-none
+                        `}
+                        style={{
+                          transform: 'translateY(-2px)',
+                        }}
                       >
                         <CollaborativeCanvas
                           projectId={currentProjectId || null}
