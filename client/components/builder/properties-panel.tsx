@@ -3345,7 +3345,7 @@ export function PropertiesPanel({
                       <Label className="text-xs text-muted-foreground">Preview</Label>
                       <div className="mt-1 border border-sidebar-border rounded-lg p-2 bg-sidebar-accent">
                         <img
-                          src={selectedElement.content || "/placeholder.svg"}
+                          src={selectedElement.content || "/placeholder.svg"||""}
                           alt="Preview"
                           className="w-full h-32 object-contain rounded"
                         />
@@ -3356,7 +3356,7 @@ export function PropertiesPanel({
                       <Label className="text-xs text-muted-foreground">Image URL</Label>
                       <Input
                         placeholder="https://example.com/image.jpg"
-                        value={selectedElement.content}
+                        value={selectedElement.content||""}
                         onChange={(e) => updateElementContent(e.target.value)}
                         className="bg-sidebar-accent border-sidebar-border mt-1 text-xs"
                       />
@@ -4268,7 +4268,7 @@ export function PropertiesPanel({
                       <Label className="text-xs text-muted-foreground">Video URL</Label>
                       <Input
                         placeholder="YouTube, Vimeo, Facebook or direct video URL"
-                        value={selectedElement.content}
+                        value={selectedElement.content || ""}
                         onChange={(e) => updateElementContent(e.target.value)}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
@@ -4293,7 +4293,7 @@ export function PropertiesPanel({
                       />
                       {selectedElement.props?.videoFileName && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          📹 {selectedElement.props.videoFileName}
+                          📹 {selectedElement.props.videoFileName ||""}
                         </p>
                       )}
                     </div>
@@ -4321,8 +4321,8 @@ export function PropertiesPanel({
                     <Separator className="my-3" />
                     <div className="flex items-center space-x-2">
                       <Switch
-                        checked={isPreviewMode || false}
-                        onCheckedChange={(checked) => onPreviewModeToggle?.(checked)}
+                        checked={selectedElement.props?.previewMode || false}
+                        onCheckedChange={(checked) => updateElementProps({ previewMode: checked })}
                       />
                       <Label className="text-xs text-muted-foreground">🎬 Preview Mode (Interact with video)</Label>
                     </div>
@@ -4333,7 +4333,7 @@ export function PropertiesPanel({
                       <Label className="text-xs text-muted-foreground">Audio URL</Label>
                       <Input
                         placeholder="https://example.com/audio.mp3"
-                        value={selectedElement.content}
+                        value={selectedElement.content || ""}
                         onChange={(e) => updateElementContent(e.target.value)}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
