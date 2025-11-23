@@ -295,7 +295,7 @@ interface CanvasProps {
   onSetActiveLeftPanel?: (panel: 'components' | 'pages' | 'siteStyle') => void // Callback to set active left panel
 }
 
-export function Canvas({
+export function BuilderCanvas({
   elements,
   selectedElements,
   currentBreakpoint,
@@ -2532,6 +2532,24 @@ export function Canvas({
   }
 
   // overlay uses `isOver` directly
+  // Helper to check if an element is visually inside a section
+  const isElementInsideSection = (element: BuilderElement, section: BuilderElement) => {
+    if (!element.position || !section.position) return false
+
+    const el = element.position
+    const sec = section.position
+
+    // Check if element center is inside section
+    const elCenterX = el.x + (el.width || 0) / 2
+    const elCenterY = el.y + (el.height || 0) / 2
+
+    return (
+      elCenterX >= sec.x &&
+      elCenterX <= sec.x + (sec.width || 0) &&
+      elCenterY >= sec.y &&
+      elCenterY <= sec.y + (sec.height || 0)
+    )
+  }
 
   const handleElementMouseDown = (e: React.MouseEvent, elementId: string) => {
     if (!canEdit) return;
@@ -2558,10 +2576,21 @@ export function Canvas({
     const startX = (e.clientX - rect.left) / scale
     const startY = (e.clientY - rect.top) / scale
     // Determine which elements are affected (multi-select drag support)
-    const idsToDrag = selectedElements.includes(elementId) && selectedElements.length > 1
+    let idsToDrag = selectedElements.includes(elementId) && selectedElements.length > 1
       ? selectedElements
       : [elementId]
 
+    // If dragging a section or card, also drag all elements inside it
+    if (element.type === 'section' || element.type === 'card') {
+      const childrenIds = elements
+        .filter(el => el.id !== elementId && isElementInsideSection(el, element))
+        .map(el => el.id)
+
+      // Merge unique IDs
+      idsToDrag = Array.from(new Set([...idsToDrag, ...childrenIds]))
+    }
+
+  
     // Build start positions per element for delta-based movement
     const startPositions = new Map<string, { x: number; y: number }>()
     for (const id of idsToDrag) {
@@ -3386,7 +3415,7 @@ export function Canvas({
     document.addEventListener("mouseup", onMouseUp)
   }, [sections, zoom, getMinRegionHeight])
 
-  const renderElement = (element: BuilderElement) => {
+  const renderElement = (element: BuilderElement, index: number = 0) => {
     const isSelected = selectedElements.includes(element.id)
     const elementStyles = getElementStyles(element)
     const position = element.position || { x: 0, y: 0, width: 200, height: 50 }
@@ -3412,23 +3441,56 @@ export function Canvas({
     const isActiveResize = isResizing === element.id
     const isActiveRotate = isRotating === element.id
 
+    
+    // Compute effective z-index when dragging groups (so children stay visible above their container)
+    const computedZIndex = (() => {
+      const group = dragGroupRef.current
+      // If this element is part of the current drag group
+      if (group && group.ids && group.ids.includes(element.id)) {
+        // If this is the main dragged element (container), put it slightly below its children
+        if (draggedElementId === element.id) return 9998
+        // Otherwise (child of dragged container) put above
+        return 9999
+      }
+
+      // Default behavior: elevate only the actively dragged element
+      return isActiveMove ? 9999 : zIndex
+    })()
+
+    // Check if element is being dragged implicitly (via group/section) by checking transient state
+    const isImplicitlyDragging = transient?.x != null || transient?.y != null
+
+    // Check if element is inside a container that's being resized
+    const isInsideResizingContainer = isResizing && elements.some(container => {
+      if (container.id !== isResizing) return false
+      if (container.type !== 'section' && container.type !== 'card') return false
+      return isElementInsideSection(element, container)
+    })
+
+    const isInteracting = isActiveMove || isActiveResize || isActiveRotate || isImplicitlyDragging || isInsideResizingContainer
+
+    // Debug log for specific elements if needed
+    // if (element.type === 'button') console.log('[Canvas] Render Button', { id: element.id, isInteracting, zIndex: isInteracting ? 100 : 10 })
+
     return (
       <div
         key={element.id}
         className={`
           absolute rounded-md group
           ${isActiveMove || isActiveResize || isActiveRotate ? "transition-none" : "transition-colors duration-200"}
-          ${isSelected ? "ring-2 ring-primary bg-primary/20" : "hover:bg-primary/10"}
+          ${!isPreviewMode && isSelected ? "ring-2 ring-primary bg-primary/20" : ""}
+          ${!isPreviewMode ? "hover:bg-primary/10" : ""}
           ${isHidden ? "opacity-30" : "opacity-100"}
-          ${isLocked ? "cursor-not-allowed" : "cursor-pointer"}
+          ${isLocked && !isPreviewMode ? "cursor-not-allowed" : isPreviewMode ? "cursor-default" : "cursor-pointer"}
         `}
         style={{
+          animationDelay: `${index * 100}ms`,
           left: position.x,
           top: position.y,
           width: finalWidth,
           height: finalHeight,
-          zIndex: isActiveMove ? 9999 : zIndex, // Dragging element always on top
-          display: isHidden ? "block" : undefined, // Show in editor even if display:none
+          zIndex: computedZIndex, // Use computed z-index so children remain visible when container is dragged
+          display: isHidden && !isPreviewMode ? "block" : isHidden ? "none" : undefined, // Hide in preview if display:none
           transform: (() => {
             const transforms = []
             if (dx !== 0 || dy !== 0) transforms.push(`translate(${dx}px, ${dy}px)`)
@@ -3438,11 +3500,11 @@ export function Canvas({
           transformOrigin: 'center center',
           willChange: (dx !== 0 || dy !== 0) ? "transform" : isActiveResize ? "width, height" : isActiveRotate ? "transform" : undefined,
         }}
-        onClick={(e) => handleElementClick(e, element.id)}
-        onMouseDown={(e) => handleElementMouseDown(e, element.id)}
+        onClick={(e) => !isPreviewMode && handleElementClick(e, element.id)}
+        onMouseDown={(e) => !isPreviewMode && handleElementMouseDown(e, element.id)}
       >
-        {/* Lock indicator */}
-        {isLocked && (
+        {/* Lock indicator - hidden in preview mode */}
+        {isLocked && !isPreviewMode && (
           <div className="absolute -top-2 -right-2 z-50 bg-yellow-500 text-white rounded-full p-1">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -3462,16 +3524,20 @@ export function Canvas({
               {element.content}
             </h1>
           )}
-          {element.type === "paragraph" && (
+          {
+            element.type === "paragraph" && (
             <p className="text-card-foreground text-sm leading-tight" style={elementStyles}>
               {element.content}
             </p>
-          )}
-          {element.type === "image" && (
+            )
+          }
+          {
+            element.type === "image" && (
             <div
-              className="w-full h-full flex items-center justify-center"
+              className="w-full h-full flex items-center justify-center overflow-hidden"
               style={{
                 transform: `rotate(${element.props?.rotation || 0}deg)`,
+                borderRadius: elementStyles.borderRadius,
               }}
             >
               <img
@@ -3870,7 +3936,7 @@ export function Canvas({
                         title="YouTube video player"
                       />
                       {/* Overlay to prevent iframe interaction in edit mode */}
-                      {!isPreviewMode && (
+                      {!element.props?.previewMode && (
                         <div
                           className="absolute inset-0 cursor-pointer"
                           style={{ pointerEvents: 'auto' }}
@@ -3896,7 +3962,7 @@ export function Canvas({
                         title="Vimeo video player"
                       />
                       {/* Overlay to prevent iframe interaction in edit mode */}
-                      {!isPreviewMode && (
+                      {!element.props?.previewMode && (
                         <div
                           className="absolute inset-0 cursor-pointer"
                           style={{ pointerEvents: 'auto' }}
@@ -3921,7 +3987,7 @@ export function Canvas({
                         title="Facebook video player"
                       />
                       {/* Overlay to prevent iframe interaction in edit mode */}
-                      {!isPreviewMode && (
+                      {!element.props?.previewMode && (
                         <div
                           className="absolute inset-0 cursor-pointer"
                           style={{ pointerEvents: 'auto' }}
@@ -3948,7 +4014,7 @@ export function Canvas({
                         Your browser does not support the video tag.
                       </video>
                       {/* Overlay to prevent video interaction in edit mode */}
-                      {!isPreviewMode && (
+                      {!element.props?.previewMode && (
                         <div
                           className="absolute inset-0 cursor-pointer"
                           style={{ pointerEvents: 'auto' }}
@@ -3975,7 +4041,7 @@ export function Canvas({
                         Your browser does not support the video tag.
                       </video>
                       {/* Overlay to prevent video interaction in edit mode */}
-                      {!isPreviewMode && (
+                      {!element.props?.previewMode && (
                         <div
                           className="absolute inset-0 cursor-pointer"
                           style={{ pointerEvents: 'auto' }}
@@ -8228,7 +8294,7 @@ export function Canvas({
               <span>{element.type}</span>
               <span className="text-xs opacity-75">({currentBreakpoint})</span>
             </div>
-            {canEdit && (
+            {canEdit && !isPreviewMode && (
               <>
                 <div className="absolute -top-6 right-0 flex gap-1 z-20">
                   <Button
@@ -8344,8 +8410,8 @@ export function Canvas({
         })(),
       }}
     >
-      {/* Partitions: interactive hover & boundaries (visible only when toggled) */}
-      {showSections && (
+      {/* Partitions: interactive hover & boundaries (visible only when toggled and NOT in preview mode) */}
+      {showSections && !isPreviewMode && (
         <PartitionsOverlay
           headerHeight={headerHeight}
           footerHeight={footerHeight}
@@ -8372,8 +8438,8 @@ export function Canvas({
           onSetActiveLeftPanel={onSetActiveLeftPanel}
         />
       )}
-      {/* Enhanced Grid overlay */}
-      {showGrid && (
+      {/* Enhanced Grid overlay - hidden in preview mode */}
+      {showGrid && !isPreviewMode && (
         <div
           className="absolute inset-0 pointer-events-none opacity-10 transition-opacity duration-300"
           style={{
@@ -8386,22 +8452,24 @@ export function Canvas({
         />
       )}
 
-      {/* Enhanced Breakpoint indicator - Fixed size regardless of zoom */}
-      <div
-        className="absolute z-30 animate-in slide-in-from-top duration-500"
-        style={{
-          top: `${16 / (zoom / 100)}px`,
-          left: '50%',
-          transform: `translateX(-50%) scale(${100 / zoom})`,
-          transformOrigin: 'center',
-        }}
-      >
-        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-muted to-muted/80 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-muted-foreground border border-border shadow-lg">
-          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-          <span>Editing for:</span>
-          <span className="font-medium text-foreground capitalize bg-primary/10 px-2 py-1 rounded-md">{currentBreakpoint}</span>
+      {/* Enhanced Breakpoint indicator - Fixed size regardless of zoom - hidden in preview mode */}
+      {!isPreviewMode && (
+        <div
+          className="absolute z-30 animate-in slide-in-from-top duration-500"
+          style={{
+            top: `${16 / (zoom / 100)}px`,
+            left: '50%',
+            transform: `translateX(-50%) scale(${100 / zoom})`,
+            transformOrigin: 'center',
+          }}
+        >
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-muted to-muted/80 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-muted-foreground border border-border shadow-lg">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+            <span>Editing for:</span>
+            <span className="font-medium text-foreground capitalize bg-primary/10 px-2 py-1 rounded-md">{currentBreakpoint}</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Elements with animations */}
       {elements.map((element, index) => (
@@ -8436,8 +8504,8 @@ export function Canvas({
         </div>
       ))}
 
-      {/* Enhanced Drop zone indicator */}
-      {isOver && (
+      {/* Enhanced Drop zone indicator - hidden in preview mode */}
+      {isOver && !isPreviewMode && (
         <div className="absolute inset-4 border-2 border-dashed border-primary rounded-xl flex items-center justify-center text-primary bg-gradient-to-br from-drop-zone/20 to-drop-zone/10 backdrop-blur-sm pointer-events-none z-20 animate-in zoom-in duration-300">
           <div className="text-center">
             <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 mx-auto animate-bounce">
@@ -8451,12 +8519,14 @@ export function Canvas({
         </div>
       )}
 
-      {/* Canvas info overlay */}
-      <div className="absolute bottom-4 right-4 z-30">
-        <div className="bg-muted/80 backdrop-blur-sm px-3 py-2 rounded-lg text-xs text-muted-foreground border border-border">
-          {elements.length} elements • {currentBreakpoint} view
+      {/* Canvas info overlay - hidden in preview mode */}
+      {!isPreviewMode && (
+        <div className="absolute bottom-4 right-4 z-30">
+          <div className="bg-muted/80 backdrop-blur-sm px-3 py-2 rounded-lg text-xs text-muted-foreground border border-border">
+            {elements.length} elements • {currentBreakpoint} view
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
