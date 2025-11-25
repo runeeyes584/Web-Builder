@@ -470,9 +470,22 @@ export default function WebsiteBuilder() {
     mobile: "w-[375px]",
   }
 
-  const handleElementSelect = (elementId: string, multiSelect = false) => {
-    if (!elementId) {
+  const handleElementSelect = (elementId: string | string[], multiSelect = false) => {
+    if (!elementId || (Array.isArray(elementId) && elementId.length === 0)) {
       setSelectedElements([])
+      return
+    }
+
+    if (Array.isArray(elementId)) {
+      if (multiSelect) {
+        // Add unique new elements to existing selection
+        setSelectedElements((prev) => {
+          const newSet = new Set([...prev, ...elementId])
+          return Array.from(newSet)
+        })
+      } else {
+        setSelectedElements(elementId)
+      }
       return
     }
 
@@ -656,8 +669,8 @@ export default function WebsiteBuilder() {
                             }
                           }}
                           className={`group/icon relative w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-200 ${activeLeftPanel === 'components' && showLeftSidebar
-                              ? 'bg-primary text-primary-foreground shadow-lg scale-110'
-                              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:scale-125 hover:shadow-md'
+                            ? 'bg-primary text-primary-foreground shadow-lg scale-110'
+                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:scale-125 hover:shadow-md'
                             }`}
                           title="Components"
                         >
@@ -675,8 +688,8 @@ export default function WebsiteBuilder() {
                             }
                           }}
                           className={`group/icon relative w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-200 ${activeLeftPanel === 'pages' && showLeftSidebar
-                              ? 'bg-primary text-primary-foreground shadow-lg scale-110'
-                              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:scale-125 hover:shadow-md'
+                            ? 'bg-primary text-primary-foreground shadow-lg scale-110'
+                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:scale-125 hover:shadow-md'
                             }`}
                           title="Pages"
                         >
@@ -694,8 +707,8 @@ export default function WebsiteBuilder() {
                             }
                           }}
                           className={`group/icon relative w-10 h-10 flex items-center justify-center rounded-lg transition-all duration-200 ${activeLeftPanel === 'siteStyle' && showLeftSidebar
-                              ? 'bg-primary text-primary-foreground shadow-lg scale-110'
-                              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:scale-125 hover:shadow-md'
+                            ? 'bg-primary text-primary-foreground shadow-lg scale-110'
+                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:scale-125 hover:shadow-md'
                             }`}
                           title="Site Style"
                         >
@@ -772,7 +785,7 @@ export default function WebsiteBuilder() {
                       {/* Radial gradient overlay for spotlight effect */}
                       <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/5 dark:to-white/5"></div>
                     </div>
-                    
+
                     <div className="h-full flex items-start justify-center p-8 relative z-10">
                       <div
                         className={`${breakpointWidths[currentBreakpoint]} transition-all duration-300 bg-card border border-border rounded-lg min-h-[600px] h-full max-h-full overflow-auto custom-scrollbar relative

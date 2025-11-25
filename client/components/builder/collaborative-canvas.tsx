@@ -15,7 +15,7 @@ interface CollaborativeCanvasProps {
   elements: any[]
   selectedElements: string[]
   currentBreakpoint: Breakpoint
-  onElementSelect: (id: string, isMultiSelect?: boolean) => void
+  onElementSelect: (id: string | string[], isMultiSelect?: boolean) => void
   onAddElement?: (element: any, position?: { x: number; y: number }) => void
   onUpdateElement?: (id: string, updates: any) => void
   onUpdateElementPosition?: (id: string, position: any) => void

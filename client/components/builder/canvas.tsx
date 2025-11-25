@@ -272,7 +272,7 @@ interface CanvasProps {
   selectedElements: string[]
   currentBreakpoint: Breakpoint
   canEdit?: boolean
-  onElementSelect: (elementId: string, multiSelect?: boolean) => void
+  onElementSelect: (elementId: string | string[], multiSelect?: boolean) => void
   onAddElement: (element: BuilderElement, position?: { x: number; y: number }) => void
   onUpdateElement: (id: string, updates: Partial<BuilderElement>) => void
   onUpdateElementPosition: (id: string, position: { x: number; y: number; width?: number; height?: number }) => void
@@ -2576,6 +2576,12 @@ export function BuilderCanvas({
     const scale = zoom / 100
     const startX = (e.clientX - rect.left) / scale
     const startY = (e.clientY - rect.top) / scale
+
+    // Track if drag actually happened
+    let hasMoved = false
+    const initialClientX = e.clientX
+    const initialClientY = e.clientY
+
     // Determine which elements are affected (multi-select drag support)
     let idsToDrag = selectedElements.includes(elementId) && selectedElements.length > 1
       ? selectedElements
@@ -2591,7 +2597,7 @@ export function BuilderCanvas({
       idsToDrag = Array.from(new Set([...idsToDrag, ...childrenIds]))
     }
 
-  
+
     // Build start positions per element for delta-based movement
     const startPositions = new Map<string, { x: number; y: number }>()
     for (const id of idsToDrag) {
@@ -2609,6 +2615,20 @@ export function BuilderCanvas({
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!canvasEl) return
+
+      // Check for movement threshold to distinguish click from drag
+      if (!hasMoved) {
+        const moveDist = Math.sqrt(
+          Math.pow(e.clientX - initialClientX, 2) +
+          Math.pow(e.clientY - initialClientY, 2)
+        )
+        if (moveDist > 3) {
+          hasMoved = true
+        } else {
+          return
+        }
+      }
+
       const rect = canvasEl.getBoundingClientRect()
       const scale = zoom / 100
       const localX = (e.clientX - rect.left) / scale
@@ -2663,7 +2683,13 @@ export function BuilderCanvas({
       scheduleRerender()
     }
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
+      // Handle click selection if no drag occurred
+      if (!hasMoved) {
+        const isMultiSelect = e.shiftKey || e.metaKey || e.ctrlKey
+        onElementSelect(elementId, isMultiSelect)
+      }
+
       // Commit final position(s) once
       const group = dragGroupRef.current
       if (group) {
@@ -2696,27 +2722,28 @@ export function BuilderCanvas({
               }
             }
 
-            onUpdateElementPosition(id, {
-              x: finalX,
-              y: finalY,
-            })
+            onUpdateElementPosition(id, { x: finalX, y: finalY })
+
+            // Clear transient state
+            transientRef.current.delete(id)
           }
-          transientRef.current.delete(id)
         }
+        scheduleRerender()
       }
-      dragGroupRef.current = null
+
       setDraggedElementId(null)
-      document.removeEventListener("mousemove", handleMouseMove)
-      document.removeEventListener("mouseup", handleMouseUp)
+      dragGroupRef.current = null
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
     }
 
-    document.addEventListener("mousemove", handleMouseMove)
-    document.addEventListener("mouseup", handleMouseUp)
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
   }
 
   // Resizing support for all Elements
   const RESIZABLE_TYPES = new Set([
-    // Basic Elements
+
     "heading",
     "paragraph",
     "image",
@@ -3115,6 +3142,96 @@ export function BuilderCanvas({
     onElementSelect(elementId, isMultiSelect)
   }
 
+  // Marquee selection state
+  const [isSelecting, setIsSelecting] = useState(false)
+  const [selectionBox, setSelectionBox] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
+  const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null)
+
+  const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    // Only start selection if left click and not on an interactive element
+    if (e.button !== 0) return
+
+    // If context menu is open, let handleCanvasClick handle closing it
+    if (contextMenuOpenRef.current) return
+
+    // Don't start selection if clicking on a boundary resize handle or other controls
+    if ((e.target as HTMLElement).closest('button') ||
+      (e.target as HTMLElement).closest('.cursor-ns-resize') ||
+      (e.target as HTMLElement).closest('.cursor-ew-resize')) {
+      return
+    }
+
+    const canvas = canvasEl
+    if (!canvas) return
+
+    const rect = canvas.getBoundingClientRect()
+    const scale = zoom / 100
+    const x = (e.clientX - rect.left) / scale
+    const y = (e.clientY - rect.top) / scale
+
+    setIsSelecting(true)
+    setStartPoint({ x, y })
+    setSelectionBox({ x, y, width: 0, height: 0 })
+
+    // Clear current selection unless shift key is pressed (optional, for now just clear)
+    if (!e.shiftKey) {
+      onElementSelect("")
+    }
+  }
+
+  const handleCanvasMouseMove = (e: React.MouseEvent) => {
+    if (!isSelecting || !startPoint || !canvasEl) return
+
+    const rect = canvasEl.getBoundingClientRect()
+    const scale = zoom / 100
+    const currentX = (e.clientX - rect.left) / scale
+    const currentY = (e.clientY - rect.top) / scale
+
+    const newBox = {
+      x: Math.min(currentX, startPoint.x),
+      y: Math.min(currentY, startPoint.y),
+      width: Math.abs(currentX - startPoint.x),
+      height: Math.abs(currentY - startPoint.y)
+    }
+
+    setSelectionBox(newBox)
+  }
+
+  const handleCanvasMouseUp = (e: React.MouseEvent) => {
+    if (!isSelecting || !selectionBox) return
+
+    setIsSelecting(false)
+    setStartPoint(null)
+
+    // Calculate intersecting elements
+    const selectedIds: string[] = []
+
+    elements.forEach(element => {
+      if (!element.position) return
+
+      const elX = element.position.x
+      const elY = element.position.y
+      const elW = element.position.width || 0
+      const elH = element.position.height || 0
+
+      // Check intersection
+      if (
+        elX < selectionBox.x + selectionBox.width &&
+        elX + elW > selectionBox.x &&
+        elY < selectionBox.y + selectionBox.height &&
+        elY + elH > selectionBox.y
+      ) {
+        selectedIds.push(element.id)
+      }
+    })
+
+    if (selectedIds.length > 0) {
+      onElementSelect(selectedIds, e.shiftKey)
+    }
+
+    setSelectionBox(null)
+  }
+
   const handleCanvasClick = () => {
     // Don't exit interactive mode if context menu was just open
     if (contextMenuOpenRef.current) {
@@ -3122,7 +3239,10 @@ export function BuilderCanvas({
       return
     }
 
-    onElementSelect("")
+    // Only clear selection if we didn't just finish a marquee selection
+    // (isSelecting is already false here because MouseUp fired first, but selectionBox is null)
+    // We can rely on the fact that if we selected something, onElementSelect was called in MouseUp
+
     setFocusedRegion(null)
     setFocusedSectionIndex(null)
     // Also exit interactive mode
@@ -3501,7 +3621,7 @@ export function BuilderCanvas({
           transformOrigin: 'center center',
           willChange: (dx !== 0 || dy !== 0) ? "transform" : isActiveResize ? "width, height" : isActiveRotate ? "transform" : undefined,
         }}
-        onClick={(e) => !isPreviewMode && handleElementClick(e, element.id)}
+
         onMouseDown={(e) => !isPreviewMode && handleElementMouseDown(e, element.id)}
       >
         {/* Lock indicator - hidden in preview mode */}
@@ -8603,6 +8723,10 @@ export function BuilderCanvas({
       ref={setCanvasNode}
       className={`relative w-full h-full min-h-[800px] bg-gradient-to-br from-canvas via-canvas to-canvas/95 overflow-auto transition-all duration-300 ${isOver ? "bg-drop-zone/20" : ""}`}
       onClick={handleCanvasClick}
+      onMouseDown={handleCanvasMouseDown}
+      onMouseMove={handleCanvasMouseMove}
+      onMouseUp={handleCanvasMouseUp}
+      onMouseLeave={handleCanvasMouseUp}
       style={{
         transform: `scale(${zoom / 100})`,
         transformOrigin: 'top left',
@@ -8624,123 +8748,150 @@ export function BuilderCanvas({
       }}
     >
       {/* Partitions: interactive hover & boundaries (visible only when toggled and NOT in preview mode) */}
-      {showSections && !isPreviewMode && (
-        <PartitionsOverlay
-          headerHeight={headerHeight}
-          footerHeight={footerHeight}
-          sections={sections}
-          setSections={setSections}
-          focusedRegion={focusedRegion}
-          focusedSectionIndex={focusedSectionIndex}
-          setFocusedRegion={setFocusedRegion}
-          setFocusedSectionIndex={setFocusedSectionIndex}
-          submergedSectionIndex={submergedSectionIndex}
-          setSubmergedSectionIndex={setSubmergedSectionIndex}
-          isHeaderSubmerged={isHeaderSubmerged}
-          setIsHeaderSubmerged={setIsHeaderSubmerged}
-          isFooterSubmerged={isFooterSubmerged}
-          setIsFooterSubmerged={setIsFooterSubmerged}
-          onStartResize={startBoundaryResize}
-          onStartSectionResize={startSectionDividerResize}
-          onStartFooterBottomResize={startFooterBottomResize}
-          defaultSectionHeight={DEFAULT_SECTION}
-          toggleCategoryRef={toggleCategoryRef}
-          sectionHasElements={sectionHasElements}
-          onSectionsChange={onSectionsChange}
-          onShowLeftSidebar={onShowLeftSidebar}
-          onSetActiveLeftPanel={onSetActiveLeftPanel}
-        />
-      )}
+      {
+        showSections && !isPreviewMode && (
+          <PartitionsOverlay
+            headerHeight={headerHeight}
+            footerHeight={footerHeight}
+            sections={sections}
+            setSections={setSections}
+            focusedRegion={focusedRegion}
+            focusedSectionIndex={focusedSectionIndex}
+            setFocusedRegion={setFocusedRegion}
+            setFocusedSectionIndex={setFocusedSectionIndex}
+            submergedSectionIndex={submergedSectionIndex}
+            setSubmergedSectionIndex={setSubmergedSectionIndex}
+            isHeaderSubmerged={isHeaderSubmerged}
+            setIsHeaderSubmerged={setIsHeaderSubmerged}
+            isFooterSubmerged={isFooterSubmerged}
+            setIsFooterSubmerged={setIsFooterSubmerged}
+            onStartResize={startBoundaryResize}
+            onStartSectionResize={startSectionDividerResize}
+            onStartFooterBottomResize={startFooterBottomResize}
+            defaultSectionHeight={DEFAULT_SECTION}
+            toggleCategoryRef={toggleCategoryRef}
+            sectionHasElements={sectionHasElements}
+            onSectionsChange={onSectionsChange}
+            onShowLeftSidebar={onShowLeftSidebar}
+            onSetActiveLeftPanel={onSetActiveLeftPanel}
+          />
+        )
+      }
       {/* Enhanced Grid overlay - hidden in preview mode */}
-      {showGrid && !isPreviewMode && (
-        <div
-          className="absolute inset-0 pointer-events-none opacity-10 transition-opacity duration-300"
-          style={{
-            backgroundImage: `
+      {
+        showGrid && !isPreviewMode && (
+          <div
+            className="absolute inset-0 pointer-events-none opacity-10 transition-opacity duration-300"
+            style={{
+              backgroundImage: `
               linear-gradient(to right, var(--color-primary) 1px, transparent 1px),
               linear-gradient(to bottom, var(--color-primary) 1px, transparent 1px)
             `,
-            backgroundSize: `${snapSettings.gridSize}px ${snapSettings.gridSize}px`,
-          }}
-        />
-      )}
+              backgroundSize: `${snapSettings.gridSize}px ${snapSettings.gridSize}px`,
+            }}
+          />
+        )
+      }
 
       {/* Enhanced Breakpoint indicator - Fixed size regardless of zoom - hidden in preview mode */}
-      {!isPreviewMode && (
-        <div
-          className="absolute z-30 animate-in slide-in-from-top duration-500"
-          style={{
-            top: `${16 / (zoom / 100)}px`,
-            left: '50%',
-            transform: `translateX(-50%) scale(${100 / zoom})`,
-            transformOrigin: 'center',
-          }}
-        >
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-muted to-muted/80 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-muted-foreground border border-border shadow-lg">
-            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-            <span>Editing for:</span>
-            <span className="font-medium text-foreground capitalize bg-primary/10 px-2 py-1 rounded-md">{currentBreakpoint}</span>
+      {
+        !isPreviewMode && (
+          <div
+            className="absolute z-30 animate-in slide-in-from-top duration-500"
+            style={{
+              top: `${16 / (zoom / 100)}px`,
+              left: '50%',
+              transform: `translateX(-50%) scale(${100 / zoom})`,
+              transformOrigin: 'center',
+            }}
+          >
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-muted to-muted/80 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-muted-foreground border border-border shadow-lg">
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+              <span>Editing for:</span>
+              <span className="font-medium text-foreground capitalize bg-primary/10 px-2 py-1 rounded-md">{currentBreakpoint}</span>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Elements with animations */}
-      {elements.map((element, index) => (
-        <div
-          key={element.id}
-          className="animate-in fade-in duration-500"
-          style={{ animationDelay: `${index * 100}ms` }}
-        >
-          <ElementContextMenu
-            element={element}
-            elements={elements}
-            selectedElements={selectedElements}
-            onElementSelect={onElementSelect}
-            onUpdateElement={onUpdateElement}
-            onDeleteElement={onDeleteElement}
-            onDuplicateElement={onDuplicateElement}
-            regions={onRegionsChange ? {
-              header: { top: 0, height: headerHeight },
-              sections: sections.map((s, idx) => ({
-                id: s.id,
-                index: idx,
-                top: headerHeight + sections.slice(0, idx).reduce((sum, sec) => sum + sec.height, 0),
-                height: s.height
-              })),
-              footer: { top: headerHeight + totalSectionsHeight, height: footerHeight }
-            } : undefined}
-            disabled={isPreviewMode || !canEdit}
-            contextMenuOpenRef={contextMenuOpenRef}
+      {
+        elements.map((element, index) => (
+          <div
+            key={element.id}
+            className="animate-in fade-in duration-500"
+            style={{ animationDelay: `${index * 100}ms` }}
           >
-            {renderElement(element)}
-          </ElementContextMenu>
-        </div>
-      ))}
+            <ElementContextMenu
+              element={element}
+              elements={elements}
+              selectedElements={selectedElements}
+              onElementSelect={onElementSelect}
+              onUpdateElement={onUpdateElement}
+              onDeleteElement={onDeleteElement}
+              onDuplicateElement={onDuplicateElement}
+              regions={onRegionsChange ? {
+                header: { top: 0, height: headerHeight },
+                sections: sections.map((s, idx) => ({
+                  id: s.id,
+                  index: idx,
+                  top: headerHeight + sections.slice(0, idx).reduce((sum, sec) => sum + sec.height, 0),
+                  height: s.height
+                })),
+                footer: { top: headerHeight + totalSectionsHeight, height: footerHeight }
+              } : undefined}
+              disabled={isPreviewMode || !canEdit}
+              contextMenuOpenRef={contextMenuOpenRef}
+            >
+              {renderElement(element)}
+            </ElementContextMenu>
+          </div>
+        ))
+      }
 
       {/* Enhanced Drop zone indicator - hidden in preview mode */}
-      {isOver && !isPreviewMode && (
-        <div className="absolute inset-4 border-2 border-dashed border-primary rounded-xl flex items-center justify-center text-primary bg-gradient-to-br from-drop-zone/20 to-drop-zone/10 backdrop-blur-sm pointer-events-none z-20 animate-in zoom-in duration-300">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 mx-auto animate-bounce">
-              <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
+      {
+        isOver && !isPreviewMode && (
+          <div className="absolute inset-4 border-2 border-dashed border-primary rounded-xl flex items-center justify-center text-primary bg-gradient-to-br from-drop-zone/20 to-drop-zone/10 backdrop-blur-sm pointer-events-none z-20 animate-in zoom-in duration-300">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 mx-auto animate-bounce">
+                <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </div>
+              <p className="text-lg font-medium">Drop component anywhere on the canvas</p>
+              <p className="text-sm text-muted-foreground mt-2">Release to add to your design</p>
             </div>
-            <p className="text-lg font-medium">Drop component anywhere on the canvas</p>
-            <p className="text-sm text-muted-foreground mt-2">Release to add to your design</p>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Canvas info overlay - hidden in preview mode */}
-      {!isPreviewMode && (
-        <div className="absolute bottom-4 right-4 z-30">
-          <div className="bg-muted/80 backdrop-blur-sm px-3 py-2 rounded-lg text-xs text-muted-foreground border border-border">
-            {elements.length} elements • {currentBreakpoint} view
+      {
+        !isPreviewMode && (
+          <div className="absolute bottom-4 right-4 z-30">
+            <div className="bg-muted/80 backdrop-blur-sm px-3 py-2 rounded-lg text-xs text-muted-foreground border border-border">
+              {elements.length} elements • {currentBreakpoint} view
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+
+      {/* Marquee Selection Box */}
+      {
+        isSelecting && selectionBox && (
+          <div
+            className="absolute border border-primary bg-primary/10 z-50 pointer-events-none"
+            style={{
+              left: selectionBox.x,
+              top: selectionBox.y,
+              width: selectionBox.width,
+              height: selectionBox.height,
+            }}
+          />
+        )
+      }
+    </div >
   )
 }
 

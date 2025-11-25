@@ -106,9 +106,9 @@ export function TopToolbar({
 
           <div className="h-6 w-px bg-border" />
 
-          <ProjectManagerComponent 
+          <ProjectManagerComponent
             pages={pages}
-            onLoadProject={onLoadProject || (() => {})}
+            onLoadProject={onLoadProject || (() => { })}
             currentProjectName={projectName}
             onProjectChange={onProjectChange}
             hasUnsavedChanges={hasUnsavedChanges}
@@ -150,9 +150,9 @@ export function TopToolbar({
 
           {/* Zoom Controls - Compact */}
           <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => onZoomChange?.(Math.max(25, zoom - 25))}
               className="h-7 w-7 p-0"
               title="Zoom Out"
@@ -160,9 +160,9 @@ export function TopToolbar({
               <ZoomOut className="w-3.5 h-3.5" />
             </Button>
             <span className="text-xs font-medium px-1.5 min-w-[2.5rem] text-center">{zoom}%</span>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => onZoomChange?.(Math.min(200, zoom + 25))}
               className="h-7 w-7 p-0"
               title="Zoom In"
@@ -175,27 +175,27 @@ export function TopToolbar({
 
           {/* View Controls - Icon only */}
           <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
-            <Button 
-              variant={showGrid ? "default" : "ghost"} 
-              size="sm" 
+            <Button
+              variant={showGrid ? "default" : "ghost"}
+              size="sm"
               onClick={() => onGridToggle?.(!showGrid)}
               className="h-7 w-7 p-0"
               title="Toggle Grid"
             >
               <Grid className="w-3.5 h-3.5" />
             </Button>
-            <Button 
-              variant={showSections ? "default" : "ghost"} 
-              size="sm" 
+            <Button
+              variant={showSections ? "default" : "ghost"}
+              size="sm"
               onClick={() => onSectionsToggle?.(!showSections)}
               className="h-7 w-7 p-0"
               title="Toggle Sections"
             >
               <Layout className="w-3.5 h-3.5" />
             </Button>
-            <Button 
-              variant={showLayers ? "default" : "ghost"} 
-              size="sm" 
+            <Button
+              variant={showLayers ? "default" : "ghost"}
+              size="sm"
               onClick={() => onLayersToggle?.(!showLayers)}
               className="h-7 w-7 p-0"
               title="Toggle Layers"
@@ -208,39 +208,39 @@ export function TopToolbar({
 
           {/* Edit Tools - Icon only */}
           <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onUndo} 
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onUndo}
               disabled={!canUndo}
               className="h-7 w-7 p-0"
               title="Undo (Ctrl+Z)"
             >
               <Undo className="w-3.5 h-3.5" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onRedo} 
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onRedo}
               disabled={!canRedo}
               className="h-7 w-7 p-0"
               title="Redo (Ctrl+Y)"
             >
               <Redo className="w-3.5 h-3.5" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onDuplicateSelected} 
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDuplicateSelected}
               disabled={selectedElements.length === 0}
               className="h-7 w-7 p-0"
               title="Duplicate (Ctrl+D)"
             >
               <Copy className="w-3.5 h-3.5" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onRotateSelected}
               disabled={selectedElements.length === 0}
               className="h-7 w-7 p-0"
@@ -255,10 +255,10 @@ export function TopToolbar({
         <div className="flex items-center gap-3 shrink-0">
           {/* Main Actions */}
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowShare(true)} 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowShare(true)}
               className="h-8 px-3 bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20"
               disabled={!projectId}
               title="Share Project"
@@ -266,20 +266,20 @@ export function TopToolbar({
               <Share2 className="w-3.5 h-3.5" />
               <span className="ml-1.5 hidden lg:inline text-xs">Share</span>
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowPreview(true)} 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPreview(true)}
               className="h-8 px-3 bg-primary/5 hover:bg-primary/10"
               title="Preview Window"
             >
               <Eye className="w-3.5 h-3.5" />
               <span className="ml-1.5 hidden lg:inline text-xs">Preview</span>
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowExport(true)} 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowExport(true)}
               className="h-8 px-3 bg-primary/5 hover:bg-primary/10"
               title="Export Project"
             >
@@ -291,10 +291,10 @@ export function TopToolbar({
           <div className="h-6 w-px bg-border" />
 
           {/* Theme Toggle */}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onDarkModeToggle} 
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDarkModeToggle}
             className="h-8 w-8 p-0 hover:bg-primary/10"
             title={isDarkMode ? "Light Mode" : "Dark Mode"}
           >
@@ -302,7 +302,7 @@ export function TopToolbar({
           </Button>
 
           <div className="h-6 w-px bg-border" />
-          <UserButton 
+          <UserButton
             appearance={{
               elements: {
                 avatarBox: "w-8 h-8",
