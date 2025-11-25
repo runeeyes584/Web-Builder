@@ -35,6 +35,7 @@ interface CollaborativeCanvasProps {
   onRegionsChange?: any
   onShowLeftSidebar?: () => void
   onSetActiveLeftPanel?: (panel: 'components' | 'pages' | 'siteStyle') => void
+  activeTool?: 'select' | 'hand'
   [key: string]: any
 }
 
@@ -382,6 +383,7 @@ export function CollaborativeCanvas({
         sendLayoutChange={sendLayoutChange}
         onShowLeftSidebar={onShowLeftSidebar}
         onSetActiveLeftPanel={onSetActiveLeftPanel}
+        activeTool={canvasProps.activeTool}
         {...canvasProps}
       />
     </div>

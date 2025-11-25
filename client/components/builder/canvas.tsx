@@ -293,6 +293,7 @@ interface CanvasProps {
   initialLayout?: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] } | null
   onShowLeftSidebar?: () => void // Callback to show the left sidebar
   onSetActiveLeftPanel?: (panel: 'components' | 'pages' | 'siteStyle') => void // Callback to set active left panel
+  activeTool?: 'select' | 'hand'
 }
 
 export function BuilderCanvas({
@@ -321,6 +322,7 @@ export function BuilderCanvas({
   initialLayout,
   onShowLeftSidebar,
   onSetActiveLeftPanel,
+  activeTool = 'select',
 }: CanvasProps) {
   // Partition dynamic sizes - initialize from saved layout if available
   const [headerHeight, setHeaderHeight] = useState<number>(initialLayout?.headerHeight || 96)
@@ -398,6 +400,10 @@ export function BuilderCanvas({
   const [submergedSectionIndex, setSubmergedSectionIndex] = useState<number | null>(null)
   const [isHeaderSubmerged, setIsHeaderSubmerged] = useState(false)
   const [isFooterSubmerged, setIsFooterSubmerged] = useState(false)
+
+  // Panning state
+  const [isPanning, setIsPanning] = useState(false)
+  const lastPanPosition = useRef<{ x: number; y: number } | null>(null)
 
   // Track if context menu is currently open to prevent exiting interactive mode
   const contextMenuOpenRef = useRef(false)
@@ -3148,6 +3154,15 @@ export function BuilderCanvas({
   const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null)
 
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    // If Hand tool is active, start panning
+    if (activeTool === 'hand') {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsPanning(true)
+      lastPanPosition.current = { x: e.clientX, y: e.clientY }
+      return
+    }
+
     // Only start selection if left click and not on an interactive element
     if (e.button !== 0) return
 
@@ -3180,6 +3195,38 @@ export function BuilderCanvas({
   }
 
   const handleCanvasMouseMove = (e: React.MouseEvent) => {
+    // Handle Panning
+    if (isPanning && lastPanPosition.current) {
+      e.preventDefault()
+      const deltaX = e.clientX - lastPanPosition.current.x
+      const deltaY = e.clientY - lastPanPosition.current.y
+
+      // Find the scrollable container - traverse up the DOM tree
+      let scrollContainer: HTMLElement | null = canvasEl?.parentElement || null
+      
+      while (scrollContainer && scrollContainer !== document.body) {
+        const style = window.getComputedStyle(scrollContainer)
+        const overflowX = style.overflowX
+        const overflowY = style.overflowY
+        
+        // Check if this element can scroll
+        if ((overflowX === 'auto' || overflowX === 'scroll' || overflowY === 'auto' || overflowY === 'scroll') &&
+            (scrollContainer.scrollHeight > scrollContainer.clientHeight || 
+             scrollContainer.scrollWidth > scrollContainer.clientWidth)) {
+          break
+        }
+        scrollContainer = scrollContainer.parentElement
+      }
+
+      if (scrollContainer) {
+        scrollContainer.scrollLeft -= deltaX
+        scrollContainer.scrollTop -= deltaY
+      }
+
+      lastPanPosition.current = { x: e.clientX, y: e.clientY }
+      return
+    }
+
     if (!isSelecting || !startPoint || !canvasEl) return
 
     const rect = canvasEl.getBoundingClientRect()
@@ -3198,6 +3245,12 @@ export function BuilderCanvas({
   }
 
   const handleCanvasMouseUp = (e: React.MouseEvent) => {
+    // Stop panning
+    if (isPanning) {
+      setIsPanning(false)
+      lastPanPosition.current = null
+    }
+
     if (!isSelecting || !selectionBox) return
 
     setIsSelecting(false)
@@ -3603,6 +3656,7 @@ export function BuilderCanvas({
           ${!isPreviewMode ? "hover:bg-primary/10" : ""}
           ${isHidden ? "opacity-30" : "opacity-100"}
           ${isLocked && !isPreviewMode ? "cursor-not-allowed" : isPreviewMode ? "cursor-default" : "cursor-pointer"}
+          ${activeTool === 'hand' ? "pointer-events-none" : ""}
         `}
         style={{
           animationDelay: `${index * 100}ms`,
@@ -8745,6 +8799,7 @@ export function BuilderCanvas({
           // Add padding so right alignment does not sit exactly at edge
           return Math.max(fallback, maxRight + 200)
         })(),
+        cursor: activeTool === 'hand' ? (isPanning ? 'grabbing' : 'grab') : (isSelecting ? 'crosshair' : 'default'),
       }}
     >
       {/* Partitions: interactive hover & boundaries (visible only when toggled and NOT in preview mode) */}

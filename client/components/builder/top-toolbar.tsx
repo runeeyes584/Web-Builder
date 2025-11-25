@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import type { Breakpoint, BuilderElement, BuilderPage } from "@/lib/builder-types"
 import { UserButton } from "@clerk/nextjs"
-import { Copy, Download, Eye, Grid, Layers, Layout, Monitor, Moon, Redo, RotateCcw, Share2, Smartphone, Sun, Tablet, Undo, ZoomIn, ZoomOut } from "lucide-react"
+import { Copy, Download, Eye, Grid, Hand, Layers, Layout, Monitor, Moon, MousePointer2, Redo, RotateCcw, Share2, Smartphone, Sun, Tablet, Undo, ZoomIn, ZoomOut } from "lucide-react"
 import { useState } from "react"
 import { ExportModal } from "./export-modal"
 import { PreviewModal } from "./preview-modal"
@@ -47,6 +47,8 @@ interface TopToolbarProps {
   onProjectChange?: (projectId: string, projectName: string, isPublic?: boolean) => void
   onPublicChange?: (isPublic: boolean) => void
   hasUnsavedChanges?: boolean
+  activeTool?: 'select' | 'hand'
+  onToolChange?: (tool: 'select' | 'hand') => void
 }
 
 export function TopToolbar({
@@ -85,6 +87,8 @@ export function TopToolbar({
   onProjectChange,
   onPublicChange,
   hasUnsavedChanges = false,
+  activeTool = 'select',
+  onToolChange,
 }: TopToolbarProps) {
   const [showPreview, setShowPreview] = useState(false)
   const [showExport, setShowExport] = useState(false)
@@ -116,37 +120,63 @@ export function TopToolbar({
         </div>
 
         {/* Center Section - Main Controls */}
-        <div className="flex items-center gap-3 flex-1 min-w-0 justify-center">
-          {/* Breakpoint Controls */}
+        <div className="flex items-center gap-2 flex-1 min-w-0 justify-center">
+          {/* Tool Switcher */}
           <div className="flex items-center gap-0.5 bg-gradient-to-r from-muted to-muted/80 rounded-lg p-0.5 shadow-sm">
+            <Button
+              variant={activeTool === "select" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => onToolChange?.("select")}
+              className="h-8 w-8 p-0"
+              title="Select Tool (V)"
+            >
+              <MousePointer2 className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={activeTool === "hand" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => onToolChange?.("hand")}
+              className="h-8 w-8 p-0"
+              title="Hand Tool (H)"
+            >
+              <Hand className="w-4 h-4" />
+            </Button>
+          </div>
+
+          <div className="h-6 w-px bg-border" />
+
+          {/* Breakpoint Controls */}
+          <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
             <Button
               variant={currentBreakpoint === "desktop" ? "default" : "ghost"}
               size="sm"
               onClick={() => onBreakpointChange("desktop")}
-              className="h-8 w-8 p-0"
+              className="h-7 w-7 p-0"
               title="Desktop View"
             >
-              <Monitor className="w-4 h-4" />
+              <Monitor className="w-3.5 h-3.5" />
             </Button>
             <Button
               variant={currentBreakpoint === "tablet" ? "default" : "ghost"}
               size="sm"
               onClick={() => onBreakpointChange("tablet")}
-              className="h-8 w-8 p-0"
+              className="h-7 w-7 p-0"
               title="Tablet View"
             >
-              <Tablet className="w-4 h-4" />
+              <Tablet className="w-3.5 h-3.5" />
             </Button>
             <Button
               variant={currentBreakpoint === "mobile" ? "default" : "ghost"}
               size="sm"
               onClick={() => onBreakpointChange("mobile")}
-              className="h-8 w-8 p-0"
+              className="h-7 w-7 p-0"
               title="Mobile View"
             >
-              <Smartphone className="w-4 h-4" />
+              <Smartphone className="w-3.5 h-3.5" />
             </Button>
           </div>
+
+          <div className="h-6 w-px bg-border" />
 
           {/* Zoom Controls - Compact */}
           <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
@@ -171,7 +201,7 @@ export function TopToolbar({
             </Button>
           </div>
 
-          <div className="h-6 w-px bg-border hidden lg:block" />
+          <div className="h-6 w-px bg-border" />
 
           {/* View Controls - Icon only */}
           <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
@@ -204,7 +234,7 @@ export function TopToolbar({
             </Button>
           </div>
 
-          <div className="h-6 w-px bg-border hidden md:block" />
+          <div className="h-6 w-px bg-border" />
 
           {/* Edit Tools - Icon only */}
           <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">

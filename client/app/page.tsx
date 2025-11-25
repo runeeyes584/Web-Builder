@@ -50,6 +50,8 @@ export default function WebsiteBuilder() {
     renamePage,
     switchPage,
     updatePageMetadata,
+    activeTool,
+    setActiveTool,
   } = useBuilderState()
 
   const [isDarkMode, setIsDarkMode] = useState(true)
@@ -618,6 +620,8 @@ export default function WebsiteBuilder() {
               onProjectChange={handleProjectChange}
               onPublicChange={setIsProjectPublic}
               hasUnsavedChanges={hasUnsavedChanges}
+              activeTool={activeTool}
+              onToolChange={setActiveTool}
             />
 
             {/* View Only Banner for Viewers */}
@@ -798,6 +802,7 @@ export default function WebsiteBuilder() {
                         }}
                       >
                         <CollaborativeCanvas
+                          activeTool={activeTool}
                           projectId={currentProjectId || null}
                           pageId={activePageId}
                           canEdit={canEdit}

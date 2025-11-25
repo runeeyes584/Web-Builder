@@ -94,6 +94,7 @@ export function useBuilderState() {
 
   const [showSections, setShowSections] = useState<boolean>(false)
   const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false)
+  const [activeTool, setActiveTool] = useState<'select' | 'hand'>('select')
 
   // Helper function để giới hạn kích thước history
   const addToHistory = useCallback((newState: BuilderElement[][]) => {
@@ -599,6 +600,8 @@ export function useBuilderState() {
     loadProject,
     currentPageId,
     setCurrentPageId,
+    activeTool,
+    setActiveTool,
     // Multi-page functions
     pages,
     activePageId,
