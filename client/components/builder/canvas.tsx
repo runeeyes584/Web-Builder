@@ -293,7 +293,8 @@ interface CanvasProps {
   initialLayout?: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] } | null
   onShowLeftSidebar?: () => void // Callback to show the left sidebar
   onSetActiveLeftPanel?: (panel: 'components' | 'pages' | 'siteStyle') => void // Callback to set active left panel
-  activeTool?: 'select' | 'hand'
+  activeTool?: 'select' | 'hand' // Current active tool
+  onElementDoubleClick?: (elementId: string) => void // Callback when element is double-clicked to show properties panel
 }
 
 export function BuilderCanvas({
@@ -323,6 +324,7 @@ export function BuilderCanvas({
   onShowLeftSidebar,
   onSetActiveLeftPanel,
   activeTool = 'select',
+  onElementDoubleClick,
 }: CanvasProps) {
   // Partition dynamic sizes - initialize from saved layout if available
   const [headerHeight, setHeaderHeight] = useState<number>(initialLayout?.headerHeight || 96)
@@ -400,10 +402,6 @@ export function BuilderCanvas({
   const [submergedSectionIndex, setSubmergedSectionIndex] = useState<number | null>(null)
   const [isHeaderSubmerged, setIsHeaderSubmerged] = useState(false)
   const [isFooterSubmerged, setIsFooterSubmerged] = useState(false)
-
-  // Panning state
-  const [isPanning, setIsPanning] = useState(false)
-  const lastPanPosition = useRef<{ x: number; y: number } | null>(null)
 
   // Track if context menu is currently open to prevent exiting interactive mode
   const contextMenuOpenRef = useRef(false)
@@ -500,6 +498,24 @@ export function BuilderCanvas({
   const [isResizing, setIsResizing] = useState<string | null>(null)
   const [isRotating, setIsRotating] = useState<string | null>(null)
   const [canvasEl, setCanvasEl] = useState<HTMLDivElement | null>(null)
+
+  // Hand tool panning state
+  const [isPanning, setIsPanning] = useState(false)
+  const panStartRef = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null)
+
+  // Marquee selection state
+  const [isMarqueeSelecting, setIsMarqueeSelecting] = useState(false)
+  const [marqueeStart, setMarqueeStart] = useState<{ x: number; y: number } | null>(null)
+  const [marqueeEnd, setMarqueeEnd] = useState<{ x: number; y: number } | null>(null)
+  const [marqueeHighlightedIds, setMarqueeHighlightedIds] = useState<string[]>([])
+  const marqueeJustCompletedRef = useRef(false)
+  
+  // Track if selection was handled in mouseDown to prevent double-handling in click
+  const selectionHandledInMouseDownRef = useRef(false)
+  // Track if actual drag occurred (mouse moved during mousedown)
+  const didDragOccurRef = useRef(false)
+  // Track pending click element for deferred selection after mouseup without drag
+  const pendingClickElementRef = useRef<string | null>(null)
 
   // Transient positions/sizes/rotation while dragging/resizing/rotating to avoid heavy global updates
   const transientRef = useRef(new Map<string, { x?: number; y?: number; width?: number; height?: number; rotation?: number }>())
@@ -2562,15 +2578,44 @@ export function BuilderCanvas({
     if (!canEdit) return;
     if (e.button !== 0) return // Only left click
 
+    // If hand tool is active, don't handle element interactions - allow panning
+    if (activeTool === 'hand') {
+      return
+    }
+
     const element = elements.find((el) => el.id === elementId)
     if (!element?.position) return
+
+    // Handle selection logic first
+    const isAlreadySelected = selectedElements.includes(elementId)
+    const isMultiSelectKey = e.shiftKey || e.metaKey || e.ctrlKey
+    
+    // Reset drag tracking flags
+    didDragOccurRef.current = false
+    pendingClickElementRef.current = null
+    
+    // Mark that selection will be handled in mouseDown
+    selectionHandledInMouseDownRef.current = true
+    
+    if (!isAlreadySelected) {
+      // Element is not selected - select it (add to selection if multi-select key held)
+      onElementSelect(elementId, isMultiSelectKey)
+    } else if (isMultiSelectKey) {
+      // Element is already selected and multi-select key is held
+      // Toggle it off (remove from selection)
+      onElementSelect(elementId, true)
+    } else {
+      // Element is already selected without multi-select key
+      // Don't change selection now - defer to click handler to handle single-select
+      // This allows dragging the group, but if no drag occurs, click will single-select
+      pendingClickElementRef.current = elementId
+    }
 
     // Check if element is locked - prevent dragging if locked
     if (element.props?.locked) {
       e.preventDefault()
       e.stopPropagation()
-      // Still allow selection of locked elements
-      onElementSelect(elementId, e.shiftKey || e.metaKey || e.ctrlKey)
+      // Selection already handled above
       return
     }
 
@@ -2582,15 +2627,13 @@ export function BuilderCanvas({
     const scale = zoom / 100
     const startX = (e.clientX - rect.left) / scale
     const startY = (e.clientY - rect.top) / scale
-
-    // Track if drag actually happened
-    let hasMoved = false
-    const initialClientX = e.clientX
-    const initialClientY = e.clientY
-
     // Determine which elements are affected (multi-select drag support)
-    let idsToDrag = selectedElements.includes(elementId) && selectedElements.length > 1
-      ? selectedElements
+    // Need to use the updated selectedElements which includes the current element
+    const currentSelection = selectedElements.includes(elementId) 
+      ? selectedElements 
+      : [...selectedElements, elementId]
+    let idsToDrag = currentSelection.length > 1
+      ? currentSelection
       : [elementId]
 
     // If dragging a section or card, also drag all elements inside it
@@ -2603,7 +2646,7 @@ export function BuilderCanvas({
       idsToDrag = Array.from(new Set([...idsToDrag, ...childrenIds]))
     }
 
-
+  
     // Build start positions per element for delta-based movement
     const startPositions = new Map<string, { x: number; y: number }>()
     for (const id of idsToDrag) {
@@ -2621,20 +2664,6 @@ export function BuilderCanvas({
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!canvasEl) return
-
-      // Check for movement threshold to distinguish click from drag
-      if (!hasMoved) {
-        const moveDist = Math.sqrt(
-          Math.pow(e.clientX - initialClientX, 2) +
-          Math.pow(e.clientY - initialClientY, 2)
-        )
-        if (moveDist > 3) {
-          hasMoved = true
-        } else {
-          return
-        }
-      }
-
       const rect = canvasEl.getBoundingClientRect()
       const scale = zoom / 100
       const localX = (e.clientX - rect.left) / scale
@@ -2643,6 +2672,12 @@ export function BuilderCanvas({
       if (!group) return
       const dx = localX - group.mouseStart.x
       const dy = localY - group.mouseStart.y
+
+      // Mark that actual drag occurred (with a small threshold to avoid false positives from jitter)
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+        didDragOccurRef.current = true
+        pendingClickElementRef.current = null // Clear pending click since drag occurred
+      }
 
       // Calculate footer boundaries
       const footerTop = headerHeight + totalSectionsHeight
@@ -2689,13 +2724,7 @@ export function BuilderCanvas({
       scheduleRerender()
     }
 
-    const handleMouseUp = (e: MouseEvent) => {
-      // Handle click selection if no drag occurred
-      if (!hasMoved) {
-        const isMultiSelect = e.shiftKey || e.metaKey || e.ctrlKey
-        onElementSelect(elementId, isMultiSelect)
-      }
-
+    const handleMouseUp = () => {
       // Commit final position(s) once
       const group = dragGroupRef.current
       if (group) {
@@ -2728,28 +2757,27 @@ export function BuilderCanvas({
               }
             }
 
-            onUpdateElementPosition(id, { x: finalX, y: finalY })
-
-            // Clear transient state
-            transientRef.current.delete(id)
+            onUpdateElementPosition(id, {
+              x: finalX,
+              y: finalY,
+            })
           }
+          transientRef.current.delete(id)
         }
-        scheduleRerender()
       }
-
-      setDraggedElementId(null)
       dragGroupRef.current = null
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
+      setDraggedElementId(null)
+      document.removeEventListener("mousemove", handleMouseMove)
+      document.removeEventListener("mouseup", handleMouseUp)
     }
 
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
+    document.addEventListener("mousemove", handleMouseMove)
+    document.addEventListener("mouseup", handleMouseUp)
   }
 
   // Resizing support for all Elements
   const RESIZABLE_TYPES = new Set([
-
+    // Basic Elements
     "heading",
     "paragraph",
     "image",
@@ -2937,6 +2965,11 @@ export function BuilderCanvas({
     direction: "e" | "s" | "se" | "n" | "w" | "ne" | "nw" | "sw"
   ) => {
     if (!canEdit) return // Block resizing for viewers
+    
+    // If hand tool is active, don't handle resizing
+    if (activeTool === 'hand') {
+      return
+    }
 
     // Check if element is locked - prevent resizing if locked
     const element = elements.find((el) => el.id === elementId)
@@ -3068,6 +3101,11 @@ export function BuilderCanvas({
 
   const handleRotateMouseDown = (e: React.MouseEvent, elementId: string) => {
     if (!canEdit) return // Block rotating for viewers
+    
+    // If hand tool is active, don't handle rotating
+    if (activeTool === 'hand') {
+      return
+    }
 
     // Check if element is locked - prevent rotating if locked
     const element = elements.find((el) => el.id === elementId)
@@ -3144,145 +3182,40 @@ export function BuilderCanvas({
 
   const handleElementClick = (e: React.MouseEvent, elementId: string) => {
     e.stopPropagation()
+    
+    // Check if there's a pending click that needs to be handled (click on already-selected element without drag)
+    if (pendingClickElementRef.current === elementId && !didDragOccurRef.current) {
+      // This was a click (not drag) on an already-selected element without Ctrl
+      // Single-select this element only
+      onElementSelect(elementId, false)
+      pendingClickElementRef.current = null
+      selectionHandledInMouseDownRef.current = false
+      return
+    }
+    
+    // Skip if selection was already handled in mouseDown
+    if (selectionHandledInMouseDownRef.current) {
+      selectionHandledInMouseDownRef.current = false
+      pendingClickElementRef.current = null
+      return
+    }
+    
     const isMultiSelect = e.ctrlKey || e.metaKey
     onElementSelect(elementId, isMultiSelect)
   }
 
-  // Marquee selection state
-  const [isSelecting, setIsSelecting] = useState(false)
-  const [selectionBox, setSelectionBox] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
-  const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null)
-
-  const handleCanvasMouseDown = (e: React.MouseEvent) => {
-    // If Hand tool is active, start panning
-    if (activeTool === 'hand') {
-      e.preventDefault()
-      e.stopPropagation()
-      setIsPanning(true)
-      lastPanPosition.current = { x: e.clientX, y: e.clientY }
-      return
+  // Handle double-click on element to show properties panel
+  const handleElementDoubleClick = (e: React.MouseEvent, elementId: string) => {
+    e.stopPropagation()
+    e.preventDefault()
+    
+    // Select the element first
+    onElementSelect(elementId, false)
+    
+    // Trigger callback to show properties panel
+    if (onElementDoubleClick) {
+      onElementDoubleClick(elementId)
     }
-
-    // Only start selection if left click and not on an interactive element
-    if (e.button !== 0) return
-
-    // If context menu is open, let handleCanvasClick handle closing it
-    if (contextMenuOpenRef.current) return
-
-    // Don't start selection if clicking on a boundary resize handle or other controls
-    if ((e.target as HTMLElement).closest('button') ||
-      (e.target as HTMLElement).closest('.cursor-ns-resize') ||
-      (e.target as HTMLElement).closest('.cursor-ew-resize')) {
-      return
-    }
-
-    const canvas = canvasEl
-    if (!canvas) return
-
-    const rect = canvas.getBoundingClientRect()
-    const scale = zoom / 100
-    const x = (e.clientX - rect.left) / scale
-    const y = (e.clientY - rect.top) / scale
-
-    setIsSelecting(true)
-    setStartPoint({ x, y })
-    setSelectionBox({ x, y, width: 0, height: 0 })
-
-    // Clear current selection unless shift key is pressed (optional, for now just clear)
-    if (!e.shiftKey) {
-      onElementSelect("")
-    }
-  }
-
-  const handleCanvasMouseMove = (e: React.MouseEvent) => {
-    // Handle Panning
-    if (isPanning && lastPanPosition.current) {
-      e.preventDefault()
-      const deltaX = e.clientX - lastPanPosition.current.x
-      const deltaY = e.clientY - lastPanPosition.current.y
-
-      // Find the scrollable container - traverse up the DOM tree
-      let scrollContainer: HTMLElement | null = canvasEl?.parentElement || null
-      
-      while (scrollContainer && scrollContainer !== document.body) {
-        const style = window.getComputedStyle(scrollContainer)
-        const overflowX = style.overflowX
-        const overflowY = style.overflowY
-        
-        // Check if this element can scroll
-        if ((overflowX === 'auto' || overflowX === 'scroll' || overflowY === 'auto' || overflowY === 'scroll') &&
-            (scrollContainer.scrollHeight > scrollContainer.clientHeight || 
-             scrollContainer.scrollWidth > scrollContainer.clientWidth)) {
-          break
-        }
-        scrollContainer = scrollContainer.parentElement
-      }
-
-      if (scrollContainer) {
-        scrollContainer.scrollLeft -= deltaX
-        scrollContainer.scrollTop -= deltaY
-      }
-
-      lastPanPosition.current = { x: e.clientX, y: e.clientY }
-      return
-    }
-
-    if (!isSelecting || !startPoint || !canvasEl) return
-
-    const rect = canvasEl.getBoundingClientRect()
-    const scale = zoom / 100
-    const currentX = (e.clientX - rect.left) / scale
-    const currentY = (e.clientY - rect.top) / scale
-
-    const newBox = {
-      x: Math.min(currentX, startPoint.x),
-      y: Math.min(currentY, startPoint.y),
-      width: Math.abs(currentX - startPoint.x),
-      height: Math.abs(currentY - startPoint.y)
-    }
-
-    setSelectionBox(newBox)
-  }
-
-  const handleCanvasMouseUp = (e: React.MouseEvent) => {
-    // Stop panning
-    if (isPanning) {
-      setIsPanning(false)
-      lastPanPosition.current = null
-    }
-
-    if (!isSelecting || !selectionBox) return
-
-    setIsSelecting(false)
-    setStartPoint(null)
-
-    // Calculate intersecting elements
-    const selectedIds: string[] = []
-
-    elements.forEach(element => {
-      if (!element.position) return
-
-      const elX = element.position.x
-      const elY = element.position.y
-      const elW = element.position.width || 0
-      const elH = element.position.height || 0
-
-      // Check intersection
-      if (
-        elX < selectionBox.x + selectionBox.width &&
-        elX + elW > selectionBox.x &&
-        elY < selectionBox.y + selectionBox.height &&
-        elY + elH > selectionBox.y
-      ) {
-        selectedIds.push(element.id)
-      }
-    })
-
-    if (selectedIds.length > 0) {
-      onElementSelect(selectedIds, e.shiftKey)
-    }
-
-    setSelectionBox(null)
   }
 
   const handleCanvasClick = () => {
@@ -3291,11 +3224,14 @@ export function BuilderCanvas({
       contextMenuOpenRef.current = false
       return
     }
+    
+    // Don't reset selection if marquee selection just completed
+    if (marqueeJustCompletedRef.current) {
+      marqueeJustCompletedRef.current = false
+      return
+    }
 
-    // Only clear selection if we didn't just finish a marquee selection
-    // (isSelecting is already false here because MouseUp fired first, but selectionBox is null)
-    // We can rely on the fact that if we selected something, onElementSelect was called in MouseUp
-
+    onElementSelect("")
     setFocusedRegion(null)
     setFocusedSectionIndex(null)
     // Also exit interactive mode
@@ -3303,6 +3239,213 @@ export function BuilderCanvas({
     setIsHeaderSubmerged(false)
     setIsFooterSubmerged(false)
   }
+
+  // Handle canvas mouse down for panning (hand tool) and marquee selection (select tool)
+  const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    // Only handle left click
+    if (e.button !== 0) return
+    
+    // Check if we're clicking on an element (not empty canvas)
+    const target = e.target as HTMLElement
+    const clickedOnElement = target.closest('[data-element-id]')
+    
+    // Don't handle if in preview mode
+    if (isPreviewMode) return
+
+    if (!canvasEl) return
+    const rect = canvasEl.getBoundingClientRect()
+    const scale = zoom / 100
+
+    if (activeTool === 'hand') {
+      // Hand tool: start panning (allow panning even when clicking on elements)
+      e.preventDefault()
+      e.stopPropagation()
+      setIsPanning(true)
+      
+      // Find the scrollable container - walk up the DOM tree
+      let scrollContainer: HTMLElement | null = canvasEl
+      while (scrollContainer) {
+        const hasScroll = scrollContainer.scrollHeight > scrollContainer.clientHeight || 
+                         scrollContainer.scrollWidth > scrollContainer.clientWidth
+        const hasOverflow = window.getComputedStyle(scrollContainer).overflow !== 'visible'
+        
+        if (hasScroll && hasOverflow) {
+          break
+        }
+        scrollContainer = scrollContainer.parentElement
+      }
+      
+      if (scrollContainer) {
+        panStartRef.current = {
+          x: e.clientX,
+          y: e.clientY,
+          scrollLeft: scrollContainer.scrollLeft,
+          scrollTop: scrollContainer.scrollTop
+        }
+        
+        // Prevent text selection during panning
+        document.body.style.userSelect = 'none'
+        document.body.style.cursor = 'grabbing'
+      }
+    } else if (activeTool === 'select' && canEdit) {
+      // Select tool: start marquee selection only on empty canvas
+      // Don't start marquee if clicking on an element
+      if (clickedOnElement) return
+      
+      // When sections overlay is visible and no region is in interactive mode,
+      // don't allow marquee selection to avoid interference with section resize
+      const isAnyRegionInteractive = isHeaderSubmerged || isFooterSubmerged || submergedSectionIndex !== null
+      if (showSections && !isAnyRegionInteractive) return
+      
+      const localX = (e.clientX - rect.left) / scale
+      const localY = (e.clientY - rect.top) / scale
+      
+      setIsMarqueeSelecting(true)
+      setMarqueeStart({ x: localX, y: localY })
+      setMarqueeEnd({ x: localX, y: localY })
+      
+      // Prevent text selection during marquee
+      document.body.style.userSelect = 'none'
+    }
+  }
+
+  // Handle canvas mouse move for panning and marquee selection
+  useEffect(() => {
+    if (!isPanning && !isMarqueeSelecting) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isPanning && panStartRef.current && canvasEl) {
+        // Hand tool panning - find the scrollable container
+        let scrollContainer: HTMLElement | null = canvasEl
+        while (scrollContainer) {
+          const hasScroll = scrollContainer.scrollHeight > scrollContainer.clientHeight || 
+                           scrollContainer.scrollWidth > scrollContainer.clientWidth
+          const hasOverflow = window.getComputedStyle(scrollContainer).overflow !== 'visible'
+          
+          if (hasScroll && hasOverflow) {
+            break
+          }
+          scrollContainer = scrollContainer.parentElement
+        }
+        
+        if (scrollContainer) {
+          const dx = e.clientX - panStartRef.current.x
+          const dy = e.clientY - panStartRef.current.y
+          scrollContainer.scrollLeft = panStartRef.current.scrollLeft - dx
+          scrollContainer.scrollTop = panStartRef.current.scrollTop - dy
+        }
+      } else if (isMarqueeSelecting && canvasEl && marqueeStart) {
+        // Marquee selection
+        const rect = canvasEl.getBoundingClientRect()
+        const scale = zoom / 100
+        const localX = (e.clientX - rect.left) / scale
+        const localY = (e.clientY - rect.top) / scale
+        setMarqueeEnd({ x: localX, y: localY })
+        
+        // Calculate intersecting elements in real-time for highlighting
+        const selectionRect = {
+          left: Math.min(marqueeStart.x, localX),
+          right: Math.max(marqueeStart.x, localX),
+          top: Math.min(marqueeStart.y, localY),
+          bottom: Math.max(marqueeStart.y, localY)
+        }
+        
+        // Find all elements that intersect with the selection rectangle
+        const intersectingIds = elements
+          .filter(el => {
+            if (!el.position) return false
+            
+            const elLeft = el.position.x
+            const elRight = el.position.x + (el.position.width || 0)
+            const elTop = el.position.y
+            const elBottom = el.position.y + (el.position.height || 0)
+            
+            // Check if element intersects with selection rectangle
+            return !(elRight < selectionRect.left || 
+                     elLeft > selectionRect.right || 
+                     elBottom < selectionRect.top || 
+                     elTop > selectionRect.bottom)
+          })
+          .map(el => el.id)
+        
+        setMarqueeHighlightedIds(intersectingIds)
+      }
+    }
+
+    const handleMouseUp = () => {
+      if (isPanning) {
+        setIsPanning(false)
+        panStartRef.current = null
+        
+        // Restore cursor and text selection
+        document.body.style.userSelect = ''
+        document.body.style.cursor = ''
+      }
+      
+      if (isMarqueeSelecting && marqueeStart && marqueeEnd) {
+        // Calculate selection rectangle
+        const selectionRect = {
+          left: Math.min(marqueeStart.x, marqueeEnd.x),
+          right: Math.max(marqueeStart.x, marqueeEnd.x),
+          top: Math.min(marqueeStart.y, marqueeEnd.y),
+          bottom: Math.max(marqueeStart.y, marqueeEnd.y)
+        }
+        
+        // Only select if there's a meaningful drag (not just a click)
+        const minDragDistance = 5
+        const dragWidth = selectionRect.right - selectionRect.left
+        const dragHeight = selectionRect.bottom - selectionRect.top
+        
+        if (dragWidth > minDragDistance || dragHeight > minDragDistance) {
+          // Find all elements that intersect with the selection rectangle
+          const selectedIds = elements
+            .filter(el => {
+              if (!el.position) return false
+              
+              const elLeft = el.position.x
+              const elRight = el.position.x + (el.position.width || 0)
+              const elTop = el.position.y
+              const elBottom = el.position.y + (el.position.height || 0)
+              
+              // Check if element intersects with selection rectangle
+              return !(elRight < selectionRect.left || 
+                       elLeft > selectionRect.right || 
+                       elBottom < selectionRect.top || 
+                       elTop > selectionRect.bottom)
+            })
+            .map(el => el.id)
+          
+          if (selectedIds.length > 0) {
+            // Set flag to prevent handleCanvasClick from resetting selection
+            marqueeJustCompletedRef.current = true
+            onElementSelect(selectedIds, false)
+          }
+        } else {
+          // It was just a click, deselect all
+          onElementSelect("", false)
+        }
+        
+        setIsMarqueeSelecting(false)
+        setMarqueeStart(null)
+        setMarqueeEnd(null)
+        setMarqueeHighlightedIds([])
+        
+        // Restore text selection
+        document.body.style.userSelect = ''
+      }
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      // Cleanup in case component unmounts during drag
+      document.body.style.userSelect = ''
+      document.body.style.cursor = ''
+    }
+  }, [isPanning, isMarqueeSelecting, marqueeStart, marqueeEnd, canvasEl, zoom, elements, onElementSelect])
 
   // Resize partitions by dragging top/bottom boundaries
   const boundaryDragRef = useRef<{
@@ -3592,6 +3735,7 @@ export function BuilderCanvas({
 
   const renderElement = (element: BuilderElement, index: number = 0) => {
     const isSelected = selectedElements.includes(element.id)
+    const isMarqueeHighlighted = marqueeHighlightedIds.includes(element.id)
     const elementStyles = getElementStyles(element)
     const position = element.position || { x: 0, y: 0, width: 200, height: 50 }
     const transient = transientRef.current.get(element.id)
@@ -3649,14 +3793,15 @@ export function BuilderCanvas({
     return (
       <div
         key={element.id}
+        data-element-id={element.id}
         className={`
           absolute rounded-md group
           ${isActiveMove || isActiveResize || isActiveRotate ? "transition-none" : "transition-colors duration-200"}
           ${!isPreviewMode && isSelected ? "ring-2 ring-primary bg-primary/20" : ""}
+          ${!isPreviewMode && isMarqueeHighlighted && !isSelected ? "ring-2 ring-primary/60 bg-primary/10" : ""}
           ${!isPreviewMode ? "hover:bg-primary/10" : ""}
           ${isHidden ? "opacity-30" : "opacity-100"}
-          ${isLocked && !isPreviewMode ? "cursor-not-allowed" : isPreviewMode ? "cursor-default" : "cursor-pointer"}
-          ${activeTool === 'hand' ? "pointer-events-none" : ""}
+          ${isLocked && !isPreviewMode ? "cursor-not-allowed" : isPreviewMode ? "cursor-default" : activeTool === 'hand' ? "cursor-grab" : "cursor-pointer"}
         `}
         style={{
           animationDelay: `${index * 100}ms`,
@@ -3675,7 +3820,8 @@ export function BuilderCanvas({
           transformOrigin: 'center center',
           willChange: (dx !== 0 || dy !== 0) ? "transform" : isActiveResize ? "width, height" : isActiveRotate ? "transform" : undefined,
         }}
-
+        onClick={(e) => !isPreviewMode && handleElementClick(e, element.id)}
+        onDoubleClick={(e) => !isPreviewMode && handleElementDoubleClick(e, element.id)}
         onMouseDown={(e) => !isPreviewMode && handleElementMouseDown(e, element.id)}
       >
         {/* Lock indicator - hidden in preview mode */}
@@ -8775,12 +8921,9 @@ export function BuilderCanvas({
     <div
       id="builder-canvas"
       ref={setCanvasNode}
-      className={`relative w-full h-full min-h-[800px] bg-gradient-to-br from-canvas via-canvas to-canvas/95 overflow-auto transition-all duration-300 ${isOver ? "bg-drop-zone/20" : ""}`}
+      className={`relative w-full h-full min-h-[800px] bg-gradient-to-br from-canvas via-canvas to-canvas/95 overflow-auto transition-all duration-300 ${isOver ? "bg-drop-zone/20" : ""} ${activeTool === 'hand' ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : ''}`}
       onClick={handleCanvasClick}
       onMouseDown={handleCanvasMouseDown}
-      onMouseMove={handleCanvasMouseMove}
-      onMouseUp={handleCanvasMouseUp}
-      onMouseLeave={handleCanvasMouseUp}
       style={{
         transform: `scale(${zoom / 100})`,
         transformOrigin: 'top left',
@@ -8799,154 +8942,154 @@ export function BuilderCanvas({
           // Add padding so right alignment does not sit exactly at edge
           return Math.max(fallback, maxRight + 200)
         })(),
-        cursor: activeTool === 'hand' ? (isPanning ? 'grabbing' : 'grab') : (isSelecting ? 'crosshair' : 'default'),
       }}
     >
       {/* Partitions: interactive hover & boundaries (visible only when toggled and NOT in preview mode) */}
-      {
-        showSections && !isPreviewMode && (
-          <PartitionsOverlay
-            headerHeight={headerHeight}
-            footerHeight={footerHeight}
-            sections={sections}
-            setSections={setSections}
-            focusedRegion={focusedRegion}
-            focusedSectionIndex={focusedSectionIndex}
-            setFocusedRegion={setFocusedRegion}
-            setFocusedSectionIndex={setFocusedSectionIndex}
-            submergedSectionIndex={submergedSectionIndex}
-            setSubmergedSectionIndex={setSubmergedSectionIndex}
-            isHeaderSubmerged={isHeaderSubmerged}
-            setIsHeaderSubmerged={setIsHeaderSubmerged}
-            isFooterSubmerged={isFooterSubmerged}
-            setIsFooterSubmerged={setIsFooterSubmerged}
-            onStartResize={startBoundaryResize}
-            onStartSectionResize={startSectionDividerResize}
-            onStartFooterBottomResize={startFooterBottomResize}
-            defaultSectionHeight={DEFAULT_SECTION}
-            toggleCategoryRef={toggleCategoryRef}
-            sectionHasElements={sectionHasElements}
-            onSectionsChange={onSectionsChange}
-            onShowLeftSidebar={onShowLeftSidebar}
-            onSetActiveLeftPanel={onSetActiveLeftPanel}
-          />
-        )
-      }
+      {showSections && !isPreviewMode && (
+        <PartitionsOverlay
+          headerHeight={headerHeight}
+          footerHeight={footerHeight}
+          sections={sections}
+          setSections={setSections}
+          focusedRegion={focusedRegion}
+          focusedSectionIndex={focusedSectionIndex}
+          setFocusedRegion={setFocusedRegion}
+          setFocusedSectionIndex={setFocusedSectionIndex}
+          submergedSectionIndex={submergedSectionIndex}
+          setSubmergedSectionIndex={setSubmergedSectionIndex}
+          isHeaderSubmerged={isHeaderSubmerged}
+          setIsHeaderSubmerged={setIsHeaderSubmerged}
+          isFooterSubmerged={isFooterSubmerged}
+          setIsFooterSubmerged={setIsFooterSubmerged}
+          onStartResize={startBoundaryResize}
+          onStartSectionResize={startSectionDividerResize}
+          onStartFooterBottomResize={startFooterBottomResize}
+          defaultSectionHeight={DEFAULT_SECTION}
+          toggleCategoryRef={toggleCategoryRef}
+          sectionHasElements={sectionHasElements}
+          onSectionsChange={onSectionsChange}
+          onShowLeftSidebar={onShowLeftSidebar}
+          onSetActiveLeftPanel={onSetActiveLeftPanel}
+        />
+      )}
       {/* Enhanced Grid overlay - hidden in preview mode */}
-      {
-        showGrid && !isPreviewMode && (
-          <div
-            className="absolute inset-0 pointer-events-none opacity-10 transition-opacity duration-300"
-            style={{
-              backgroundImage: `
+      {showGrid && !isPreviewMode && (
+        <div
+          className="absolute inset-0 pointer-events-none opacity-10 transition-opacity duration-300"
+          style={{
+            backgroundImage: `
               linear-gradient(to right, var(--color-primary) 1px, transparent 1px),
               linear-gradient(to bottom, var(--color-primary) 1px, transparent 1px)
             `,
-              backgroundSize: `${snapSettings.gridSize}px ${snapSettings.gridSize}px`,
-            }}
-          />
-        )
-      }
+            backgroundSize: `${snapSettings.gridSize}px ${snapSettings.gridSize}px`,
+          }}
+        />
+      )}
 
       {/* Enhanced Breakpoint indicator - Fixed size regardless of zoom - hidden in preview mode */}
-      {
-        !isPreviewMode && (
-          <div
-            className="absolute z-30 animate-in slide-in-from-top duration-500"
-            style={{
-              top: `${16 / (zoom / 100)}px`,
-              left: '50%',
-              transform: `translateX(-50%) scale(${100 / zoom})`,
-              transformOrigin: 'center',
-            }}
-          >
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-muted to-muted/80 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-muted-foreground border border-border shadow-lg">
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-              <span>Editing for:</span>
-              <span className="font-medium text-foreground capitalize bg-primary/10 px-2 py-1 rounded-md">{currentBreakpoint}</span>
-            </div>
+      {!isPreviewMode && (
+        <div
+          className="absolute z-30 animate-in slide-in-from-top duration-500"
+          style={{
+            top: `${16 / (zoom / 100)}px`,
+            left: '50%',
+            transform: `translateX(-50%) scale(${100 / zoom})`,
+            transformOrigin: 'center',
+          }}
+        >
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-muted to-muted/80 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-muted-foreground border border-border shadow-lg">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+            <span>Editing for:</span>
+            <span className="font-medium text-foreground capitalize bg-primary/10 px-2 py-1 rounded-md">{currentBreakpoint}</span>
           </div>
-        )
-      }
+        </div>
+      )}
 
       {/* Elements with animations */}
-      {
-        elements.map((element, index) => (
-          <div
-            key={element.id}
-            className="animate-in fade-in duration-500"
-            style={{ animationDelay: `${index * 100}ms` }}
+      {elements.map((element, index) => (
+        <div
+          key={element.id}
+          className="animate-in fade-in duration-500"
+          style={{ animationDelay: `${index * 100}ms` }}
+        >
+          <ElementContextMenu
+            element={element}
+            elements={elements}
+            selectedElements={selectedElements}
+            onElementSelect={onElementSelect}
+            onUpdateElement={onUpdateElement}
+            onDeleteElement={onDeleteElement}
+            onDuplicateElement={onDuplicateElement}
+            regions={onRegionsChange ? {
+              header: { top: 0, height: headerHeight },
+              sections: sections.map((s, idx) => ({
+                id: s.id,
+                index: idx,
+                top: headerHeight + sections.slice(0, idx).reduce((sum, sec) => sum + sec.height, 0),
+                height: s.height
+              })),
+              footer: { top: headerHeight + totalSectionsHeight, height: footerHeight }
+            } : undefined}
+            disabled={isPreviewMode || !canEdit || activeTool === 'hand'}
+            contextMenuOpenRef={contextMenuOpenRef}
           >
-            <ElementContextMenu
-              element={element}
-              elements={elements}
-              selectedElements={selectedElements}
-              onElementSelect={onElementSelect}
-              onUpdateElement={onUpdateElement}
-              onDeleteElement={onDeleteElement}
-              onDuplicateElement={onDuplicateElement}
-              regions={onRegionsChange ? {
-                header: { top: 0, height: headerHeight },
-                sections: sections.map((s, idx) => ({
-                  id: s.id,
-                  index: idx,
-                  top: headerHeight + sections.slice(0, idx).reduce((sum, sec) => sum + sec.height, 0),
-                  height: s.height
-                })),
-                footer: { top: headerHeight + totalSectionsHeight, height: footerHeight }
-              } : undefined}
-              disabled={isPreviewMode || !canEdit}
-              contextMenuOpenRef={contextMenuOpenRef}
-            >
-              {renderElement(element)}
-            </ElementContextMenu>
-          </div>
-        ))
-      }
+            {renderElement(element)}
+          </ElementContextMenu>
+        </div>
+      ))}
 
-      {/* Enhanced Drop zone indicator - hidden in preview mode */}
-      {
-        isOver && !isPreviewMode && (
-          <div className="absolute inset-4 border-2 border-dashed border-primary rounded-xl flex items-center justify-center text-primary bg-gradient-to-br from-drop-zone/20 to-drop-zone/10 backdrop-blur-sm pointer-events-none z-20 animate-in zoom-in duration-300">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 mx-auto animate-bounce">
-                <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-              </div>
-              <p className="text-lg font-medium">Drop component anywhere on the canvas</p>
-              <p className="text-sm text-muted-foreground mt-2">Release to add to your design</p>
-            </div>
-          </div>
-        )
-      }
-
-      {/* Canvas info overlay - hidden in preview mode */}
-      {
-        !isPreviewMode && (
-          <div className="absolute bottom-4 right-4 z-30">
-            <div className="bg-muted/80 backdrop-blur-sm px-3 py-2 rounded-lg text-xs text-muted-foreground border border-border">
-              {elements.length} elements • {currentBreakpoint} view
-            </div>
-          </div>
-        )
-      }
-
-      {/* Marquee Selection Box */}
-      {
-        isSelecting && selectionBox && (
+      {/* Marquee selection rectangle */}
+      {isMarqueeSelecting && marqueeStart && marqueeEnd && (
+        <>
           <div
-            className="absolute border border-primary bg-primary/10 z-50 pointer-events-none"
+            className="absolute border-2 border-dashed border-primary/80 bg-primary/5 pointer-events-none z-50 rounded-sm"
             style={{
-              left: selectionBox.x,
-              top: selectionBox.y,
-              width: selectionBox.width,
-              height: selectionBox.height,
+              left: Math.min(marqueeStart.x, marqueeEnd.x),
+              top: Math.min(marqueeStart.y, marqueeEnd.y),
+              width: Math.abs(marqueeEnd.x - marqueeStart.x),
+              height: Math.abs(marqueeEnd.y - marqueeStart.y),
+              boxShadow: '0 0 0 1px rgba(var(--primary), 0.1)',
             }}
           />
-        )
-      }
-    </div >
+          {/* Selection count indicator */}
+          {marqueeHighlightedIds.length > 0 && (
+            <div
+              className="absolute bg-primary text-primary-foreground text-xs font-medium px-2 py-1 rounded-md pointer-events-none z-50 shadow-lg"
+              style={{
+                left: Math.max(marqueeStart.x, marqueeEnd.x) + 8,
+                top: Math.min(marqueeStart.y, marqueeEnd.y),
+              }}
+            >
+              {marqueeHighlightedIds.length} element{marqueeHighlightedIds.length > 1 ? 's' : ''}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Enhanced Drop zone indicator - hidden in preview mode */}
+      {isOver && !isPreviewMode && (
+        <div className="absolute inset-4 border-2 border-dashed border-primary rounded-xl flex items-center justify-center text-primary bg-gradient-to-br from-drop-zone/20 to-drop-zone/10 backdrop-blur-sm pointer-events-none z-20 animate-in zoom-in duration-300">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 mx-auto animate-bounce">
+              <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            </div>
+            <p className="text-lg font-medium">Drop component anywhere on the canvas</p>
+            <p className="text-sm text-muted-foreground mt-2">Release to add to your design</p>
+          </div>
+        </div>
+      )}
+
+      {/* Canvas info overlay - hidden in preview mode */}
+      {!isPreviewMode && (
+        <div className="absolute bottom-4 right-4 z-30">
+          <div className="bg-muted/80 backdrop-blur-sm px-3 py-2 rounded-lg text-xs text-muted-foreground border border-border">
+            {elements.length} elements • {currentBreakpoint} view
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

@@ -36,6 +36,7 @@ interface CollaborativeCanvasProps {
   onShowLeftSidebar?: () => void
   onSetActiveLeftPanel?: (panel: 'components' | 'pages' | 'siteStyle') => void
   activeTool?: 'select' | 'hand'
+  onElementDoubleClick?: (elementId: string) => void
   [key: string]: any
 }
 
@@ -57,6 +58,7 @@ export function CollaborativeCanvas({
   onLayoutUpdate,
   onShowLeftSidebar,
   onSetActiveLeftPanel,
+  onElementDoubleClick,
   ...canvasProps
 }: CollaborativeCanvasProps) {
   const { user } = useUser()
@@ -384,6 +386,7 @@ export function CollaborativeCanvas({
         onShowLeftSidebar={onShowLeftSidebar}
         onSetActiveLeftPanel={onSetActiveLeftPanel}
         activeTool={canvasProps.activeTool}
+        onElementDoubleClick={onElementDoubleClick}
         {...canvasProps}
       />
     </div>

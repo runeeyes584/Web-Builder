@@ -320,9 +320,73 @@ export function ElementContextMenu({
 
   const isHidden = element.styles.display === "none"
   const isLocked = element.props?.locked || false
+  
+  // Check if this element is part of a multi-selection
+  const isMultiSelection = selectedElements.length > 1 && selectedElements.includes(element.id)
+  const selectionCount = isMultiSelection ? selectedElements.length : 1
 
   if (disabled) {
     return <>{children}</>
+  }
+
+  // Handler for deleting selected elements (single or multiple)
+  const handleDelete = () => {
+    if (isMultiSelection) {
+      // Delete all selected elements
+      selectedElements.forEach(id => onDeleteElement(id))
+    } else {
+      onDeleteElement(element.id)
+    }
+  }
+
+  // Handler for duplicating selected elements (single or multiple)
+  const handleDuplicate = () => {
+    if (isMultiSelection) {
+      // Duplicate all selected elements
+      selectedElements.forEach(id => onDuplicateElement(id))
+    } else {
+      onDuplicateElement(element.id)
+    }
+  }
+
+  // Handler for hiding/showing selected elements
+  const handleToggleVisibility = () => {
+    if (isMultiSelection) {
+      selectedElements.forEach(id => {
+        const el = elements.find(e => e.id === id)
+        if (el) {
+          const isElHidden = el.styles.display === "none"
+          onUpdateElement(id, {
+            styles: {
+              ...el.styles,
+              display: isElHidden ? "block" : "none",
+            }
+          })
+        }
+      })
+    } else {
+      toggleElementVisibility()
+    }
+  }
+
+  // Handler for locking/unlocking selected elements
+  const handleToggleLock = () => {
+    if (isMultiSelection) {
+      selectedElements.forEach(id => {
+        const el = elements.find(e => e.id === id)
+        if (el) {
+          const isElLocked = el.props?.locked || false
+          onUpdateElement(id, {
+            props: {
+              ...el.props,
+              locked: !isElLocked,
+            }
+          })
+        }
+      })
+    } else {
+      toggleElementLock()
+    }
   }
 
   return (
@@ -367,6 +431,16 @@ export function ElementContextMenu({
           className="max-h-[336px] overflow-y-auto overflow-x-hidden"
           onScroll={checkScrollPosition}
         >
+          {/* Multi-selection header */}
+          {isMultiSelection && (
+            <>
+              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 rounded-sm mx-1 mb-1">
+                {selectionCount} Elements Selected
+              </div>
+              <ContextMenuSeparator />
+            </>
+          )}
+          
           {/* Arrange Submenu */}
           <ContextMenuSub>
             <ContextMenuSubTrigger>
@@ -457,31 +531,31 @@ export function ElementContextMenu({
           <ContextMenuSeparator />
 
           {/* Visibility Toggle */}
-          <ContextMenuItem onClick={toggleElementVisibility}>
+          <ContextMenuItem onClick={handleToggleVisibility}>
             {isHidden ? (
               <>
                 <Eye className="w-4 h-4 mr-2" />
-                Show
+                {isMultiSelection ? `Show ${selectionCount} Elements` : "Show"}
               </>
             ) : (
               <>
                 <EyeOff className="w-4 h-4 mr-2" />
-                Hide
+                {isMultiSelection ? `Hide ${selectionCount} Elements` : "Hide"}
               </>
             )}
           </ContextMenuItem>
 
           {/* Lock Toggle */}
-          <ContextMenuItem onClick={toggleElementLock}>
+          <ContextMenuItem onClick={handleToggleLock}>
             {isLocked ? (
               <>
                 <Unlock className="w-4 h-4 mr-2" />
-                Unlock
+                {isMultiSelection ? `Unlock ${selectionCount} Elements` : "Unlock"}
               </>
             ) : (
               <>
                 <Lock className="w-4 h-4 mr-2" />
-                Lock
+                {isMultiSelection ? `Lock ${selectionCount} Elements` : "Lock"}
               </>
             )}
           </ContextMenuItem>
@@ -489,20 +563,20 @@ export function ElementContextMenu({
           <ContextMenuSeparator />
 
           {/* Duplicate */}
-          <ContextMenuItem onClick={() => onDuplicateElement(element.id)}>
+          <ContextMenuItem onClick={handleDuplicate}>
             <Copy className="w-4 h-4 mr-2" />
-            Duplicate
+            {isMultiSelection ? `Duplicate ${selectionCount} Elements` : "Duplicate"}
           </ContextMenuItem>
 
           <ContextMenuSeparator />
 
           {/* Delete */}
           <ContextMenuItem 
-            onClick={() => onDeleteElement(element.id)}
+            onClick={handleDelete}
             className="text-destructive focus:text-destructive"
           >
             <Trash2 className="w-4 h-4 mr-2" />
-            Delete
+            {isMultiSelection ? `Delete ${selectionCount} Elements` : "Delete"}
           </ContextMenuItem>
         </div>
 

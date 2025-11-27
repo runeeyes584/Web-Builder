@@ -475,6 +475,8 @@ export default function WebsiteBuilder() {
   const handleElementSelect = (elementId: string | string[], multiSelect = false) => {
     if (!elementId || (Array.isArray(elementId) && elementId.length === 0)) {
       setSelectedElements([])
+      // Hide right sidebar when clicking on empty canvas area
+      setShowRightSidebar(false)
       return
     }
 
@@ -499,6 +501,14 @@ export default function WebsiteBuilder() {
       setSelectedElements([elementId])
     }
   }
+
+  // Handle double-click on element to show properties panel
+  const handleElementDoubleClick = useCallback((elementId: string) => {
+    // Ensure element is selected
+    setSelectedElements([elementId])
+    // Show properties panel (right sidebar)
+    setShowRightSidebar(true)
+  }, [setSelectedElements])
 
   const handleAddTemplate = (templateElements: BuilderElement[]) => {
     templateElements.forEach((element) => {
@@ -530,6 +540,26 @@ export default function WebsiteBuilder() {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Block all keyboard shortcuts for viewers
       if (!canEdit) return
+
+      // Tool switching shortcuts (V for select, H for hand) - no modifier needed
+      if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Check if we're typing in an input field
+        const target = e.target as HTMLElement
+        const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
+        
+        if (!isTyping) {
+          switch (e.key.toLowerCase()) {
+            case 'v':
+              e.preventDefault()
+              setActiveTool('select')
+              return
+            case 'h':
+              e.preventDefault()
+              setActiveTool('hand')
+              return
+          }
+        }
+      }
 
       if (e.ctrlKey || e.metaKey) {
         switch (e.key.toLowerCase()) {
@@ -564,7 +594,7 @@ export default function WebsiteBuilder() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [collaborativeUndo, collaborativeRedo, selectedElements, duplicateElement, handleRotateSelected, canEdit])
+  }, [collaborativeUndo, collaborativeRedo, selectedElements, duplicateElement, handleRotateSelected, canEdit, setActiveTool])
 
 
 
@@ -842,6 +872,7 @@ export default function WebsiteBuilder() {
                           initialLayout={canvasLayout}
                           onShowLeftSidebar={() => setShowLeftSidebar(true)}
                           onSetActiveLeftPanel={(panel) => setActiveLeftPanel(panel)}
+                          onElementDoubleClick={handleElementDoubleClick}
                         />
                       </div>
                     </div>

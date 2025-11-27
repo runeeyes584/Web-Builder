@@ -7,6 +7,7 @@ import morgan from 'morgan';
 import { Server } from 'socket.io';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import collaborationRouter from './routes/Collaboration.route';
+import cloudinaryRouter from './routes/Cloudinary.route';
 import editHistoryRouter from './routes/EditHistory.route';
 import { healthRouter } from './routes/health';
 import pageRouter from './routes/Page.route';
@@ -49,6 +50,7 @@ app.use('/api/projects', projectRouter);
 app.use('/api/pages', pageRouter);
 app.use('/api/history', editHistoryRouter);
 app.use('/api/collaboration', collaborationRouter);
+app.use('/api/cloudinary', cloudinaryRouter);
 app.use('/health', healthRouter);
 
 app.get('/', (_req: any, res: { json: (arg0: { ok: boolean; service: string; }) => void; }) => {

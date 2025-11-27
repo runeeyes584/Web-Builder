@@ -107,7 +107,7 @@ export const LayersPanel = React.memo(function LayersPanel({
             ? "bg-primary/20 border-primary/50 ring-1 ring-primary/30"
             : "hover:bg-sidebar-accent/50 border-sidebar-border/50"
         }`}
-        onClick={() => onElementSelect(element.id)}
+        onClick={(e) => onElementSelect(element.id, e.ctrlKey || e.metaKey || e.shiftKey)}
       >
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 bg-primary/20 rounded flex items-center justify-center">

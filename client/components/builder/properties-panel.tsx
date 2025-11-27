@@ -1,5 +1,6 @@
 "use client"
 
+import { cloudinaryApi } from "@/api/cloudinary.api"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
+import { useToast } from "@/hooks/use-toast"
 import type { Breakpoint, BuilderElement } from "@/lib/builder-types"
 import {
     AlertCircle,
@@ -63,6 +65,7 @@ export function PropertiesPanel({
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [expandedHeaders, setExpandedHeaders] = useState<Set<number>>(new Set())
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
+  const { toast } = useToast()
 
   const selectedElement = selectedElements.length === 1 ? elements.find((el) => el.id === selectedElements[0]) : null
   const multipleSelected = selectedElements.length > 1
@@ -4280,21 +4283,52 @@ export function PropertiesPanel({
                       <Label className="text-xs text-muted-foreground">Or Upload Video</Label>
                       <Input
                         type="file"
-                        accept="video/mp4,video/webm,video/ogg,video/*"
-                        onChange={(e) => {
+                        accept="video/mp4,video/webm,video/ogg,video/*/''"
+                        onChange={async (e) => {
                           const file = e.target.files?.[0]
                           if (file) {
-                            const url = URL.createObjectURL(file)
-                            updateElementContent(url)
-                            updateElementProps({ videoFileName: file.name })
+                            toast({
+                              title: "Uploading...",
+                              description: `Uploading ${file.name} to cloud storage. This may take a moment...`,
+                            })
+                            
+                            const result = await cloudinaryApi.uploadVideo(file)
+                            
+                            if (result.success && result.data) {
+                              updateElementContent(result.data.url)
+                              updateElementProps({ 
+                                videoFileName: file.name,
+                                cloudinaryPublicId: result.data.publicId,
+                                videoWidth: result.data.width,
+                                videoHeight: result.data.height,
+                                videoFormat: result.data.format,
+                                videoDuration: result.data.duration,
+                                optimizedUrls: result.data.optimizedUrls
+                              })
+                              toast({
+                                title: "Success!",
+                                description: `Video uploaded successfully`,
+                              })
+                            } else {
+                              toast({
+                                title: "Upload failed",
+                                description: result.message || "Failed to upload video",
+                                variant: "destructive",
+                              })
+                            }
                           }
                         }}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
-                      {selectedElement.props?.videoFileName && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          📹 {selectedElement.props.videoFileName ||""}
-                        </p>
+                      {selectedElement.props?.cloudinaryPublicId && (
+                        <div className="mt-1 text-xs">
+                          <p className="text-success flex items-center gap-1">
+                            <span className="text-green-500">✓</span> {selectedElement.props?.videoFileName || "Video"}
+                          </p>
+                          <p className="text-muted-foreground">
+                            Stored in cloud • {selectedElement.props?.videoFormat} • {selectedElement.props?.videoDuration?.toFixed(1)}s
+                          </p>
+                        </div>
                       )}
                     </div>
                     <div className="flex items-center space-x-2">
@@ -5348,7 +5382,7 @@ export function PropertiesPanel({
                         {selectedElement.props?.imageUrl && (
                           <div className="relative w-full h-32 rounded border border-sidebar-border overflow-hidden">
                             <img 
-                              src={selectedElement.props.imageUrl} 
+                              src={selectedElement.props.imageUrl || ""} 
                               alt="Blog" 
                               className="w-full h-full object-cover"
                             />
