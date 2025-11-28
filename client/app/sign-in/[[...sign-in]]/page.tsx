@@ -1,8 +1,38 @@
 "use client"
 
-import { SignIn } from '@clerk/nextjs'
+import { SignIn, useUser } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function SignInPage() {
+  const { user, isLoaded } = useUser()
+  const router = useRouter()
+
+  useEffect(() => {
+    const checkAdminAndRedirect = async () => {
+      if (isLoaded && user?.id) {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/users/status/${user.id}`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.role === "admin") {
+              router.push("/admin")
+            } else {
+              router.push("/")
+            }
+          } else {
+            router.push("/")
+          }
+        } catch (error) {
+          console.error("Failed to check admin status:", error)
+          router.push("/")
+        }
+      }
+    }
+
+    checkAdminAndRedirect()
+  }, [isLoaded, user?.id, router])
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-md">
@@ -25,7 +55,7 @@ export default function SignInPage() {
             }
           }}
           fallbackRedirectUrl="/"
-          redirectUrl="/"
+          forceRedirectUrl="/"
         />
       </div>
     </div>

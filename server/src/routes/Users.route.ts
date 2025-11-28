@@ -1,8 +1,9 @@
 import express from "express";
-import { handleClerkWebhook } from "../controllers/Users.controller";
+import { getUserStatus, handleClerkWebhook } from "../controllers/Users.controller";
 
 const router = express.Router();
 
 router.post("/clerk", handleClerkWebhook);
+router.get("/status/:clerkId", getUserStatus);
 
 export default router;

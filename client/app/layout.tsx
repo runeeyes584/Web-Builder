@@ -1,3 +1,4 @@
+import { DeletedAccountCheck } from "@/components/deleted-account-check"
 import { Toaster } from "@/components/ui/toaster"
 import { ClerkProvider } from '@clerk/nextjs'
 import type { Metadata } from "next"
@@ -28,6 +29,7 @@ export default function RootLayout({
         <body className={`font-sans ${inter.variable} antialiased`} suppressHydrationWarning>
           <Suspense fallback={null}>{children}</Suspense>
           <Toaster />
+          <DeletedAccountCheck />
         </body>
       </html>
     </ClerkProvider>

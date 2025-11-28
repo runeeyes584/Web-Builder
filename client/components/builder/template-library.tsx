@@ -158,11 +158,10 @@ export function TemplateLibrary({ onAddTemplate }: TemplateLibraryProps) {
                 variant={selectedCategory === category.id ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSelectedCategory(category.id)}
-                className={`whitespace-nowrap transition-all duration-200 ${
-                  selectedCategory === category.id 
-                    ? "bg-primary text-primary-foreground shadow-lg" 
+                className={`whitespace-nowrap transition-all duration-200 ${selectedCategory === category.id
+                    ? "bg-primary text-primary-foreground shadow-lg"
                     : "hover:bg-muted/50"
-                }`}
+                  }`}
               >
                 <category.icon className="w-3 h-3 mr-2" />
                 {category.label}
@@ -177,8 +176,8 @@ export function TemplateLibrary({ onAddTemplate }: TemplateLibraryProps) {
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
               {filteredTemplates.map((template, index) => (
-                <Card 
-                  key={template.id} 
+                <Card
+                  key={template.id}
                   className="group p-0 hover:shadow-xl transition-all duration-300 border-border/50 hover:border-primary/30 overflow-hidden bg-card/50 backdrop-blur-sm"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
@@ -268,9 +267,9 @@ export function TemplateLibrary({ onAddTemplate }: TemplateLibraryProps) {
                         </DialogContent>
                       </Dialog>
 
-                      <Button 
-                        size="sm" 
-                        className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-200" 
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-200"
                         onClick={() => handleAddTemplate(template)}
                       >
                         <Plus className="w-3 h-3 mr-1" />

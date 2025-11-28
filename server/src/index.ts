@@ -6,8 +6,9 @@ import { createServer } from 'http';
 import morgan from 'morgan';
 import { Server } from 'socket.io';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
-import collaborationRouter from './routes/Collaboration.route';
+import adminRouter from './routes/Admin.route';
 import cloudinaryRouter from './routes/Cloudinary.route';
+import collaborationRouter from './routes/Collaboration.route';
 import editHistoryRouter from './routes/EditHistory.route';
 import { healthRouter } from './routes/health';
 import pageRouter from './routes/Page.route';
@@ -51,10 +52,11 @@ app.use('/api/pages', pageRouter);
 app.use('/api/history', editHistoryRouter);
 app.use('/api/collaboration', collaborationRouter);
 app.use('/api/cloudinary', cloudinaryRouter);
+app.use('/api/admin', adminRouter); // Admin routes
 app.use('/health', healthRouter);
 
 app.get('/', (_req: any, res: { json: (arg0: { ok: boolean; service: string; }) => void; }) => {
-    res.json({ ok: true, service: 'web-builder-server' });
+  res.json({ ok: true, service: 'web-builder-server' });
 });
 
 // Error handling (must be after routes)
@@ -68,7 +70,7 @@ const collaborationSocket = new CollaborationSocket(io);
 export { collaborationSocket };
 
 httpServer.listen(port, () => {
-    // eslint-disable-next-line no-console
-    console.log(`Server listening on http://localhost:${port}`);
-    console.log(`Socket.IO server running on ws://localhost:${port}`);
+  // eslint-disable-next-line no-console
+  console.log(`Server listening on http://localhost:${port}`);
+  console.log(`Socket.IO server running on ws://localhost:${port}`);
 });

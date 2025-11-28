@@ -13,6 +13,7 @@ import type { BuilderElement, BuilderPage, RegionsLayout } from "@/lib/builder-t
 import { componentCategories } from "@/lib/component-categories"
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs"
 import { Layers, LayoutGrid, Palette } from "lucide-react"
+import { useRouter } from "next/navigation"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { DndProvider, useDragLayer } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
@@ -74,10 +75,38 @@ export default function WebsiteBuilder() {
   const [userRole, setUserRole] = useState<'OWNER' | 'EDITOR' | 'VIEWER'>('OWNER')
 
   // Get current user info from Clerk
-  const { user } = useUser()
+  const { user, isLoaded } = useUser()
+  const router = useRouter()
+  const [isCheckingAdmin, setIsCheckingAdmin] = useState(true)
 
   // Computed property for edit permission
   const canEdit = userRole !== 'VIEWER'
+
+  // Check if user is admin and redirect to admin dashboard
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!isLoaded) return
+      
+      if (user?.id) {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/users/status/${user.id}`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.role === "admin") {
+              router.push("/admin")
+              return // Don't set isCheckingAdmin to false, keep showing loading
+            }
+          }
+        } catch (error) {
+          console.error("Failed to check admin status:", error)
+        }
+      }
+      
+      setIsCheckingAdmin(false)
+    }
+
+    checkAdminStatus()
+  }, [isLoaded, user?.id, router])
 
   // Auto-save hook - only enabled when user has edit permission and project is open
   const { hasUnsavedChanges } = useAutoSave({
@@ -546,7 +575,7 @@ export default function WebsiteBuilder() {
         // Check if we're typing in an input field
         const target = e.target as HTMLElement
         const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
-        
+
         if (!isTyping) {
           switch (e.key.toLowerCase()) {
             case 'v':
@@ -597,6 +626,14 @@ export default function WebsiteBuilder() {
   }, [collaborativeUndo, collaborativeRedo, selectedElements, duplicateElement, handleRotateSelected, canEdit, setActiveTool])
 
 
+  // Show loading while checking admin status
+  if (isCheckingAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
 
   return (
     <>

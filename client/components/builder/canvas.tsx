@@ -509,7 +509,7 @@ export function BuilderCanvas({
   const [marqueeEnd, setMarqueeEnd] = useState<{ x: number; y: number } | null>(null)
   const [marqueeHighlightedIds, setMarqueeHighlightedIds] = useState<string[]>([])
   const marqueeJustCompletedRef = useRef(false)
-  
+
   // Track if selection was handled in mouseDown to prevent double-handling in click
   const selectionHandledInMouseDownRef = useRef(false)
   // Track if actual drag occurred (mouse moved during mousedown)
@@ -2589,14 +2589,14 @@ export function BuilderCanvas({
     // Handle selection logic first
     const isAlreadySelected = selectedElements.includes(elementId)
     const isMultiSelectKey = e.shiftKey || e.metaKey || e.ctrlKey
-    
+
     // Reset drag tracking flags
     didDragOccurRef.current = false
     pendingClickElementRef.current = null
-    
+
     // Mark that selection will be handled in mouseDown
     selectionHandledInMouseDownRef.current = true
-    
+
     if (!isAlreadySelected) {
       // Element is not selected - select it (add to selection if multi-select key held)
       onElementSelect(elementId, isMultiSelectKey)
@@ -2629,8 +2629,8 @@ export function BuilderCanvas({
     const startY = (e.clientY - rect.top) / scale
     // Determine which elements are affected (multi-select drag support)
     // Need to use the updated selectedElements which includes the current element
-    const currentSelection = selectedElements.includes(elementId) 
-      ? selectedElements 
+    const currentSelection = selectedElements.includes(elementId)
+      ? selectedElements
       : [...selectedElements, elementId]
     let idsToDrag = currentSelection.length > 1
       ? currentSelection
@@ -2646,7 +2646,7 @@ export function BuilderCanvas({
       idsToDrag = Array.from(new Set([...idsToDrag, ...childrenIds]))
     }
 
-  
+
     // Build start positions per element for delta-based movement
     const startPositions = new Map<string, { x: number; y: number }>()
     for (const id of idsToDrag) {
@@ -2965,7 +2965,7 @@ export function BuilderCanvas({
     direction: "e" | "s" | "se" | "n" | "w" | "ne" | "nw" | "sw"
   ) => {
     if (!canEdit) return // Block resizing for viewers
-    
+
     // If hand tool is active, don't handle resizing
     if (activeTool === 'hand') {
       return
@@ -3101,7 +3101,7 @@ export function BuilderCanvas({
 
   const handleRotateMouseDown = (e: React.MouseEvent, elementId: string) => {
     if (!canEdit) return // Block rotating for viewers
-    
+
     // If hand tool is active, don't handle rotating
     if (activeTool === 'hand') {
       return
@@ -3182,7 +3182,7 @@ export function BuilderCanvas({
 
   const handleElementClick = (e: React.MouseEvent, elementId: string) => {
     e.stopPropagation()
-    
+
     // Check if there's a pending click that needs to be handled (click on already-selected element without drag)
     if (pendingClickElementRef.current === elementId && !didDragOccurRef.current) {
       // This was a click (not drag) on an already-selected element without Ctrl
@@ -3192,14 +3192,14 @@ export function BuilderCanvas({
       selectionHandledInMouseDownRef.current = false
       return
     }
-    
+
     // Skip if selection was already handled in mouseDown
     if (selectionHandledInMouseDownRef.current) {
       selectionHandledInMouseDownRef.current = false
       pendingClickElementRef.current = null
       return
     }
-    
+
     const isMultiSelect = e.ctrlKey || e.metaKey
     onElementSelect(elementId, isMultiSelect)
   }
@@ -3208,10 +3208,10 @@ export function BuilderCanvas({
   const handleElementDoubleClick = (e: React.MouseEvent, elementId: string) => {
     e.stopPropagation()
     e.preventDefault()
-    
+
     // Select the element first
     onElementSelect(elementId, false)
-    
+
     // Trigger callback to show properties panel
     if (onElementDoubleClick) {
       onElementDoubleClick(elementId)
@@ -3224,7 +3224,7 @@ export function BuilderCanvas({
       contextMenuOpenRef.current = false
       return
     }
-    
+
     // Don't reset selection if marquee selection just completed
     if (marqueeJustCompletedRef.current) {
       marqueeJustCompletedRef.current = false
@@ -3244,11 +3244,11 @@ export function BuilderCanvas({
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
     // Only handle left click
     if (e.button !== 0) return
-    
+
     // Check if we're clicking on an element (not empty canvas)
     const target = e.target as HTMLElement
     const clickedOnElement = target.closest('[data-element-id]')
-    
+
     // Don't handle if in preview mode
     if (isPreviewMode) return
 
@@ -3261,20 +3261,20 @@ export function BuilderCanvas({
       e.preventDefault()
       e.stopPropagation()
       setIsPanning(true)
-      
+
       // Find the scrollable container - walk up the DOM tree
       let scrollContainer: HTMLElement | null = canvasEl
       while (scrollContainer) {
-        const hasScroll = scrollContainer.scrollHeight > scrollContainer.clientHeight || 
-                         scrollContainer.scrollWidth > scrollContainer.clientWidth
+        const hasScroll = scrollContainer.scrollHeight > scrollContainer.clientHeight ||
+          scrollContainer.scrollWidth > scrollContainer.clientWidth
         const hasOverflow = window.getComputedStyle(scrollContainer).overflow !== 'visible'
-        
+
         if (hasScroll && hasOverflow) {
           break
         }
         scrollContainer = scrollContainer.parentElement
       }
-      
+
       if (scrollContainer) {
         panStartRef.current = {
           x: e.clientX,
@@ -3282,7 +3282,7 @@ export function BuilderCanvas({
           scrollLeft: scrollContainer.scrollLeft,
           scrollTop: scrollContainer.scrollTop
         }
-        
+
         // Prevent text selection during panning
         document.body.style.userSelect = 'none'
         document.body.style.cursor = 'grabbing'
@@ -3291,19 +3291,19 @@ export function BuilderCanvas({
       // Select tool: start marquee selection only on empty canvas
       // Don't start marquee if clicking on an element
       if (clickedOnElement) return
-      
+
       // When sections overlay is visible and no region is in interactive mode,
       // don't allow marquee selection to avoid interference with section resize
       const isAnyRegionInteractive = isHeaderSubmerged || isFooterSubmerged || submergedSectionIndex !== null
       if (showSections && !isAnyRegionInteractive) return
-      
+
       const localX = (e.clientX - rect.left) / scale
       const localY = (e.clientY - rect.top) / scale
-      
+
       setIsMarqueeSelecting(true)
       setMarqueeStart({ x: localX, y: localY })
       setMarqueeEnd({ x: localX, y: localY })
-      
+
       // Prevent text selection during marquee
       document.body.style.userSelect = 'none'
     }
@@ -3318,16 +3318,16 @@ export function BuilderCanvas({
         // Hand tool panning - find the scrollable container
         let scrollContainer: HTMLElement | null = canvasEl
         while (scrollContainer) {
-          const hasScroll = scrollContainer.scrollHeight > scrollContainer.clientHeight || 
-                           scrollContainer.scrollWidth > scrollContainer.clientWidth
+          const hasScroll = scrollContainer.scrollHeight > scrollContainer.clientHeight ||
+            scrollContainer.scrollWidth > scrollContainer.clientWidth
           const hasOverflow = window.getComputedStyle(scrollContainer).overflow !== 'visible'
-          
+
           if (hasScroll && hasOverflow) {
             break
           }
           scrollContainer = scrollContainer.parentElement
         }
-        
+
         if (scrollContainer) {
           const dx = e.clientX - panStartRef.current.x
           const dy = e.clientY - panStartRef.current.y
@@ -3341,7 +3341,7 @@ export function BuilderCanvas({
         const localX = (e.clientX - rect.left) / scale
         const localY = (e.clientY - rect.top) / scale
         setMarqueeEnd({ x: localX, y: localY })
-        
+
         // Calculate intersecting elements in real-time for highlighting
         const selectionRect = {
           left: Math.min(marqueeStart.x, localX),
@@ -3349,25 +3349,25 @@ export function BuilderCanvas({
           top: Math.min(marqueeStart.y, localY),
           bottom: Math.max(marqueeStart.y, localY)
         }
-        
+
         // Find all elements that intersect with the selection rectangle
         const intersectingIds = elements
           .filter(el => {
             if (!el.position) return false
-            
+
             const elLeft = el.position.x
             const elRight = el.position.x + (el.position.width || 0)
             const elTop = el.position.y
             const elBottom = el.position.y + (el.position.height || 0)
-            
+
             // Check if element intersects with selection rectangle
-            return !(elRight < selectionRect.left || 
-                     elLeft > selectionRect.right || 
-                     elBottom < selectionRect.top || 
-                     elTop > selectionRect.bottom)
+            return !(elRight < selectionRect.left ||
+              elLeft > selectionRect.right ||
+              elBottom < selectionRect.top ||
+              elTop > selectionRect.bottom)
           })
           .map(el => el.id)
-        
+
         setMarqueeHighlightedIds(intersectingIds)
       }
     }
@@ -3376,12 +3376,12 @@ export function BuilderCanvas({
       if (isPanning) {
         setIsPanning(false)
         panStartRef.current = null
-        
+
         // Restore cursor and text selection
         document.body.style.userSelect = ''
         document.body.style.cursor = ''
       }
-      
+
       if (isMarqueeSelecting && marqueeStart && marqueeEnd) {
         // Calculate selection rectangle
         const selectionRect = {
@@ -3390,31 +3390,31 @@ export function BuilderCanvas({
           top: Math.min(marqueeStart.y, marqueeEnd.y),
           bottom: Math.max(marqueeStart.y, marqueeEnd.y)
         }
-        
+
         // Only select if there's a meaningful drag (not just a click)
         const minDragDistance = 5
         const dragWidth = selectionRect.right - selectionRect.left
         const dragHeight = selectionRect.bottom - selectionRect.top
-        
+
         if (dragWidth > minDragDistance || dragHeight > minDragDistance) {
           // Find all elements that intersect with the selection rectangle
           const selectedIds = elements
             .filter(el => {
               if (!el.position) return false
-              
+
               const elLeft = el.position.x
               const elRight = el.position.x + (el.position.width || 0)
               const elTop = el.position.y
               const elBottom = el.position.y + (el.position.height || 0)
-              
+
               // Check if element intersects with selection rectangle
-              return !(elRight < selectionRect.left || 
-                       elLeft > selectionRect.right || 
-                       elBottom < selectionRect.top || 
-                       elTop > selectionRect.bottom)
+              return !(elRight < selectionRect.left ||
+                elLeft > selectionRect.right ||
+                elBottom < selectionRect.top ||
+                elTop > selectionRect.bottom)
             })
             .map(el => el.id)
-          
+
           if (selectedIds.length > 0) {
             // Set flag to prevent handleCanvasClick from resetting selection
             marqueeJustCompletedRef.current = true
@@ -3424,12 +3424,12 @@ export function BuilderCanvas({
           // It was just a click, deselect all
           onElementSelect("", false)
         }
-        
+
         setIsMarqueeSelecting(false)
         setMarqueeStart(null)
         setMarqueeEnd(null)
         setMarqueeHighlightedIds([])
-        
+
         // Restore text selection
         document.body.style.userSelect = ''
       }
@@ -3437,7 +3437,7 @@ export function BuilderCanvas({
 
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
-    
+
     return () => {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)

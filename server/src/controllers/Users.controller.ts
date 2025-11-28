@@ -67,3 +67,23 @@ export const handleClerkWebhook = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const getUserStatus = async (req: Request, res: Response) => {
+  try {
+    const { clerkId } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { clerk_id: clerkId },
+      select: { is_deleted: true, role: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({ is_deleted: user.is_deleted, role: user.role });
+  } catch (error) {
+    console.error("Error fetching user status:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

@@ -1020,7 +1020,7 @@ export const getPopularTemplates = () => {
 
 export const searchTemplates = (query: string) => {
   const lowercaseQuery = query.toLowerCase()
-  return templates.filter((template) => 
+  return templates.filter((template) =>
     template.name.toLowerCase().includes(lowercaseQuery) ||
     template.description.toLowerCase().includes(lowercaseQuery) ||
     template.tags?.some(tag => tag.toLowerCase().includes(lowercaseQuery))
