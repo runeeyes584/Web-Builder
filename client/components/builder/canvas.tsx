@@ -10,6 +10,7 @@ import { Copy, Trash2 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDrop } from "react-dnd"
 import { ElementContextMenu } from "./element-context-menu"
+import { SectionContextMenu, useSectionActions } from "./section-context-menu"
 
 // Simple Markdown parser
 const parseMarkdown = (text: string) => {
@@ -287,10 +288,10 @@ interface CanvasProps {
   isPreviewMode?: boolean
   toggleCategoryRef?: React.MutableRefObject<((categoryName: string) => void) | null>
   onRegionsChange?: (regions: RegionsLayout) => void
-  onLayoutChange?: (layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }) => void
-  sendLayoutChange?: (layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }) => void
-  onSectionsChange?: (sections: { id: string; height: number }[], headerHeight: number, footerHeight: number) => void // Immediate callback when sections are added/removed
-  initialLayout?: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] } | null
+  onLayoutChange?: (layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number; name?: string }[] }) => void
+  sendLayoutChange?: (layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number; name?: string }[] }) => void
+  onSectionsChange?: (sections: { id: string; height: number; name?: string }[], headerHeight: number, footerHeight: number) => void // Immediate callback when sections are added/removed
+  initialLayout?: { headerHeight: number; footerHeight: number; sections: { id: string; height: number; name?: string }[] } | null
   onShowLeftSidebar?: () => void // Callback to show the left sidebar
   onSetActiveLeftPanel?: (panel: 'components' | 'pages' | 'siteStyle') => void // Callback to set active left panel
   activeTool?: 'select' | 'hand' // Current active tool
@@ -334,15 +335,51 @@ export function BuilderCanvas({
   const MIN_SECTION = 128
 
   // Sections model: vertical stacks between header and footer - initialize from saved layout
-  type Section = { id: string; height: number }
+  type Section = { id: string; height: number; name?: string }
   const DEFAULT_SECTION = 608 // 800 - 96 - 96 (matches initial min canvas height minus header/footer)
   const [sections, setSections] = useState<Section[]>(
     initialLayout?.sections && initialLayout.sections.length > 0
-      ? initialLayout.sections.map(s => ({ id: s.id, height: Math.max(MIN_SECTION, s.height) }))
+      ? initialLayout.sections.map(s => ({ id: s.id, height: Math.max(MIN_SECTION, s.height), name: (s as Section).name }))
       : [{ id: `sec-${Date.now()}`, height: Math.max(MIN_SECTION, DEFAULT_SECTION) }]
   )
   const totalSectionsHeight = sections.reduce((sum, s) => sum + s.height, 0)
   const contentHeight = headerHeight + totalSectionsHeight + footerHeight
+
+  // Sync sections from initialLayout when section names change externally (e.g., from LayersPanel rename)
+  // Use a ref to track the previous initialLayout to detect external changes
+  const prevInitialLayoutRef = useRef(initialLayout)
+  useEffect(() => {
+    // Skip if initialLayout is not available or hasn't changed
+    if (!initialLayout?.sections) {
+      prevInitialLayoutRef.current = initialLayout
+      return
+    }
+
+    const prev = prevInitialLayoutRef.current
+    prevInitialLayoutRef.current = initialLayout
+
+    // Skip on initial mount or if previous layout didn't exist
+    if (!prev?.sections) return
+
+    // Only handle rename: same number of sections, same IDs
+    if (initialLayout.sections.length !== prev.sections.length) return
+
+    // Check if this is a rename operation (same IDs but different names)
+    const isRenameOperation = initialLayout.sections.every((s, idx) => 
+      s.id === prev.sections[idx]?.id
+    ) && initialLayout.sections.some((s, idx) => 
+      s.name !== prev.sections[idx]?.name
+    )
+
+    if (isRenameOperation) {
+      setSections(currentSections => 
+        currentSections.map((s, idx) => ({
+          ...s,
+          name: initialLayout.sections[idx]?.name
+        }))
+      )
+    }
+  }, [initialLayout])
 
   // Notify parent about current regions layout for LayersPanel grouping
   useEffect(() => {
@@ -364,7 +401,7 @@ export function BuilderCanvas({
     onLayoutChange({
       headerHeight,
       footerHeight,
-      sections: sections.map(s => ({ id: s.id, height: s.height })),
+      sections: sections.map(s => ({ id: s.id, height: s.height, name: s.name })),
     })
   }, [onLayoutChange, headerHeight, footerHeight, sections])
 
@@ -383,7 +420,7 @@ export function BuilderCanvas({
       sendLayoutChange({
         headerHeight,
         footerHeight,
-        sections: sections.map(s => ({ id: s.id, height: s.height }))
+        sections: sections.map(s => ({ id: s.id, height: s.height, name: s.name }))
       })
     }, 300) // 300ms debounce
 
@@ -8970,6 +9007,11 @@ export function BuilderCanvas({
           onSectionsChange={onSectionsChange}
           onShowLeftSidebar={onShowLeftSidebar}
           onSetActiveLeftPanel={onSetActiveLeftPanel}
+          // New props for section context menu
+          elements={elements}
+          onAddElement={onAddElement}
+          onDeleteElement={onDeleteElement}
+          onUpdateElementPosition={onUpdateElementPosition}
         />
       )}
       {/* Enhanced Grid overlay - hidden in preview mode */}
@@ -9118,11 +9160,16 @@ function PartitionsOverlay({
   onSectionsChange,
   onShowLeftSidebar,
   onSetActiveLeftPanel,
+  // New props for section context menu
+  elements,
+  onAddElement,
+  onDeleteElement,
+  onUpdateElementPosition,
 }: {
   headerHeight: number
   footerHeight: number
-  sections: { id: string; height: number }[]
-  setSections: React.Dispatch<React.SetStateAction<{ id: string; height: number }[]>>
+  sections: { id: string; height: number; name?: string }[]
+  setSections: React.Dispatch<React.SetStateAction<{ id: string; height: number; name?: string }[]>>
   focusedRegion: null | "header" | "section" | "footer"
   focusedSectionIndex: number | null
   setFocusedRegion: (r: null | "header" | "section" | "footer") => void
@@ -9139,9 +9186,14 @@ function PartitionsOverlay({
   defaultSectionHeight: number
   toggleCategoryRef?: React.MutableRefObject<((categoryName: string) => void) | null>
   sectionHasElements: (sectionIndex: number) => boolean
-  onSectionsChange?: (sections: { id: string; height: number }[], headerHeight: number, footerHeight: number) => void
+  onSectionsChange?: (sections: { id: string; height: number; name?: string }[], headerHeight: number, footerHeight: number) => void
   onShowLeftSidebar?: () => void
   onSetActiveLeftPanel?: (panel: 'components' | 'pages' | 'siteStyle') => void
+  // New props for section context menu
+  elements: BuilderElement[]
+  onAddElement?: (element: BuilderElement, position?: { x: number; y: number }) => void
+  onDeleteElement?: (id: string) => void
+  onUpdateElementPosition?: (id: string, position: { x: number; y: number; width?: number; height?: number }) => void
 }) {
   // Fine-grained hover states so sections act independently
   const [hoverHeader, setHoverHeader] = useState(false)
@@ -9152,6 +9204,36 @@ function PartitionsOverlay({
   const [hoverSectionIndex, setHoverSectionIndex] = useState<number | null>(null)
   const [hoverSectionTopIndex, setHoverSectionTopIndex] = useState<number | null>(null)
   const [hoverSectionBottomIndex, setHoverSectionBottomIndex] = useState<number | null>(null)
+
+  // Track if context menu is open for sections
+  const [isSectionContextMenuOpen, setIsSectionContextMenuOpen] = useState(false)
+
+  // Section actions hook for context menu functionality
+  const {
+    copiedElements,
+    addSectionAbove,
+    addSectionBelow,
+    moveSectionUp,
+    moveSectionDown,
+    copyElements,
+    pasteElements,
+    deleteSection,
+    renamingSectionIndex,
+    startRenameSection,
+    cancelRenameSection,
+    confirmRenameSection,
+    getSectionName,
+  } = useSectionActions({
+    sections,
+    setSections,
+    headerHeight,
+    elements,
+    onAddElement,
+    onDeleteElement,
+    onUpdateElementPosition,
+    defaultSectionHeight,
+    onSectionsChange,
+  })
 
   // Note: submerged states now come from parent Canvas component via props
 
@@ -9326,45 +9408,65 @@ function PartitionsOverlay({
       </div>
       {/* Render each section band */}
       {sections.map((sec, idx) => (
-        <div
-          key={sec.id}
-          className="absolute left-0 right-0"
-          style={{
-            top: `${sectionTops[idx]}px`,
-            height: `${sec.height}px`,
-            pointerEvents: submergedSectionIndex === idx ? 'none' : 'auto'
-          }}
-          onMouseEnter={() => setHoverSectionIndex(idx)}
-          onMouseLeave={() => setHoverSectionIndex(null)}
-          onClick={(e) => {
-            e.stopPropagation()
-            // Toggle logic: if already focused on this section, submerge it (hide overlay)
-            // If submerged, unfocus it. Otherwise, focus it.
-            if (focusedSectionIndex === idx) {
-              if (submergedSectionIndex === idx) {
-                // Currently submerged -> unfocus completely
-                setFocusedRegion(null)
-                setFocusedSectionIndex(null)
-                setSubmergedSectionIndex(null)
-              } else {
-                // Currently focused but not submerged -> submerge it
-                setSubmergedSectionIndex(idx)
-              }
-            } else {
-              // Not focused -> focus it (but don't submerge yet)
-              setFocusedRegion("section")
-              setFocusedSectionIndex(idx)
-              setSubmergedSectionIndex(null)
-              setIsHeaderSubmerged(false)
-              setIsFooterSubmerged(false)
-            }
+        <SectionContextMenu
+          key={`context-${sec.id}`}
+          sectionIndex={idx}
+          sectionId={sec.id}
+          sections={sections}
+          headerHeight={headerHeight}
+          elements={elements}
+          copiedElements={copiedElements}
+          onAddSectionAbove={addSectionAbove}
+          onAddSectionBelow={addSectionBelow}
+          onMoveSectionUp={moveSectionUp}
+          onMoveSectionDown={moveSectionDown}
+          onCopyElements={copyElements}
+          onPasteElements={pasteElements}
+          onDeleteSection={deleteSection}
+          onRenameSection={startRenameSection}
+          disabled={submergedSectionIndex === idx}
+          onOpenChange={(open) => {
+            setIsSectionContextMenuOpen(open)
           }}
         >
+          <div
+            className="absolute left-0 right-0"
+            style={{
+              top: `${sectionTops[idx]}px`,
+              height: `${sec.height}px`,
+              pointerEvents: submergedSectionIndex === idx ? 'none' : 'auto'
+            }}
+            onMouseEnter={() => setHoverSectionIndex(idx)}
+            onMouseLeave={() => setHoverSectionIndex(null)}
+            onClick={(e) => {
+              e.stopPropagation()
+              // Toggle logic: if already focused on this section, submerge it (hide overlay)
+              // If submerged, unfocus it. Otherwise, focus it.
+              if (focusedSectionIndex === idx) {
+                if (submergedSectionIndex === idx) {
+                  // Currently submerged -> unfocus completely
+                  setFocusedRegion(null)
+                  setFocusedSectionIndex(null)
+                  setSubmergedSectionIndex(null)
+                } else {
+                  // Currently focused but not submerged -> submerge it
+                  setSubmergedSectionIndex(idx)
+                }
+              } else {
+                // Not focused -> focus it (but don't submerge yet)
+                setFocusedRegion("section")
+                setFocusedSectionIndex(idx)
+                setSubmergedSectionIndex(null)
+                setIsHeaderSubmerged(false)
+                setIsFooterSubmerged(false)
+              }
+            }}
+          >
           {/* Show subtle border when submerged to indicate interactive mode */}
           {submergedSectionIndex === idx && (
             <div className="absolute inset-0 border-2 border-dashed border-blue-400/40 pointer-events-none animate-pulse">
               <div className="absolute top-1 left-2 text-[11px] text-blue-400 bg-background/80 px-1 rounded">
-                Section {idx + 1} <span className="text-[10px] opacity-70">(interactive mode - click to exit)</span>
+                {getSectionName(idx)} <span className="text-[10px] opacity-70">(interactive mode - click to exit)</span>
               </div>
             </div>
           )}
@@ -9377,10 +9479,33 @@ function PartitionsOverlay({
             || (hoverFooterTop && idx === sections.length - 1)
           ) && (
               <div className={`absolute inset-0 ${focusedSectionIndex === idx ? "ring-1 ring-blue-400/50" : ""} bg-blue-400/10 border border-blue-400/30 pointer-events-auto`}>
-                <div className="absolute top-1 left-2 text-[11px] text-blue-400 pointer-events-none">
-                  Section {idx + 1}
-                  {focusedSectionIndex === idx && submergedSectionIndex !== idx && (
-                    <span className="ml-2 text-[10px] opacity-70">(click again to interact)</span>
+                <div className="absolute top-1 left-2 text-[11px] text-blue-400 flex items-center gap-1">
+                  {renamingSectionIndex === idx ? (
+                    <input
+                      type="text"
+                      autoFocus
+                      defaultValue={sec.name || `Section ${idx + 1}`}
+                      className="bg-background/90 border border-blue-400/50 rounded px-1.5 py-0.5 text-[11px] text-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 w-32 pointer-events-auto"
+                      onClick={(e) => e.stopPropagation()}
+                      onBlur={(e) => {
+                        confirmRenameSection(idx, e.target.value)
+                      }}
+                      onKeyDown={(e) => {
+                        e.stopPropagation()
+                        if (e.key === 'Enter') {
+                          confirmRenameSection(idx, e.currentTarget.value)
+                        } else if (e.key === 'Escape') {
+                          cancelRenameSection()
+                        }
+                      }}
+                    />
+                  ) : (
+                    <span className="pointer-events-none">
+                      {getSectionName(idx)}
+                      {focusedSectionIndex === idx && submergedSectionIndex !== idx && (
+                        <span className="ml-2 text-[10px] opacity-70">(click again to interact)</span>
+                      )}
+                    </span>
                   )}
                 </div>
 
@@ -9551,7 +9676,8 @@ function PartitionsOverlay({
                 )}
               </div>
             )}
-        </div>
+          </div>
+        </SectionContextMenu>
       ))}
       <div
         className="absolute left-0 right-0"

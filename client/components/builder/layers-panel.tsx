@@ -2,6 +2,16 @@
 
 import { Card } from "@/components/ui/card"
 import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -38,6 +48,12 @@ import {
   Layers,
   ChevronDown,
   ChevronRight,
+  Plus,
+  Clipboard,
+  LayoutTemplate,
+  PanelTop,
+  PanelBottom,
+  Pencil,
 } from "lucide-react"
 import React, { useCallback, useMemo, useState } from "react"
 import { useElementActions } from "./element-context-menu"
@@ -52,6 +68,19 @@ interface LayersPanelProps {
   isOpen: boolean
   onClose: () => void
   regions?: RegionsLayout
+  // Section action callbacks
+  sections?: { id: string; height: number; name?: string }[]
+  headerHeight?: number
+  footerHeight?: number
+  copiedElements?: BuilderElement[] | null
+  onAddSectionAbove?: (index: number) => void
+  onAddSectionBelow?: (index: number) => void
+  onMoveSectionUp?: (index: number) => void
+  onMoveSectionDown?: (index: number) => void
+  onCopyElements?: (sectionIndex: number) => void
+  onPasteElements?: (sectionIndex: number) => void
+  onDeleteSection?: (index: number) => void
+  onRenameSection?: (index: number, newName: string) => void
 }
 
 export const LayersPanel = React.memo(function LayersPanel({
@@ -64,9 +93,24 @@ export const LayersPanel = React.memo(function LayersPanel({
   isOpen,
   onClose,
   regions,
+  // Section action props
+  sections = [],
+  headerHeight = 96,
+  footerHeight = 96,
+  copiedElements = null,
+  onAddSectionAbove,
+  onAddSectionBelow,
+  onMoveSectionUp,
+  onMoveSectionDown,
+  onCopyElements,
+  onPasteElements,
+  onDeleteSection,
+  onRenameSection,
 }: LayersPanelProps) {
   // All hooks must be called before any conditional returns
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(["header", "footer", "section-0"]))
+  // Track which section is being renamed in layers panel
+  const [renamingSectionIndex, setRenamingSectionIndex] = useState<number>(-1)
 
   // Use shared element actions from context menu
   const {
@@ -462,20 +506,30 @@ export const LayersPanel = React.memo(function LayersPanel({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {regions ? (
             <>
-              {/* Header Group */}
-              <div>
+              {/* Header Group - with distinct styling and icon */}
+              <div className="bg-emerald-500/5 rounded-lg border border-emerald-500/20">
                 <button
                   onClick={() => toggleGroup("header")}
-                  className="flex items-center justify-between w-full p-2 hover:bg-sidebar-accent/50 rounded-lg transition-colors"
+                  className="flex items-center justify-between w-full p-3 hover:bg-emerald-500/10 rounded-lg transition-colors"
                 >
-                  <span className="font-medium text-sidebar-foreground">Header (#{grouped.header.length})</span>
-                  <span className="text-sm text-muted-foreground">{expandedGroups.has("header") ? "−" : "+"}</span>
+                  <div className="flex items-center gap-2">
+                    <PanelTop className="w-4 h-4 text-emerald-500" />
+                    <span className="font-semibold text-emerald-500">Header</span>
+                    <span className="text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                      {grouped.header.length}
+                    </span>
+                  </div>
+                  {expandedGroups.has("header") ? (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  )}
                 </button>
-                {expandedGroups.has("header") && (
-                  <div className="mt-2 space-y-1">
+                {expandedGroups.has("header") && grouped.header.length > 0 && (
+                  <div className="px-3 pb-3 space-y-1 ml-4 border-l-2 border-emerald-500/30">
                     {grouped.header.map((element) => (
                       <LayerElementCard key={element.id} element={element} />
                     ))}
@@ -483,37 +537,359 @@ export const LayersPanel = React.memo(function LayersPanel({
                 )}
               </div>
 
-              {/* Sections Groups */}
-              {grouped.sections.map((sec) => (
-                <div key={sec.key}>
-                  <button
-                    onClick={() => toggleGroup(sec.key)}
-                    className="flex items-center justify-between w-full p-2 hover:bg-sidebar-accent/50 rounded-lg transition-colors"
-                  >
-                    <span className="font-medium text-sidebar-foreground">Section {sec.index + 1} (#{sec.elements.length})</span>
-                    <span className="text-sm text-muted-foreground">{expandedGroups.has(sec.key) ? "−" : "+"}</span>
-                  </button>
-                  {expandedGroups.has(sec.key) && (
-                    <div className="mt-2 space-y-1">
-                      {sec.elements.map((element) => (
-                        <LayerElementCard key={element.id} element={element} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+              {/* Sections Groups - each with context menu */}
+              {grouped.sections.map((sec) => {
+                const sectionIndex = sec.index
+                const sectionData = sections[sectionIndex]
+                const sectionName = sectionData?.name || `Section ${sectionIndex + 1}`
+                const isFirstSection = sectionIndex === 0
+                const isLastSection = sectionIndex === sections.length - 1
+                const hasCopied = copiedElements && copiedElements.length > 0
+                const hasElements = sec.elements.length > 0
+                const isRenaming = renamingSectionIndex === sectionIndex
 
-              {/* Footer Group */}
-              <div>
+                return (
+                  <ContextMenu key={sec.key}>
+                    <ContextMenuTrigger asChild>
+                      <div className="bg-blue-500/5 rounded-lg border border-blue-500/20">
+                        <div className="flex items-center justify-between w-full p-3 hover:bg-blue-500/10 rounded-lg transition-colors">
+                          {/* Clickable area for toggle */}
+                          <div 
+                            onClick={() => !isRenaming && toggleGroup(sec.key)}
+                            className="flex items-center gap-2 cursor-pointer flex-1 min-w-0"
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => e.key === 'Enter' && !isRenaming && toggleGroup(sec.key)}
+                          >
+                            <LayoutTemplate className="w-4 h-4 text-blue-500 shrink-0" />
+                            {isRenaming ? (
+                              <input
+                                type="text"
+                                autoFocus
+                                defaultValue={sectionName}
+                                className="bg-background border border-blue-400/50 rounded px-2 py-0.5 text-sm font-semibold text-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-400 w-full max-w-[150px]"
+                                onClick={(e) => e.stopPropagation()}
+                                onBlur={(e) => {
+                                  const newName = e.target.value.trim()
+                                  onRenameSection?.(sectionIndex, newName)
+                                  setRenamingSectionIndex(-1)
+                                }}
+                                onKeyDown={(e) => {
+                                  e.stopPropagation()
+                                  if (e.key === 'Enter') {
+                                    const newName = e.currentTarget.value.trim()
+                                    onRenameSection?.(sectionIndex, newName)
+                                    setRenamingSectionIndex(-1)
+                                  } else if (e.key === 'Escape') {
+                                    setRenamingSectionIndex(-1)
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <span className="font-semibold text-blue-500 truncate">{sectionName}</span>
+                            )}
+                            <span className="text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded shrink-0">
+                              {sec.elements.length}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            {/* Rename button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setRenamingSectionIndex(sectionIndex)
+                              }}
+                              className="p-1 rounded transition-all duration-200 group hover:bg-blue-500/20"
+                              title="Rename section"
+                            >
+                              <Pencil className="w-3 h-3 text-muted-foreground group-hover:text-blue-500 group-hover:scale-110 transition-all" />
+                            </button>
+                            {/* Copy elements button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onCopyElements?.(sectionIndex)
+                              }}
+                              disabled={!hasElements}
+                              className={`p-1 rounded transition-all duration-200 group ${
+                                !hasElements 
+                                  ? 'opacity-30 cursor-not-allowed' 
+                                  : 'hover:bg-blue-500/20'
+                              }`}
+                              title="Copy elements"
+                            >
+                              <Copy className="w-3 h-3 text-muted-foreground group-hover:text-blue-500 group-hover:scale-110 transition-all" />
+                            </button>
+                            {/* Paste elements button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onPasteElements?.(sectionIndex)
+                              }}
+                              disabled={!hasCopied}
+                              className={`p-1 rounded transition-all duration-200 group ${
+                                !hasCopied 
+                                  ? 'opacity-30 cursor-not-allowed' 
+                                  : 'hover:bg-blue-500/20'
+                              }`}
+                              title={hasCopied ? `Paste elements (${copiedElements?.length})` : "No elements copied"}
+                            >
+                              <Clipboard className="w-3 h-3 text-muted-foreground group-hover:text-blue-500 group-hover:scale-110 transition-all" />
+                            </button>
+                            {/* 3-dots menu for more actions */}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="p-1 rounded transition-all duration-200 group hover:bg-blue-500/20"
+                                  title="More actions"
+                                >
+                                  <MoreVertical className="w-3 h-3 text-muted-foreground group-hover:text-blue-500 group-hover:scale-110 transition-all" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48 z-[150]">
+                                {/* Add Section */}
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    <span>Add Section</span>
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent className="w-40">
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        onAddSectionAbove?.(sectionIndex)
+                                      }}
+                                    >
+                                      <ArrowUp className="mr-2 h-4 w-4" />
+                                      <span>Add Above</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        onAddSectionBelow?.(sectionIndex)
+                                      }}
+                                    >
+                                      <ArrowDown className="mr-2 h-4 w-4" />
+                                      <span>Add Below</span>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                                
+                                {/* Move Section */}
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger disabled={isFirstSection && isLastSection}>
+                                    <MoveUp className="mr-2 h-4 w-4" />
+                                    <span>Move Section</span>
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent className="w-40">
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        onMoveSectionUp?.(sectionIndex)
+                                      }}
+                                      disabled={isFirstSection}
+                                    >
+                                      <ArrowUp className="mr-2 h-4 w-4" />
+                                      <span>Move Up</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        onMoveSectionDown?.(sectionIndex)
+                                      }}
+                                      disabled={isLastSection}
+                                    >
+                                      <ArrowDown className="mr-2 h-4 w-4" />
+                                      <span>Move Down</span>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                                
+                                <DropdownMenuSeparator />
+                                
+                                {/* Delete Section */}
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    onDeleteSection?.(sectionIndex)
+                                  }}
+                                  disabled={sections.length <= 1}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  <span>Delete Section</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            {/* Toggle indicator */}
+                            <div 
+                              onClick={() => toggleGroup(sec.key)}
+                              className="cursor-pointer p-1"
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => e.key === 'Enter' && toggleGroup(sec.key)}
+                            >
+                              {expandedGroups.has(sec.key) ? (
+                                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {expandedGroups.has(sec.key) && sec.elements.length > 0 && (
+                          <div className="px-3 pb-3 space-y-1 ml-4 border-l-2 border-blue-500/30">
+                            {sec.elements.map((element) => (
+                              <LayerElementCard key={element.id} element={element} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent className="w-56">
+                      {/* Rename Section */}
+                      <ContextMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setRenamingSectionIndex(sectionIndex)
+                        }}
+                      >
+                        <Pencil className="mr-2 h-4 w-4" />
+                        <span>Rename Section</span>
+                      </ContextMenuItem>
+                      
+                      <ContextMenuSeparator />
+                      
+                      {/* Add Section Submenu */}
+                      <ContextMenuSub>
+                        <ContextMenuSubTrigger>
+                          <Plus className="mr-2 h-4 w-4" />
+                          <span>Add Section</span>
+                        </ContextMenuSubTrigger>
+                        <ContextMenuSubContent className="w-48">
+                          <ContextMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onAddSectionAbove?.(sectionIndex)
+                            }}
+                          >
+                            <ArrowUp className="mr-2 h-4 w-4" />
+                            <span>Add Above</span>
+                          </ContextMenuItem>
+                          <ContextMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onAddSectionBelow?.(sectionIndex)
+                            }}
+                          >
+                            <ArrowDown className="mr-2 h-4 w-4" />
+                            <span>Add Below</span>
+                          </ContextMenuItem>
+                        </ContextMenuSubContent>
+                      </ContextMenuSub>
+
+                      {/* Move Section Submenu */}
+                      <ContextMenuSub>
+                        <ContextMenuSubTrigger disabled={isFirstSection && isLastSection}>
+                          <MoveUp className="mr-2 h-4 w-4" />
+                          <span>Move Section</span>
+                        </ContextMenuSubTrigger>
+                        <ContextMenuSubContent className="w-48">
+                          <ContextMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onMoveSectionUp?.(sectionIndex)
+                            }}
+                            disabled={isFirstSection}
+                          >
+                            <ArrowUp className="mr-2 h-4 w-4" />
+                            <span>Move Up</span>
+                          </ContextMenuItem>
+                          <ContextMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onMoveSectionDown?.(sectionIndex)
+                            }}
+                            disabled={isLastSection}
+                          >
+                            <ArrowDown className="mr-2 h-4 w-4" />
+                            <span>Move Down</span>
+                          </ContextMenuItem>
+                        </ContextMenuSubContent>
+                      </ContextMenuSub>
+
+                      <ContextMenuSeparator />
+
+                      {/* Copy Elements */}
+                      <ContextMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onCopyElements?.(sectionIndex)
+                        }}
+                        disabled={!hasElements}
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        <span>Copy Element Design</span>
+                      </ContextMenuItem>
+
+                      {/* Paste Elements */}
+                      <ContextMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onPasteElements?.(sectionIndex)
+                        }}
+                        disabled={!hasCopied}
+                      >
+                        <Clipboard className="mr-2 h-4 w-4" />
+                        <span>Paste Elements</span>
+                        {hasCopied && (
+                          <span className="ml-auto text-xs text-muted-foreground">
+                            ({copiedElements?.length})
+                          </span>
+                        )}
+                      </ContextMenuItem>
+
+                      <ContextMenuSeparator />
+
+                      {/* Delete Section */}
+                      <ContextMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onDeleteSection?.(sectionIndex)
+                        }}
+                        disabled={sections.length <= 1}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Delete Section</span>
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
+                )
+              })}
+
+              {/* Footer Group - with distinct styling and icon */}
+              <div className="bg-emerald-500/5 rounded-lg border border-emerald-500/20">
                 <button
                   onClick={() => toggleGroup("footer")}
-                  className="flex items-center justify-between w-full p-2 hover:bg-sidebar-accent/50 rounded-lg transition-colors"
+                  className="flex items-center justify-between w-full p-3 hover:bg-emerald-500/10 rounded-lg transition-colors"
                 >
-                  <span className="font-medium text-sidebar-foreground">Footer (#{grouped.footer.length})</span>
-                  <span className="text-sm text-muted-foreground">{expandedGroups.has("footer") ? "−" : "+"}</span>
+                  <div className="flex items-center gap-2">
+                    <PanelBottom className="w-4 h-4 text-emerald-500" />
+                    <span className="font-semibold text-emerald-500">Footer</span>
+                    <span className="text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                      {grouped.footer.length}
+                    </span>
+                  </div>
+                  {expandedGroups.has("footer") ? (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  )}
                 </button>
-                {expandedGroups.has("footer") && (
-                  <div className="mt-2 space-y-1">
+                {expandedGroups.has("footer") && grouped.footer.length > 0 && (
+                  <div className="px-3 pb-3 space-y-1 ml-4 border-l-2 border-emerald-500/30">
                     {grouped.footer.map((element) => (
                       <LayerElementCard key={element.id} element={element} />
                     ))}

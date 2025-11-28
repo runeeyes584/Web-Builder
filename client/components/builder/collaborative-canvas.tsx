@@ -23,8 +23,9 @@ interface CollaborativeCanvasProps {
   onDuplicateElement?: (id: string) => any
   onCollaborationReady?: (sendElementChange: (change: any) => void) => void
   onLayoutChangeReady?: (sendLayoutChange: (layout: any) => void) => void
-  onLayoutUpdate?: (layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }) => void
-  onSectionsChange?: (sections: { id: string; height: number }[], headerHeight: number, footerHeight: number) => void
+  onLayoutUpdate?: (layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number; name?: string }[] }) => void
+  onSectionsChange?: (sections: { id: string; height: number; name?: string }[], headerHeight: number, footerHeight: number) => void
+  onSectionActionsReady?: (actions: any) => void
   snapToGrid: (value: number, gridSize: number) => number
   snapSettings: { enabled: boolean; gridSize: number; snapToElements: boolean; snapDistance: number }
   zoom?: number

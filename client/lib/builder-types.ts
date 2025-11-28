@@ -75,7 +75,7 @@ export interface RegionsLayout {
 export interface CanvasLayout {
   headerHeight: number
   footerHeight: number
-  sections: { id: string; height: number }[]
+  sections: { id: string; height: number; name?: string }[]
   version?: string
 }
 

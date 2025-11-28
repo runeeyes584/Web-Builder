@@ -65,7 +65,19 @@ export default function WebsiteBuilder() {
   // Active left panel: components | pages | siteStyle
   const [activeLeftPanel, setActiveLeftPanel] = useState<'components' | 'pages' | 'siteStyle'>('pages')
   const [regionsLayout, setRegionsLayout] = useState<RegionsLayout | null>(null)
-  const [canvasLayout, setCanvasLayout] = useState<{ headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] } | null>(null)
+  const [canvasLayout, setCanvasLayout] = useState<{ headerHeight: number; footerHeight: number; sections: { id: string; height: number; name?: string }[] } | null>(null)
+
+  // Section actions state - exposed from Canvas for LayersPanel
+  const [sectionActions, setSectionActions] = useState<{
+    addSectionAbove: (index: number) => void
+    addSectionBelow: (index: number) => void
+    moveSectionUp: (index: number) => void
+    moveSectionDown: (index: number) => void
+    copyElements: (sectionIndex: number) => void
+    pasteElements: (sectionIndex: number) => void
+    deleteSection: (index: number) => void
+    copiedElements: BuilderElement[] | null
+  } | null>(null)
 
   // Project and collaboration state
   const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(undefined)
@@ -141,13 +153,47 @@ export default function WebsiteBuilder() {
   }, [])
 
   // Handle layout updates from other collaborators
-  const handleLayoutUpdate = useCallback((layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }) => {
+  const handleLayoutUpdate = useCallback((layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number; name?: string }[] }) => {
     // Update local canvas layout state when receiving layout changes from other users
     setCanvasLayout(layout)
   }, [])
 
+  // Handle section rename from LayersPanel
+  const handleRenameSection = useCallback(async (index: number, newName: string) => {
+    if (!canvasLayout) return
+
+    const newSections = [...canvasLayout.sections]
+    if (newSections[index]) {
+      newSections[index] = { ...newSections[index], name: newName.trim() || undefined }
+    }
+
+    const newLayout = { ...canvasLayout, sections: newSections }
+
+    // Update local state immediately
+    setCanvasLayout(newLayout)
+
+    // Broadcast to collaborators via WebSocket immediately
+    if (sendLayoutChangeRef.current) {
+      sendLayoutChangeRef.current(newLayout)
+    }
+
+    // Save to database if project is open
+    if (currentProjectId && canEdit) {
+      try {
+        const { projectsApi } = await import('@/api/projects.api')
+        await projectsApi.update(currentProjectId, {
+          name: currentProjectName,
+          elements: elements,
+          layout: newLayout,
+        })
+      } catch (error) {
+        console.error('Failed to save layout after section rename:', error)
+      }
+    }
+  }, [canvasLayout, currentProjectId, canEdit, currentProjectName, elements])
+
   // Handle immediate save when sections are added/removed (not debounced)
-  const handleSectionsChange = useCallback(async (sections: { id: string; height: number }[], headerHeight: number, footerHeight: number) => {
+  const handleSectionsChange = useCallback(async (sections: { id: string; height: number; name?: string }[], headerHeight: number, footerHeight: number) => {
     if (!currentProjectId || !canEdit) return
 
     const newLayout = { headerHeight, footerHeight, sections }
@@ -885,6 +931,7 @@ export default function WebsiteBuilder() {
                           onCollaborationReady={handleCollaborationReady}
                           onLayoutChangeReady={handleLayoutChangeReady}
                           onLayoutUpdate={handleLayoutUpdate}
+                          onSectionActionsReady={setSectionActions}
                           onRoleChanged={(newRole: string) => {
                             setUserRole(newRole as 'OWNER' | 'EDITOR' | 'VIEWER')
                             setIsProjectOwner(newRole === 'OWNER')
@@ -962,6 +1009,19 @@ export default function WebsiteBuilder() {
               isOpen={showLayers}
               onClose={() => setShowLayers(false)}
               regions={regionsLayout || undefined}
+              // Section actions from Canvas
+              sections={canvasLayout?.sections || []}
+              headerHeight={canvasLayout?.headerHeight || 96}
+              footerHeight={canvasLayout?.footerHeight || 96}
+              copiedElements={sectionActions?.copiedElements}
+              onAddSectionAbove={sectionActions?.addSectionAbove}
+              onAddSectionBelow={sectionActions?.addSectionBelow}
+              onMoveSectionUp={sectionActions?.moveSectionUp}
+              onMoveSectionDown={sectionActions?.moveSectionDown}
+              onCopyElements={sectionActions?.copyElements}
+              onPasteElements={sectionActions?.pasteElements}
+              onDeleteSection={sectionActions?.deleteSection}
+              onRenameSection={handleRenameSection}
             />
           </div>
           <DragLayer />

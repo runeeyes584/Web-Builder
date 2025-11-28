@@ -241,3 +241,6 @@ temp/
 # Local development
 .local
 *.local
+
+#uploads folder
+uploads/
