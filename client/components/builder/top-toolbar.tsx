@@ -96,14 +96,14 @@ export function TopToolbar({
 
   return (
     <>
-      <div className="h-14 bg-gradient-to-r from-card via-card to-card/95 border-b border-border flex items-center gap-4 px-4 backdrop-blur-sm">
+      <div className="h-14 bg-gradient-to-r from-card via-card to-card/95 border-b border-border flex items-center justify-between px-4 backdrop-blur-sm overflow-x-auto">
         {/* Left Section - Logo & Project */}
-        <div className="flex items-center gap-3 min-w-0 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg">
               <span className="text-primary-foreground font-bold text-sm">WB</span>
             </div>
-            <div className="hidden lg:block">
+            <div className="hidden xl:block">
               <span className="font-semibold text-foreground text-sm whitespace-nowrap">Website Builder</span>
             </div>
           </div>
@@ -120,7 +120,7 @@ export function TopToolbar({
         </div>
 
         {/* Center Section - Main Controls */}
-        <div className="flex items-center gap-2 flex-1 min-w-0 justify-center">
+        <div className="flex items-center gap-2 shrink-0 mx-4">
           {/* Tool Switcher */}
           <div className="flex items-center gap-0.5 bg-gradient-to-r from-muted to-muted/80 rounded-lg p-0.5 shadow-sm">
             <Button
@@ -189,7 +189,7 @@ export function TopToolbar({
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </Button>
-            <span className="text-xs font-medium px-1.5 min-w-[2.5rem] text-center">{zoom}%</span>
+            <span className="text-xs font-medium px-1 min-w-[2rem] text-center">{zoom}%</span>
             <Button
               variant="ghost"
               size="sm"
@@ -279,23 +279,26 @@ export function TopToolbar({
               <RotateCcw className="w-3.5 h-3.5" />
             </Button>
           </div>
+
+          <div className="h-6 w-px bg-border" />
+
+          {/* Share Button - moved to center */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowShare(true)}
+            className="h-8 w-8 p-0 bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20"
+            disabled={!projectId}
+            title="Share Project"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+          </Button>
         </div>
 
         {/* Right Section - Actions & User */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Main Actions */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowShare(true)}
-              className="h-8 px-3 bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20"
-              disabled={!projectId}
-              title="Share Project"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              <span className="ml-1.5 hidden lg:inline text-xs">Share</span>
-            </Button>
+          <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
               size="sm"
@@ -331,7 +334,6 @@ export function TopToolbar({
             {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </Button>
 
-          <div className="h-6 w-px bg-border" />
           <UserButton
             appearance={{
               elements: {

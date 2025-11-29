@@ -1756,6 +1756,469 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
           </div>
         )
       
+      case "file-upload":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div
+              className="w-full h-full flex flex-col items-center justify-center"
+              style={{
+                fontFamily: element.props?.fontFamily || 'inherit',
+                fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                fontWeight: element.props?.fontWeight || 'normal',
+                color: element.props?.textColor || 'var(--color-foreground)',
+                backgroundColor: element.props?.backgroundColor || 'var(--color-background)',
+                borderColor: element.props?.borderColor || 'var(--color-border)',
+                borderRadius: element.props?.borderRadius || '0.5rem',
+                padding: element.props?.padding || '0.75rem',
+                borderStyle: element.props?.borderStyle || 'dashed',
+                borderWidth: element.props?.borderWidth || '2px',
+                border: `${element.props?.borderWidth || '2px'} ${element.props?.borderStyle || 'dashed'} ${element.props?.borderColor || 'var(--color-border)'}`
+              }}
+            >
+              <svg
+                className="w-8 h-8 mb-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                style={{ color: element.props?.textColor || 'var(--color-muted-foreground)' }}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <span
+                className="text-sm"
+                style={{
+                  fontFamily: element.props?.fontFamily || 'inherit',
+                  fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                  fontWeight: element.props?.fontWeight || 'normal',
+                  color: element.props?.textColor || 'var(--color-muted-foreground)'
+                }}
+              >
+                {element.content}
+              </span>
+            </div>
+          </div>
+        )
+
+      case "file-download":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{
+                fontFamily: element.props?.fontFamily || 'inherit',
+                fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                fontWeight: element.props?.fontWeight || 'normal',
+                color: element.props?.textColor || 'var(--color-primary-foreground)',
+                backgroundColor: element.props?.backgroundColor || 'var(--color-primary)',
+                borderRadius: element.props?.borderRadius || '8px',
+                padding: element.props?.padding || '0.75rem'
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  style={{
+                    color: element.props?.iconColor || 'var(--color-primary-foreground)',
+                    width: element.props?.iconSize ? `${element.props.iconSize}px` : '16px',
+                    height: element.props?.iconSize ? `${element.props.iconSize}px` : '16px'
+                  }}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span
+                  className="text-sm font-medium"
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                    fontWeight: element.props?.fontWeight || 'normal',
+                    color: element.props?.textColor || 'var(--color-primary-foreground)'
+                  }}
+                >
+                  {element.content}
+                </span>
+              </div>
+            </div>
+          </div>
+        )
+
+      case "pdf-viewer":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div
+              className="w-full h-full flex flex-col items-center justify-center"
+              style={{
+                fontFamily: element.props?.fontFamily || 'inherit',
+                fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                fontWeight: element.props?.fontWeight || 'normal',
+                color: element.props?.textColor || 'var(--color-foreground)',
+                backgroundColor: element.props?.backgroundColor || 'var(--color-card)',
+                borderColor: element.props?.borderColor || 'var(--color-border)',
+                borderRadius: element.props?.borderRadius || '0.5rem',
+                padding: element.props?.padding || '1rem',
+                border: `1px solid ${element.props?.borderColor || 'var(--color-border)'}`
+              }}
+            >
+              {element.props?.pdfUrl || element.props?.uploadedFile ? (
+                <div className="w-full h-full flex flex-col">
+                  <div className="flex items-center justify-between mb-2">
+                    <span
+                      className="text-sm font-medium"
+                      style={{
+                        fontFamily: element.props?.fontFamily || 'inherit',
+                        fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                        fontWeight: element.props?.fontWeight || 'normal',
+                        color: element.props?.textColor || 'var(--color-foreground)'
+                      }}
+                    >
+                      {element.props?.fileName || "PDF Document"}
+                    </span>
+                    <span
+                      className="text-xs text-muted-foreground"
+                      style={{
+                        fontFamily: element.props?.fontFamily || 'inherit',
+                        fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                        fontWeight: element.props?.fontWeight || 'normal',
+                        color: element.props?.textColor || 'var(--color-muted-foreground)'
+                      }}
+                    >
+                      Open in New Tab
+                    </span>
+                  </div>
+                  <iframe
+                    src={element.props?.uploadedFile ? URL.createObjectURL(element.props.uploadedFile) : element.props?.pdfUrl}
+                    className="w-full flex-1 border-0 rounded"
+                    style={{ borderRadius: element.props?.borderRadius || '0.5rem' }}
+                    title={element.props?.fileName || "PDF Document"}
+                  />
+                </div>
+              ) : (
+                <div className="text-center">
+                  <svg
+                    className="w-12 h-12 text-muted-foreground mb-2 mx-auto"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    style={{ color: element.props?.textColor || 'var(--color-muted-foreground)' }}
+                  >
+                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                  </svg>
+                  {element.props?.showFileName !== false && (
+                    <span
+                      className="text-sm font-medium block"
+                      style={{
+                        fontFamily: element.props?.fontFamily || 'inherit',
+                        fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                        fontWeight: element.props?.fontWeight || 'normal',
+                        color: element.props?.textColor || 'var(--color-foreground)'
+                      }}
+                    >
+                      {element.props?.fileName || "PDF Document"}
+                    </span>
+                  )}
+                  <span
+                    className="text-xs text-muted-foreground mt-1 block"
+                    style={{
+                      fontFamily: element.props?.fontFamily || 'inherit',
+                      fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                      fontWeight: element.props?.fontWeight || 'normal',
+                      color: element.props?.textColor || 'var(--color-muted-foreground)'
+                    }}
+                  >
+                    PDF Viewer
+                  </span>
+                  {element.props?.showUploadButton !== false && (
+                    <div className="mt-3">
+                      <span
+                        className="text-xs text-muted-foreground"
+                        style={{
+                          fontFamily: element.props?.fontFamily || 'inherit',
+                          fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                          fontWeight: element.props?.fontWeight || 'normal',
+                          color: element.props?.textColor || 'var(--color-muted-foreground)'
+                        }}
+                      >
+                        Upload PDF URL or file in properties panel
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )
+
+      case "document":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div
+              className="w-full h-full flex flex-col items-center justify-center"
+              style={{
+                fontFamily: element.props?.fontFamily || 'inherit',
+                fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                fontWeight: element.props?.fontWeight || 'normal',
+                color: element.props?.textColor || 'var(--color-foreground)',
+                backgroundColor: element.props?.backgroundColor || 'var(--color-card)',
+                borderColor: element.props?.borderColor || 'var(--color-border)',
+                borderRadius: element.props?.borderRadius || '0.5rem',
+                padding: element.props?.padding || '1rem',
+                border: `1px solid ${element.props?.borderColor || 'var(--color-border)'}`
+              }}
+            >
+              {element.props?.documentUrl || element.props?.uploadedFile ? (
+                <div className="w-full h-full flex flex-col">
+                  <div className="flex items-center justify-between mb-2">
+                    <span
+                      className="text-sm font-medium"
+                      style={{
+                        fontFamily: element.props?.fontFamily || 'inherit',
+                        fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                        fontWeight: element.props?.fontWeight || 'normal',
+                        color: element.props?.textColor || 'var(--color-foreground)'
+                      }}
+                    >
+                      {element.props?.fileName || "Document Viewer"}
+                    </span>
+                    <span
+                      className="text-xs text-muted-foreground"
+                      style={{
+                        fontFamily: element.props?.fontFamily || 'inherit',
+                        fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                        fontWeight: element.props?.fontWeight || 'normal',
+                        color: element.props?.textColor || 'var(--color-muted-foreground)'
+                      }}
+                    >
+                      Open in New Tab
+                    </span>
+                  </div>
+                  <div className="flex-1 flex items-center justify-center">
+                    {element.props?.documentType === 'pdf' ||
+                      (element.props?.uploadedFile && element.props.uploadedFile.type === 'application/pdf') ||
+                      (element.props?.documentUrl && element.props.documentUrl.toLowerCase().includes('.pdf')) ? (
+                      <iframe
+                        src={element.props?.uploadedFile ? URL.createObjectURL(element.props.uploadedFile) : element.props?.documentUrl}
+                        className="w-full h-full border-0 rounded"
+                        style={{ borderRadius: element.props?.borderRadius || '0.5rem' }}
+                        title={element.props?.fileName || "Document Viewer"}
+                      />
+                    ) : (
+                      <div className="text-center">
+                        <svg
+                          className="w-16 h-16 text-muted-foreground mb-2 mx-auto"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                          style={{ color: element.props?.textColor || 'var(--color-muted-foreground)' }}
+                        >
+                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                        </svg>
+                        <span
+                          className="text-sm font-medium block"
+                          style={{
+                            fontFamily: element.props?.fontFamily || 'inherit',
+                            fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                            fontWeight: element.props?.fontWeight || 'normal',
+                            color: element.props?.textColor || 'var(--color-foreground)'
+                          }}
+                        >
+                          {element.props?.fileName || "Document Viewer"}
+                        </span>
+                        <span
+                          className="text-xs text-muted-foreground mt-1 block"
+                          style={{
+                            fontFamily: element.props?.fontFamily || 'inherit',
+                            fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                            fontWeight: element.props?.fontWeight || 'normal',
+                            color: element.props?.textColor || 'var(--color-muted-foreground)'
+                          }}
+                        >
+                          Document preview not available
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <svg
+                    className="w-10 h-10 text-muted-foreground mb-2 mx-auto"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    style={{ color: element.props?.textColor || 'var(--color-muted-foreground)' }}
+                  >
+                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                  </svg>
+                  {element.props?.showFileName !== false && (
+                    <span
+                      className="text-sm font-medium block"
+                      style={{
+                        fontFamily: element.props?.fontFamily || 'inherit',
+                        fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                        fontWeight: element.props?.fontWeight || 'normal',
+                        color: element.props?.textColor || 'var(--color-foreground)'
+                      }}
+                    >
+                      {element.props?.fileName || "Document Viewer"}
+                    </span>
+                  )}
+                  <span
+                    className="text-xs text-muted-foreground mt-1 block"
+                    style={{
+                      fontFamily: element.props?.fontFamily || 'inherit',
+                      fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                      fontWeight: element.props?.fontWeight || 'normal',
+                      color: element.props?.textColor || 'var(--color-muted-foreground)'
+                    }}
+                  >
+                    Document Viewer
+                  </span>
+                  {element.props?.showUploadButton !== false && (
+                    <div className="mt-3">
+                      <span
+                        className="text-xs text-muted-foreground"
+                        style={{
+                          fontFamily: element.props?.fontFamily || 'inherit',
+                          fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                          fontWeight: element.props?.fontWeight || 'normal',
+                          color: element.props?.textColor || 'var(--color-muted-foreground)'
+                        }}
+                      >
+                        Upload document URL or file in properties panel
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )
+
+      case "folder":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div
+              className="w-full h-full flex flex-col"
+              style={{
+                fontFamily: element.props?.fontFamily || 'inherit',
+                fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                fontWeight: element.props?.fontWeight || 'normal',
+                color: element.props?.textColor || 'var(--color-foreground)',
+                backgroundColor: element.props?.backgroundColor || 'var(--color-card)',
+                borderColor: element.props?.borderColor || 'var(--color-border)',
+                borderRadius: element.props?.borderRadius || '0.5rem',
+                padding: element.props?.padding || '1rem',
+                border: `1px solid ${element.props?.borderColor || 'var(--color-border)'}`
+              }}
+            >
+              {/* Folder Header */}
+              <div className="flex items-center gap-2 mb-3">
+                <svg
+                  className="w-6 h-6 text-muted-foreground"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  style={{ color: element.props?.textColor || 'var(--color-muted-foreground)' }}
+                >
+                  <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                </svg>
+                <span
+                  className="text-sm font-medium flex-1"
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                    fontWeight: element.props?.fontWeight || 'normal',
+                    color: element.props?.textColor || 'var(--color-foreground)'
+                  }}
+                >
+                  {element.props?.folderName || "Folder Name"}
+                </span>
+                {element.props?.showItemCount !== false && (
+                  <span
+                    className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded"
+                    style={{
+                      fontFamily: element.props?.fontFamily || 'inherit',
+                      fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                      fontWeight: element.props?.fontWeight || 'normal',
+                      color: element.props?.textColor || 'var(--color-muted-foreground)'
+                    }}
+                  >
+                    {element.props?.items?.length || 0} items
+                  </span>
+                )}
+              </div>
+
+              {/* Folder Items */}
+              <div className="flex-1 overflow-y-auto">
+                {element.props?.items && element.props.items.length > 0 ? (
+                  <div className="space-y-1">
+                    {element.props.items.map((item: { id: string | number; type: string; icon?: string; name: string }) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-2 p-1 hover:bg-muted rounded text-xs"
+                        style={{
+                          fontFamily: element.props?.fontFamily || 'inherit',
+                          fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                          fontWeight: element.props?.fontWeight || 'normal',
+                          color: element.props?.textColor || 'var(--color-foreground)'
+                        }}
+                      >
+                        {/* File/Folder Icon */}
+                        {item.type === 'folder' ? (
+                          <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                          </svg>
+                        ) : item.icon === 'pdf' ? (
+                          <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                          </svg>
+                        ) : item.icon === 'image' ? (
+                          <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                          </svg>
+                        )}
+
+                        {/* File/Folder Name */}
+                        <span className="flex-1 truncate">{item.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div
+                    className="text-center text-muted-foreground py-4"
+                    style={{
+                      fontFamily: element.props?.fontFamily || 'inherit',
+                      fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                      fontWeight: element.props?.fontWeight || 'normal',
+                      color: element.props?.textColor || 'var(--color-muted-foreground)'
+                    }}
+                  >
+                    Empty folder
+                  </div>
+                )}
+              </div>
+
+              {/* Add Item Button (shown in preview as a hint) */}
+              {element.props?.allowAddItems !== false && (
+                <div className="mt-2 pt-2 border-t border-border">
+                  <span
+                    className="w-full text-xs text-muted-foreground block text-center"
+                    style={{
+                      fontFamily: element.props?.fontFamily || 'inherit',
+                      fontSize: element.props?.fontSize ? `${element.props.fontSize - 2}px` : '12px',
+                      color: element.props?.textColor || 'var(--color-muted-foreground)'
+                    }}
+                  >
+                    + Add Item
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+
       case "section":
       case "grid":
       case "footer":
