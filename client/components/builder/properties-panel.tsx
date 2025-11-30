@@ -3482,6 +3482,24 @@ export function PropertiesPanel({
                       />
                       <Label className="text-xs text-muted-foreground">Open in new tab</Label>
                     </div>
+                    <Separator className="bg-sidebar-border" />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label className="text-xs font-medium">Preview Mode</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Click button on canvas to test link
+                        </p>
+                      </div>
+                      <Switch
+                        checked={selectedElement.props?.buttonPreviewMode || false}
+                        onCheckedChange={(checked) => updateElementProps({ buttonPreviewMode: checked })}
+                      />
+                    </div>
+                    {selectedElement.props?.buttonPreviewMode && (
+                      <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                        ⚠️ Preview mode is ON. Clicking the button will navigate to the link.
+                      </div>
+                    )}
                   </div>
                 ) : selectedElement.type === "typography" ? (
                   <div className="space-y-3">

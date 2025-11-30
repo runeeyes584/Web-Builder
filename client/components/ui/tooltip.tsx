@@ -61,7 +61,7 @@ function TooltipContent({
         side={side}
         className={cn(
           // Base styles
-          'z-50 w-fit origin-center rounded-lg px-3 py-2 text-xs text-balance shadow-lg',
+          'z-[100] w-fit origin-center rounded-lg px-3 py-2 text-xs text-balance shadow-lg',
           // Background with gradient and glow effect
           'bg-gradient-to-br from-popover via-popover to-popover/95',
           'border border-border/50 backdrop-blur-sm',
@@ -89,7 +89,7 @@ function TooltipContent({
         {/* Enhanced arrow with gradient */}
         <TooltipPrimitive.Arrow 
           className={cn(
-            'z-50 size-2.5 rounded-[2px]',
+            'z-[100] size-2.5 rounded-[2px]',
             'bg-gradient-to-br from-popover via-popover to-popover/95',
             'border border-border/50',
             // Arrow positioning based on side

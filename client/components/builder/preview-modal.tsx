@@ -105,14 +105,14 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
             {element.content}
           </h1>
         )
-      
+
       case "paragraph":
         return (
           <p key={element.id} style={{ ...wrapperStyles, ...contentStyles }} className="text-foreground text-sm leading-tight">
             {element.content}
           </p>
         )
-      
+
       case "image":
         return (
           <div key={element.id} style={wrapperStyles}>
@@ -136,7 +136,7 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
             })()}
           </div>
         )
-      
+
       case "video":
         return (
           <div key={element.id} style={wrapperStyles}>
@@ -225,7 +225,7 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
             </div>
           </div>
         )
-      
+
       case "audio":
         return (
           <div key={element.id} style={wrapperStyles}>
@@ -253,14 +253,34 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
             </div>
           </div>
         )
-      
+
       case "button":
+        const handleButtonClick = () => {
+          if (element.props?.href) {
+            const url = element.props.href
+            // Ensure URL has protocol
+            const finalUrl = url.startsWith('http://') || url.startsWith('https://') 
+              ? url 
+              : `https://${url}`
+            
+            if (element.props?.openInNewTab) {
+              window.open(finalUrl, '_blank', 'noopener,noreferrer')
+            } else {
+              window.location.href = finalUrl
+            }
+          }
+        }
         return (
-          <button key={element.id} style={{ ...wrapperStyles, ...contentStyles }} className="text-foreground hover:opacity-90 transition-opacity">
+          <button 
+            key={element.id} 
+            style={{ ...wrapperStyles, ...contentStyles }} 
+            className="text-foreground hover:opacity-90 transition-opacity cursor-pointer"
+            onClick={handleButtonClick}
+          >
             {element.content}
           </button>
         )
-      
+
       case "card":
         return (
           <div key={element.id} style={wrapperStyles}>
@@ -679,9 +699,9 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
             <div className="w-full h-full bg-card border border-border rounded-lg overflow-hidden relative" style={contentStyles}>
               <div className="w-full h-full flex items-center justify-center bg-muted">
                 {element.props?.uploadedImages?.[0] ? (
-                  <img 
-                    src={element.props.uploadedImages[0]} 
-                    alt="Carousel slide" 
+                  <img
+                    src={element.props.uploadedImages[0]}
+                    alt="Carousel slide"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -744,11 +764,11 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
       case "separator":
         return (
           <div key={element.id} style={wrapperStyles}>
-            <div 
+            <div
               className="w-full h-full flex items-center justify-center"
               style={contentStyles}
             >
-              <div 
+              <div
                 className={`${element.props?.orientation === 'vertical' ? 'h-full w-px' : 'w-full h-px'} bg-border`}
                 style={{
                   backgroundColor: element.props?.color || undefined,
@@ -797,11 +817,11 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
       case "badge":
         return (
           <div key={element.id} style={wrapperStyles}>
-            <div 
+            <div
               className="w-full h-full flex items-center justify-center"
               style={contentStyles}
             >
-              <span 
+              <span
                 className="inline-flex items-center justify-center"
                 style={{
                   padding: '0.25rem 0.75rem',
@@ -809,12 +829,12 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
                   fontFamily: contentStyles.fontFamily,
                   fontSize: contentStyles.fontSize,
                   fontWeight: contentStyles.fontWeight,
-                  backgroundColor: element.props?.variant === 'outline' ? 'transparent' : 
+                  backgroundColor: element.props?.variant === 'outline' ? 'transparent' :
                     (element.props?.variant === 'secondary' ? 'var(--secondary)' :
-                    element.props?.variant === 'destructive' ? 'var(--destructive)' : 'var(--primary)'),
+                      element.props?.variant === 'destructive' ? 'var(--destructive)' : 'var(--primary)'),
                   color: element.props?.variant === 'outline' ? 'var(--foreground)' :
                     (element.props?.variant === 'secondary' ? 'var(--secondary-foreground)' :
-                    element.props?.variant === 'destructive' ? 'var(--destructive-foreground)' : 'var(--primary-foreground)'),
+                      element.props?.variant === 'destructive' ? 'var(--destructive-foreground)' : 'var(--primary-foreground)'),
                   border: element.props?.variant === 'outline' ? '1px solid var(--border)' : undefined,
                 }}
               >
@@ -827,8 +847,8 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
       case "avatar":
         return (
           <div key={element.id} style={wrapperStyles}>
-            <div 
-              className="w-full h-full flex items-center justify-center" 
+            <div
+              className="w-full h-full flex items-center justify-center"
               style={contentStyles}
             >
               {element.props?.src ? (
@@ -1241,7 +1261,7 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
                   >
                     {element.props?.submitText || "Login"}
                   </button>
-                  <div 
+                  <div
                     className="text-xs text-center"
                     style={{ color: element.props?.forgotPasswordColor || '#9ca3af' }}
                   >
@@ -1755,7 +1775,7 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
             </div>
           </div>
         )
-      
+
       case "file-upload":
         return (
           <div key={element.id} style={wrapperStyles}>
@@ -2219,6 +2239,555 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
           </div>
         )
 
+      // Advanced UI Components
+      case "calendar":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={contentStyles}>
+              <div className="text-center">
+                <h3
+                  className="font-semibold text-sm mb-3"
+                  style={{
+                    fontFamily: element.props?.titleFontFamily || 'inherit',
+                    fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : '14px',
+                    fontWeight: element.props?.titleFontWeight || '600',
+                    color: element.props?.titleTextColor || 'inherit'
+                  }}
+                >
+                  {element.props?.title || "Calendar"}
+                </h3>
+                <div className="grid grid-cols-7 gap-1 text-xs">
+                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                    <div key={i} className="p-1 text-center font-medium text-muted-foreground">{day}</div>
+                  ))}
+                  {Array.from({ length: 28 }, (_, i) => (
+                    <div key={i} className="p-1 text-center hover:bg-muted rounded">{i + 1}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+
+      case "search-bar":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full" style={contentStyles}>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder={element.content}
+                  className="w-full px-3 py-2 pl-8 text-sm border border-border rounded-lg bg-background text-foreground"
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '16px',
+                    fontWeight: element.props?.fontWeight || 'normal',
+                    color: element.props?.textColor || 'var(--color-foreground)'
+                  }}
+                  disabled
+                />
+                <svg className="absolute left-2 top-2.5 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        )
+
+      case "filter":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" style={contentStyles}>
+              <h3
+                className="font-semibold text-sm mb-3"
+                style={{
+                  fontFamily: element.props?.titleFontFamily || 'inherit',
+                  fontSize: element.props?.titleFontSize ? `${element.props.titleFontSize}px` : '14px',
+                  fontWeight: element.props?.titleFontWeight || '600',
+                  color: element.props?.titleTextColor || 'var(--color-foreground)'
+                }}
+              >
+                {element.props?.title || element.content}
+              </h3>
+              <div className="space-y-2">
+                {(element.props?.options || [
+                  { id: "option1", label: "Option 1", checked: false },
+                  { id: "option2", label: "Option 2", checked: false },
+                  { id: "option3", label: "Option 3", checked: false }
+                ]).map((option: { id: string; label: string; checked?: boolean }, index: number) => (
+                  <label key={option.id || index} className="flex items-center gap-2 text-xs cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="rounded border-border bg-background text-primary"
+                      checked={option.checked || false}
+                      disabled
+                    />
+                    <span
+                      style={{
+                        fontFamily: element.props?.optionFontFamily || 'inherit',
+                        fontSize: element.props?.optionFontSize ? `${element.props.optionFontSize}px` : '12px',
+                        fontWeight: element.props?.optionFontWeight || 'normal',
+                        color: element.props?.optionTextColor || 'var(--color-foreground)'
+                      }}
+                    >
+                      {option.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+
+      case "breadcrumb":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full flex items-center" style={contentStyles}>
+              <nav className="flex items-center space-x-1 text-sm">
+                {(element.props?.items || [
+                  { id: "home", label: "Home", href: "/", isLast: false },
+                  { id: "about", label: "About", href: "/about", isLast: false },
+                  { id: "contact", label: "Contact", href: "/contact", isLast: true }
+                ]).map((item: { id: string; label: string; href?: string; isLast?: boolean }, index: number, array: { id: string; label: string; href?: string; isLast?: boolean }[]) => (
+                  <div key={item.id || index} className="flex items-center">
+                    <span
+                      className={item.isLast ? "" : "hover:underline cursor-pointer"}
+                      style={{
+                        fontFamily: element.props?.fontFamily || 'inherit',
+                        fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                        fontWeight: element.props?.fontWeight || 'normal',
+                        color: item.isLast
+                          ? (element.props?.lastItemColor || 'var(--color-muted-foreground)')
+                          : (element.props?.textColor || 'var(--color-primary)')
+                      }}
+                    >
+                      {item.label}
+                    </span>
+                    {index < array.length - 1 && (
+                      <span
+                        className="mx-1"
+                        style={{
+                          fontFamily: element.props?.fontFamily || 'inherit',
+                          fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                          fontWeight: element.props?.fontWeight || 'normal',
+                          color: element.props?.separatorColor || 'var(--color-muted-foreground)'
+                        }}
+                      >
+                        {element.props?.separator || "/"}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </nav>
+            </div>
+          </div>
+        )
+
+      case "pagination":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full flex items-center justify-center" style={contentStyles}>
+              <nav className="flex items-center space-x-1">
+                {(element.props?.items || [
+                  { id: "prev", label: "←", type: "prev", isActive: false },
+                  { id: "1", label: "1", type: "page", isActive: true },
+                  { id: "2", label: "2", type: "page", isActive: false },
+                  { id: "3", label: "3", type: "page", isActive: false },
+                  { id: "ellipsis", label: "...", type: "ellipsis", isActive: false },
+                  { id: "10", label: "10", type: "page", isActive: false },
+                  { id: "next", label: "→", type: "next", isActive: false }
+                ]).map((item: { id: string; label: string; type?: string; isActive?: boolean }, index: number) => (
+                  <div key={item.id || index}>
+                    {item.type === "ellipsis" ? (
+                      <span
+                        className="px-2 py-1 text-xs text-muted-foreground"
+                        style={{
+                          fontFamily: element.props?.fontFamily || 'inherit',
+                          fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '12px',
+                          fontWeight: element.props?.fontWeight || 'normal',
+                          color: element.props?.textColor || 'var(--color-muted-foreground)'
+                        }}
+                      >
+                        {item.label}
+                      </span>
+                    ) : (
+                      <button
+                        className={`px-2 py-1 text-xs border rounded ${item.isActive
+                          ? "bg-primary text-primary-foreground"
+                          : "border-border"
+                          }`}
+                        style={{
+                          fontFamily: element.props?.fontFamily || 'inherit',
+                          fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '12px',
+                          fontWeight: element.props?.fontWeight || 'normal',
+                          color: item.isActive
+                            ? (element.props?.activeTextColor || 'var(--color-primary-foreground)')
+                            : (element.props?.textColor || 'var(--color-foreground)'),
+                          backgroundColor: item.isActive
+                            ? (element.props?.activeBgColor || 'var(--color-primary)')
+                            : 'transparent',
+                          borderColor: element.props?.borderColor || 'var(--color-border)'
+                        }}
+                        disabled
+                      >
+                        {item.label}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </nav>
+            </div>
+          </div>
+        )
+
+      case "spinner":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full flex items-center justify-center" style={contentStyles}>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <span className="ml-2 text-sm">{element.content}</span>
+            </div>
+          </div>
+        )
+
+      case "skeleton":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full" style={contentStyles}>
+              <div className="animate-pulse space-y-3">
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+                <div className="h-4 bg-muted rounded w-1/2"></div>
+                <div className="h-4 bg-muted rounded w-5/6"></div>
+              </div>
+            </div>
+          </div>
+        )
+
+      case "alert":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full flex items-center justify-center" style={contentStyles}>
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span
+                  className="text-sm font-medium"
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                    fontWeight: element.props?.fontWeight || 'medium',
+                    color: element.props?.textColor || 'var(--color-destructive-foreground)'
+                  }}
+                >
+                  {element.content}
+                </span>
+              </div>
+            </div>
+          </div>
+        )
+
+      case "toast":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full flex items-center justify-center" style={contentStyles}>
+              <div className="flex items-center gap-2">
+                <svg
+                  className="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  style={{
+                    color: element.props?.iconColor || 'currentColor'
+                  }}
+                >
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span
+                  className="text-sm"
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                    fontWeight: element.props?.fontWeight || 'normal',
+                    color: element.props?.textColor || 'var(--color-foreground)'
+                  }}
+                >
+                  {element.content}
+                </span>
+              </div>
+            </div>
+          </div>
+        )
+
+      // Content & Text Components
+      case "code-block":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full relative" style={contentStyles}>
+              <pre className="w-full h-full p-4 bg-muted rounded-lg border border-border overflow-auto">
+                <code
+                  className={`text-sm font-mono language-${element.props?.language || 'javascript'}`}
+                  style={{
+                    fontFamily: element.props?.fontFamily || 'inherit',
+                    fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                    fontWeight: element.props?.fontWeight || 'normal',
+                    color: element.props?.textColor || 'var(--color-foreground)'
+                  }}
+                >
+                  {element.content}
+                </code>
+              </pre>
+              <div className="absolute top-2 right-2 px-2 py-1 bg-primary/10 text-primary text-xs rounded-md font-medium">
+                {element.props?.language || 'javascript'}
+              </div>
+            </div>
+          </div>
+        )
+
+      case "markdown":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div
+              className="w-full h-full p-4 bg-card rounded-lg border border-border overflow-auto prose prose-sm max-w-none"
+              style={{
+                fontFamily: element.props?.fontFamily || 'inherit',
+                fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                fontWeight: element.props?.fontWeight || 'normal',
+                color: element.props?.textColor || 'var(--color-foreground)',
+                ...contentStyles
+              }}
+            >
+              <div className="whitespace-pre-wrap">{element.content}</div>
+            </div>
+          </div>
+        )
+
+      case "rich-text":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div
+              className="w-full h-full p-4 bg-card rounded-lg border border-border overflow-auto"
+              style={{
+                fontFamily: element.props?.fontFamily || 'inherit',
+                fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                fontWeight: element.props?.fontWeight || 'normal',
+                color: element.props?.textColor || 'var(--color-foreground)',
+                fontStyle: element.props?.italic ? 'italic' : 'normal',
+                textDecoration: element.props?.underline ? 'underline' : 'none',
+                ...contentStyles
+              }}
+            >
+              {element.content}
+            </div>
+          </div>
+        )
+
+      case "typography":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full" style={contentStyles}>
+              <h2
+                style={{
+                  fontFamily: element.props?.headingFontFamily || 'inherit',
+                  fontSize: element.props?.headingFontSize ? `${element.props.headingFontSize}px` : '24px',
+                  fontWeight: element.props?.headingFontWeight || 'bold',
+                  color: element.props?.headingColor || 'var(--color-foreground)'
+                }}
+              >
+                {element.props?.heading || "Typography"}
+              </h2>
+              <p
+                style={{
+                  fontFamily: element.props?.subtitleFontFamily || 'inherit',
+                  fontSize: element.props?.subtitleFontSize ? `${element.props.subtitleFontSize}px` : '14px',
+                  fontWeight: element.props?.subtitleFontWeight || 'normal',
+                  color: element.props?.subtitleColor || 'var(--color-muted-foreground)'
+                }}
+              >
+                {element.props?.subtitle || "Font styles and sizes"}
+              </p>
+            </div>
+          </div>
+        )
+
+      case "link":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <a
+              href={element.props?.href || "#"}
+              className="text-primary hover:underline"
+              style={{
+                fontFamily: element.props?.fontFamily || 'inherit',
+                fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                fontWeight: element.props?.fontWeight || 'normal',
+                color: element.props?.textColor || 'var(--color-primary)',
+                ...contentStyles
+              }}
+              target={element.props?.openInNewTab ? "_blank" : undefined}
+              rel={element.props?.openInNewTab ? "noopener noreferrer" : undefined}
+            >
+              {element.content || "Link"}
+            </a>
+          </div>
+        )
+
+      case "tag":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <span
+              className="inline-flex items-center px-2 py-1 rounded-full text-xs"
+              style={{
+                fontFamily: element.props?.fontFamily || 'inherit',
+                fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '12px',
+                fontWeight: element.props?.fontWeight || 'medium',
+                color: element.props?.textColor || 'var(--color-primary)',
+                backgroundColor: element.props?.backgroundColor || 'var(--color-primary/10)',
+                ...contentStyles
+              }}
+            >
+              {element.content || "Tag"}
+            </span>
+          </div>
+        )
+
+      case "label":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <span
+              className="text-sm font-medium"
+              style={{
+                fontFamily: element.props?.fontFamily || 'inherit',
+                fontSize: element.props?.fontSize ? `${element.props.fontSize}px` : '14px',
+                fontWeight: element.props?.fontWeight || 'medium',
+                color: element.props?.textColor || 'var(--color-foreground)',
+                ...contentStyles
+              }}
+            >
+              {element.content || "Label"}
+            </span>
+          </div>
+        )
+
+      // Feedback & Status Components
+      case "loading":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full flex items-center justify-center" style={contentStyles}>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <span className="ml-2 text-sm">{element.content || "Loading..."}</span>
+            </div>
+          </div>
+        )
+
+      case "progress-ring":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full flex items-center justify-center" style={contentStyles}>
+              <div className="relative">
+                <svg className="w-16 h-16 transform -rotate-90">
+                  <circle
+                    className="text-muted"
+                    strokeWidth="4"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="28"
+                    cx="32"
+                    cy="32"
+                  />
+                  <circle
+                    className="text-primary"
+                    strokeWidth="4"
+                    strokeDasharray={`${(element.props?.progress || 75) * 1.76} 176`}
+                    strokeLinecap="round"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="28"
+                    cx="32"
+                    cy="32"
+                  />
+                </svg>
+                {element.props?.showPercentage !== false && (
+                  <div className="absolute inset-0 flex items-center justify-center text-sm font-medium">
+                    {element.props?.progress || 75}%
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+
+      case "notification":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full flex items-center justify-center" style={contentStyles}>
+              <div className="relative">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {element.props?.count && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                    {element.props.count}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+
+      case "success-message":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full flex items-center justify-center bg-green-100 text-green-800 rounded-lg p-4" style={contentStyles}>
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm font-medium">{element.content || "Success!"}</span>
+            </div>
+          </div>
+        )
+
+      case "error-message":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full flex items-center justify-center bg-red-100 text-red-800 rounded-lg p-4" style={contentStyles}>
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm font-medium">{element.content || "Error!"}</span>
+            </div>
+          </div>
+        )
+
+      case "warning-message":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full flex items-center justify-center bg-yellow-100 text-yellow-800 rounded-lg p-4" style={contentStyles}>
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm font-medium">{element.content || "Warning!"}</span>
+            </div>
+          </div>
+        )
+
+      // Utility Components
+      case "spacer":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div className="w-full h-full" style={contentStyles}></div>
+          </div>
+        )
+
+      case "container":
+      case "wrapper":
+      case "flexbox":
+      case "center":
+      case "stack":
+        return (
+          <div key={element.id} style={{ ...wrapperStyles, ...contentStyles }}>
+            {element.content}
+          </div>
+        )
+
       case "section":
       case "grid":
       case "footer":
@@ -2229,14 +2798,14 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
             {element.content}
           </div>
         )
-      
+
       case "form":
         return (
           <div key={element.id} style={{ ...wrapperStyles, ...contentStyles }} className="text-foreground">
             {element.content}
           </div>
         )
-      
+
       default:
         return (
           <div key={element.id} style={{ ...wrapperStyles, ...contentStyles }} className="text-foreground overflow-hidden">
@@ -2300,7 +2869,7 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
             >
               {/* Preview canvas with absolute positioning - exactly like builder canvas */}
               {/* For tablet/mobile, we scale down the entire canvas content to fit the viewport */}
-              <div 
+              <div
                 className="relative w-full overflow-hidden"
                 style={{ height: `${scaledCanvasHeight}px` }}
               >

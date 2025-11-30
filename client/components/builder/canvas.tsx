@@ -365,14 +365,14 @@ export function BuilderCanvas({
     if (initialLayout.sections.length !== prev.sections.length) return
 
     // Check if this is a rename operation (same IDs but different names)
-    const isRenameOperation = initialLayout.sections.every((s, idx) => 
+    const isRenameOperation = initialLayout.sections.every((s, idx) =>
       s.id === prev.sections[idx]?.id
-    ) && initialLayout.sections.some((s, idx) => 
+    ) && initialLayout.sections.some((s, idx) =>
       s.name !== prev.sections[idx]?.name
     )
 
     if (isRenameOperation) {
-      setSections(currentSections => 
+      setSections(currentSections =>
         currentSections.map((s, idx) => ({
           ...s,
           name: initialLayout.sections[idx]?.name
@@ -3912,7 +3912,34 @@ export function BuilderCanvas({
           }
           {
             element.type === "button" && (
-              <button className="text-card-foreground w-full h-full hover:opacity-90 transition-opacity" style={elementStyles}>
+              <button 
+                className={`text-card-foreground w-full h-full hover:opacity-90 transition-opacity ${(element.props?.buttonPreviewMode || isPreviewMode) && element.props?.href ? 'cursor-pointer' : ''}`}
+                style={elementStyles}
+                onMouseDown={(e) => {
+                  // When button preview mode is ON, prevent drag behavior
+                  if ((element.props?.buttonPreviewMode || isPreviewMode) && element.props?.href) {
+                    e.stopPropagation()
+                  }
+                }}
+                onClick={(e) => {
+                  // Handle button preview mode - navigate to link when clicked
+                  if ((element.props?.buttonPreviewMode || isPreviewMode) && element.props?.href) {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    const url = element.props.href
+                    // Ensure URL has protocol
+                    const finalUrl = url.startsWith('http://') || url.startsWith('https://') 
+                      ? url 
+                      : `https://${url}`
+                    
+                    if (element.props?.openInNewTab) {
+                      window.open(finalUrl, '_blank', 'noopener,noreferrer')
+                    } else {
+                      window.location.href = finalUrl
+                    }
+                  }
+                }}
+              >
                 {element.content}
               </button>
             )
@@ -9462,67 +9489,149 @@ function PartitionsOverlay({
               }
             }}
           >
-          {/* Show subtle border when submerged to indicate interactive mode */}
-          {submergedSectionIndex === idx && (
-            <div className="absolute inset-0 border-2 border-dashed border-blue-400/40 pointer-events-none animate-pulse">
-              <div className="absolute top-1 left-2 text-[11px] text-blue-400 bg-background/80 px-1 rounded">
-                {getSectionName(idx)} <span className="text-[10px] opacity-70">(interactive mode - click to exit)</span>
-              </div>
-            </div>
-          )}
-          {/* Show overlay only if section is not submerged */}
-          {submergedSectionIndex !== idx && (hoverSectionIndex === idx
-            || focusedSectionIndex === idx
-            || hoverSectionTopIndex === idx
-            || hoverSectionBottomIndex === idx
-            || (hoverHeaderBottom && idx === 0)
-            || (hoverFooterTop && idx === sections.length - 1)
-          ) && (
-              <div className={`absolute inset-0 ${focusedSectionIndex === idx ? "ring-1 ring-blue-400/50" : ""} bg-blue-400/10 border border-blue-400/30 pointer-events-auto`}>
-                <div className="absolute top-1 left-2 text-[11px] text-blue-400 flex items-center gap-1">
-                  {renamingSectionIndex === idx ? (
-                    <input
-                      type="text"
-                      autoFocus
-                      defaultValue={sec.name || `Section ${idx + 1}`}
-                      className="bg-background/90 border border-blue-400/50 rounded px-1.5 py-0.5 text-[11px] text-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 w-32 pointer-events-auto"
-                      onClick={(e) => e.stopPropagation()}
-                      onBlur={(e) => {
-                        confirmRenameSection(idx, e.target.value)
-                      }}
-                      onKeyDown={(e) => {
-                        e.stopPropagation()
-                        if (e.key === 'Enter') {
-                          confirmRenameSection(idx, e.currentTarget.value)
-                        } else if (e.key === 'Escape') {
-                          cancelRenameSection()
-                        }
-                      }}
-                    />
-                  ) : (
-                    <span className="pointer-events-none">
-                      {getSectionName(idx)}
-                      {focusedSectionIndex === idx && submergedSectionIndex !== idx && (
-                        <span className="ml-2 text-[10px] opacity-70">(click again to interact)</span>
-                      )}
-                    </span>
-                  )}
+            {/* Show subtle border when submerged to indicate interactive mode */}
+            {submergedSectionIndex === idx && (
+              <div className="absolute inset-0 border-2 border-dashed border-blue-400/40 pointer-events-none animate-pulse">
+                <div className="absolute top-1 left-2 text-[11px] text-blue-400 bg-background/80 px-1 rounded">
+                  {getSectionName(idx)} <span className="text-[10px] opacity-70">(interactive mode - click to exit)</span>
                 </div>
+              </div>
+            )}
+            {/* Show overlay only if section is not submerged */}
+            {submergedSectionIndex !== idx && (hoverSectionIndex === idx
+              || focusedSectionIndex === idx
+              || hoverSectionTopIndex === idx
+              || hoverSectionBottomIndex === idx
+              || (hoverHeaderBottom && idx === 0)
+              || (hoverFooterTop && idx === sections.length - 1)
+            ) && (
+                <div className={`absolute inset-0 ${focusedSectionIndex === idx ? "ring-1 ring-blue-400/50" : ""} bg-blue-400/10 border border-blue-400/30 pointer-events-auto`}>
+                  <div className="absolute top-1 left-2 text-[11px] text-blue-400 flex items-center gap-1">
+                    {renamingSectionIndex === idx ? (
+                      <input
+                        type="text"
+                        autoFocus
+                        defaultValue={sec.name || `Section ${idx + 1}`}
+                        className="bg-background/90 border border-blue-400/50 rounded px-1.5 py-0.5 text-[11px] text-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 w-32 pointer-events-auto"
+                        onClick={(e) => e.stopPropagation()}
+                        onBlur={(e) => {
+                          confirmRenameSection(idx, e.target.value)
+                        }}
+                        onKeyDown={(e) => {
+                          e.stopPropagation()
+                          if (e.key === 'Enter') {
+                            confirmRenameSection(idx, e.currentTarget.value)
+                          } else if (e.key === 'Escape') {
+                            cancelRenameSection()
+                          }
+                        }}
+                      />
+                    ) : (
+                      <span className="pointer-events-none">
+                        {getSectionName(idx)}
+                        {focusedSectionIndex === idx && submergedSectionIndex !== idx && (
+                          <span className="ml-2 text-[10px] opacity-70">(click again to interact)</span>
+                        )}
+                      </span>
+                    )}
+                  </div>
 
-                {/* Display buttons only if section is empty (no elements) */}
-                {!sectionHasElements(idx) && (
-                  <>
-                    {/* Choose your starting point - Smooth transitioning UI */}
-                    {sec.height > 200 ? (
-                      /* Full size - show all elements with text */
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto transition-all duration-300 ease-in-out">
-                        <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-300">
-                          <h3 className="text-sm font-medium text-blue-400 mb-2 transition-opacity duration-200">Choose your starting point</h3>
-                          <div className="flex gap-4">
-                            {/* Designed Section Button */}
+                  {/* Display buttons only if section is empty (no elements) */}
+                  {!sectionHasElements(idx) && (
+                    <>
+                      {/* Choose your starting point - Smooth transitioning UI */}
+                      {sec.height > 200 ? (
+                        /* Full size - show all elements with text */
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto transition-all duration-300 ease-in-out">
+                          <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-300">
+                            <h3 className="text-sm font-medium text-blue-400 mb-2 transition-opacity duration-200">Choose your starting point</h3>
+                            <div className="flex gap-4">
+                              {/* Designed Section Button */}
+                              <button
+                                type="button"
+                                className="flex flex-col items-center gap-3 px-6 py-5 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg border-2 border-border hover:border-blue-400 w-32"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  // Expand left sidebar and switch to components panel
+                                  onShowLeftSidebar?.()
+                                  onSetActiveLeftPanel?.('components')
+                                  // Then expand the Layout category
+                                  if (toggleCategoryRef?.current) {
+                                    toggleCategoryRef.current("Layout")
+                                  }
+                                }}
+                                title="Choose from pre-designed sections"
+                              >
+                                <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center border border-blue-500/30 transition-transform duration-200">
+                                  <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
+                                  </svg>
+                                </div>
+                                <span className="text-xs font-medium text-card-foreground text-center transition-opacity duration-200">Designed Section</span>
+                              </button>
+
+                              {/* Grid Layout Button */}
+                              <button
+                                type="button"
+                                className="flex flex-col items-center gap-3 px-6 py-5 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg border-2 border-border hover:border-blue-400 w-32"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  // Expand left sidebar and switch to components panel
+                                  onShowLeftSidebar?.()
+                                  onSetActiveLeftPanel?.('components')
+                                  // Then expand the Layout category
+                                  if (toggleCategoryRef?.current) {
+                                    toggleCategoryRef.current("Layout")
+                                  }
+                                }}
+                                title="Create a custom grid layout"
+                              >
+                                <div className="w-12 h-12 bg-muted/50 rounded-lg flex items-center justify-center border border-border transition-transform duration-200">
+                                  <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                                  </svg>
+                                </div>
+                                <span className="text-xs font-medium text-card-foreground text-center transition-opacity duration-200">Grid Layout</span>
+                              </button>
+
+                              {/* Add an Element Button */}
+                              <button
+                                type="button"
+                                className="flex flex-col items-center gap-3 px-6 py-5 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg border-2 border-border hover:border-blue-400 w-32"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  // Expand left sidebar and switch to components panel
+                                  onShowLeftSidebar?.()
+                                  onSetActiveLeftPanel?.('components')
+                                  // Then expand the Basic Elements category
+                                  if (toggleCategoryRef?.current) {
+                                    toggleCategoryRef.current("Basic Elements")
+                                  }
+                                }}
+                                title="Add individual elements from the sidebar"
+                              >
+                                <div className="w-12 h-12 bg-muted/50 rounded-lg flex items-center justify-center border border-border transition-transform duration-200">
+                                  <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                  </svg>
+                                </div>
+                                <span className="text-xs font-medium text-card-foreground text-center transition-opacity duration-200">Add an Element</span>
+                              </button>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1 transition-opacity duration-200">
+                              Choose a grid layout, add elements<br />
+                              or add a <a href="#" className="text-blue-400 hover:underline" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>Designed Section</a>
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Compact size - show 3 icon buttons without labels (smooth transition) */
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto transition-all duration-300 ease-in-out">
+                          <div className="flex gap-3 animate-in fade-in zoom-in-95 duration-300">
+                            {/* Designed Section Button - Icon Only */}
                             <button
                               type="button"
-                              className="flex flex-col items-center gap-3 px-6 py-5 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg border-2 border-border hover:border-blue-400 w-32"
+                              className="flex items-center justify-center p-3 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 border-2 border-border hover:border-blue-400"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 // Expand left sidebar and switch to components panel
@@ -9533,20 +9642,19 @@ function PartitionsOverlay({
                                   toggleCategoryRef.current("Layout")
                                 }
                               }}
-                              title="Choose from pre-designed sections"
+                              title="Designed Section"
                             >
-                              <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center border border-blue-500/30 transition-transform duration-200">
-                                <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div className="w-8 h-8 bg-blue-500/10 rounded flex items-center justify-center border border-blue-500/30">
+                                <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
                                 </svg>
                               </div>
-                              <span className="text-xs font-medium text-card-foreground text-center transition-opacity duration-200">Designed Section</span>
                             </button>
 
-                            {/* Grid Layout Button */}
+                            {/* Grid Layout Button - Icon Only */}
                             <button
                               type="button"
-                              className="flex flex-col items-center gap-3 px-6 py-5 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg border-2 border-border hover:border-blue-400 w-32"
+                              className="flex items-center justify-center p-3 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 border-2 border-border hover:border-blue-400"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 // Expand left sidebar and switch to components panel
@@ -9557,20 +9665,19 @@ function PartitionsOverlay({
                                   toggleCategoryRef.current("Layout")
                                 }
                               }}
-                              title="Create a custom grid layout"
+                              title="Grid Layout"
                             >
-                              <div className="w-12 h-12 bg-muted/50 rounded-lg flex items-center justify-center border border-border transition-transform duration-200">
-                                <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div className="w-8 h-8 bg-muted/50 rounded flex items-center justify-center border border-border">
+                                <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
                                 </svg>
                               </div>
-                              <span className="text-xs font-medium text-card-foreground text-center transition-opacity duration-200">Grid Layout</span>
                             </button>
 
-                            {/* Add an Element Button */}
+                            {/* Add Element Button - Icon Only */}
                             <button
                               type="button"
-                              className="flex flex-col items-center gap-3 px-6 py-5 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg border-2 border-border hover:border-blue-400 w-32"
+                              className="flex items-center justify-center p-3 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 border-2 border-border hover:border-blue-400"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 // Expand left sidebar and switch to components panel
@@ -9581,101 +9688,21 @@ function PartitionsOverlay({
                                   toggleCategoryRef.current("Basic Elements")
                                 }
                               }}
-                              title="Add individual elements from the sidebar"
+                              title="Add an Element"
                             >
-                              <div className="w-12 h-12 bg-muted/50 rounded-lg flex items-center justify-center border border-border transition-transform duration-200">
-                                <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div className="w-8 h-8 bg-muted/50 rounded flex items-center justify-center border border-border">
+                                <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                 </svg>
                               </div>
-                              <span className="text-xs font-medium text-card-foreground text-center transition-opacity duration-200">Add an Element</span>
                             </button>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1 transition-opacity duration-200">
-                            Choose a grid layout, add elements<br />
-                            or add a <a href="#" className="text-blue-400 hover:underline" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>Designed Section</a>
-                          </p>
                         </div>
-                      </div>
-                    ) : (
-                      /* Compact size - show 3 icon buttons without labels (smooth transition) */
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto transition-all duration-300 ease-in-out">
-                        <div className="flex gap-3 animate-in fade-in zoom-in-95 duration-300">
-                          {/* Designed Section Button - Icon Only */}
-                          <button
-                            type="button"
-                            className="flex items-center justify-center p-3 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 border-2 border-border hover:border-blue-400"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              // Expand left sidebar and switch to components panel
-                              onShowLeftSidebar?.()
-                              onSetActiveLeftPanel?.('components')
-                              // Then expand the Layout category
-                              if (toggleCategoryRef?.current) {
-                                toggleCategoryRef.current("Layout")
-                              }
-                            }}
-                            title="Designed Section"
-                          >
-                            <div className="w-8 h-8 bg-blue-500/10 rounded flex items-center justify-center border border-blue-500/30">
-                              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
-                              </svg>
-                            </div>
-                          </button>
-
-                          {/* Grid Layout Button - Icon Only */}
-                          <button
-                            type="button"
-                            className="flex items-center justify-center p-3 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 border-2 border-border hover:border-blue-400"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              // Expand left sidebar and switch to components panel
-                              onShowLeftSidebar?.()
-                              onSetActiveLeftPanel?.('components')
-                              // Then expand the Layout category
-                              if (toggleCategoryRef?.current) {
-                                toggleCategoryRef.current("Layout")
-                              }
-                            }}
-                            title="Grid Layout"
-                          >
-                            <div className="w-8 h-8 bg-muted/50 rounded flex items-center justify-center border border-border">
-                              <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
-                              </svg>
-                            </div>
-                          </button>
-
-                          {/* Add Element Button - Icon Only */}
-                          <button
-                            type="button"
-                            className="flex items-center justify-center p-3 bg-card hover:bg-card/80 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg hover:scale-110 border-2 border-border hover:border-blue-400"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              // Expand left sidebar and switch to components panel
-                              onShowLeftSidebar?.()
-                              onSetActiveLeftPanel?.('components')
-                              // Then expand the Basic Elements category
-                              if (toggleCategoryRef?.current) {
-                                toggleCategoryRef.current("Basic Elements")
-                              }
-                            }}
-                            title="Add an Element"
-                          >
-                            <div className="w-8 h-8 bg-muted/50 rounded flex items-center justify-center border border-border">
-                              <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                              </svg>
-                            </div>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
           </div>
         </SectionContextMenu>
       ))}
