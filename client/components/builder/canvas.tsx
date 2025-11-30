@@ -2664,14 +2664,21 @@ export function BuilderCanvas({
     const scale = zoom / 100
     const startX = (e.clientX - rect.left) / scale
     const startY = (e.clientY - rect.top) / scale
+    
     // Determine which elements are affected (multi-select drag support)
-    // Need to use the updated selectedElements which includes the current element
-    const currentSelection = selectedElements.includes(elementId)
-      ? selectedElements
-      : [...selectedElements, elementId]
-    let idsToDrag = currentSelection.length > 1
-      ? currentSelection
-      : [elementId]
+    // Only drag multiple elements if this element was already selected AND multi-select key is held
+    let idsToDrag: string[] = [elementId]
+    
+    if (isAlreadySelected && isMultiSelectKey && selectedElements.length > 1) {
+      // Element was already selected and multi-select key is held - drag all selected elements
+      idsToDrag = selectedElements
+    } else if (isAlreadySelected && !isMultiSelectKey && selectedElements.length > 1 && selectedElements.includes(elementId)) {
+      // Element was already part of a multi-selection - drag the whole group
+      idsToDrag = selectedElements
+    } else {
+      // Single element drag - only drag the current element
+      idsToDrag = [elementId]
+    }
 
     // If dragging a section or card, also drag all elements inside it
     if (element.type === 'section' || element.type === 'card') {

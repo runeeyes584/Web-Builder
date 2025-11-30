@@ -13,29 +13,29 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import type { Breakpoint, BuilderElement } from "@/lib/builder-types"
 import {
-    AlertCircle,
-    AlignCenter,
-    AlignJustify,
-    AlignLeft,
-    AlignRight,
-    Bell,
-    FolderIcon as BorderIcon,
-    Check,
-    Circle,
-    Code,
-    ImageIcon,
-    Layout,
-    Monitor,
-    Palette,
-    Plus,
-    Settings,
-    Shapes as Shadow,
-    Smartphone,
-    Tablet,
-    Trash2,
-    Type,
-    X,
-    Zap
+  AlertCircle,
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
+  Bell,
+  FolderIcon as BorderIcon,
+  Check,
+  Circle,
+  Code,
+  ImageIcon,
+  Layout,
+  Monitor,
+  Palette,
+  Plus,
+  Settings,
+  Shapes as Shadow,
+  Smartphone,
+  Tablet,
+  Trash2,
+  Type,
+  X,
+  Zap
 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 
@@ -152,7 +152,7 @@ export function PropertiesPanel({
       if (selectedElement.type === "separator" && (props.thickness || props.orientation)) {
         const thickness = parseInt(props.thickness || selectedElement.props?.thickness) || 2
         const orientation = props.orientation || selectedElement.props?.orientation || "horizontal"
-        
+
         if (orientation === "horizontal") {
           updates.position = {
             x: selectedElement.position?.x || 0,
@@ -190,7 +190,7 @@ export function PropertiesPanel({
       <Separator className="bg-sidebar-border" />
       <div>
         <Label className="text-sm font-medium mb-3 block">Form Elements Styling</Label>
-        
+
         {/* Form Title */}
         <div className="space-y-3">
           <div>
@@ -238,7 +238,7 @@ export function PropertiesPanel({
             </div>
           </div>
         </div>
-        
+
         {/* Input Fields */}
         <div className="space-y-3">
           <div>
@@ -306,7 +306,7 @@ export function PropertiesPanel({
               </div>
             </div>
           </div>
-          
+
           {/* Button */}
           <div>
             <Label className="text-xs text-muted-foreground mb-2 block">Submit Button</Label>
@@ -381,7 +381,7 @@ export function PropertiesPanel({
   const renderSurveyFormStyling = () => (
     <>
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Form Title Typography */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -499,7 +499,7 @@ export function PropertiesPanel({
       </div>
 
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Question Typography */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -576,7 +576,7 @@ export function PropertiesPanel({
       </div>
 
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Rating Buttons Style */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -685,7 +685,7 @@ export function PropertiesPanel({
       </div>
 
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Comments Textarea Style */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -822,7 +822,7 @@ export function PropertiesPanel({
       </div>
 
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Submit Button Style */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -940,7 +940,7 @@ export function PropertiesPanel({
   const renderOrderFormStyling = () => (
     <>
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Form Title Typography */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -1058,7 +1058,7 @@ export function PropertiesPanel({
       </div>
 
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Input Fields Style */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -1181,7 +1181,7 @@ export function PropertiesPanel({
       </div>
 
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Submit Button Style */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -1299,7 +1299,7 @@ export function PropertiesPanel({
   const renderBookingFormStyling = () => (
     <>
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Form Title Typography */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -1417,7 +1417,7 @@ export function PropertiesPanel({
       </div>
 
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Input Fields Style */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -1540,7 +1540,7 @@ export function PropertiesPanel({
       </div>
 
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Submit Button Style */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -1660,7 +1660,7 @@ export function PropertiesPanel({
       <Separator className="bg-sidebar-border" />
       <div>
         <Label className="text-sm font-medium mb-3 block">Feedback Form Styling</Label>
-        
+
         {/* Form Title Typography */}
         <div className="space-y-3">
           <div>
@@ -1774,9 +1774,9 @@ export function PropertiesPanel({
             </div>
           </div>
         </div>
-        
+
         <Separator className="bg-sidebar-border my-4" />
-        
+
         {/* Select Dropdown Style */}
         <div className="space-y-3">
           <div>
@@ -1899,9 +1899,9 @@ export function PropertiesPanel({
             </div>
           </div>
         </div>
-        
+
         <Separator className="bg-sidebar-border my-4" />
-        
+
         {/* Feedback Textarea Style */}
         <div className="space-y-3">
           <div>
@@ -2038,9 +2038,9 @@ export function PropertiesPanel({
             </div>
           </div>
         </div>
-        
+
         <Separator className="bg-sidebar-border my-4" />
-        
+
         {/* Submit Button Style */}
         <div className="space-y-3">
           <div>
@@ -2161,7 +2161,7 @@ export function PropertiesPanel({
   const renderNewsletterSignupStyling = () => (
     <>
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Form Title Typography */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -2279,7 +2279,7 @@ export function PropertiesPanel({
       </div>
 
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Description Typography */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -2356,7 +2356,7 @@ export function PropertiesPanel({
       </div>
 
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Email Input Style */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -2437,7 +2437,7 @@ export function PropertiesPanel({
       </div>
 
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Subscribe Button Style */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -2513,7 +2513,7 @@ export function PropertiesPanel({
   const renderLoginFormStyling = () => (
     <>
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Form Title Typography */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -2631,7 +2631,7 @@ export function PropertiesPanel({
       </div>
 
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Input Fields Style */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -2754,7 +2754,7 @@ export function PropertiesPanel({
       </div>
 
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Submit Button Style */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -2872,7 +2872,7 @@ export function PropertiesPanel({
   const renderRegistrationFormStyling = () => (
     <>
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Form Title Typography */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -2990,7 +2990,7 @@ export function PropertiesPanel({
       </div>
 
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Input Fields Style */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -3113,7 +3113,7 @@ export function PropertiesPanel({
       </div>
 
       <Separator className="bg-sidebar-border" />
-      
+
       {/* Submit Button Style */}
       <div>
         <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -3304,11 +3304,10 @@ export function PropertiesPanel({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-shrink-0 px-3 py-2 text-xs font-medium transition-all duration-200 relative min-w-[60px] ${
-                activeTab === tab.id
+              className={`flex-shrink-0 px-3 py-2 text-xs font-medium transition-all duration-200 relative min-w-[60px] ${activeTab === tab.id
                   ? "bg-sidebar-accent text-sidebar-accent-foreground border-b-2 border-primary shadow-sm"
                   : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/30"
-              }`}
+                }`}
             >
               <div className="flex flex-col items-center gap-1">
                 <tab.icon className="w-3 h-3" />
@@ -3348,18 +3347,18 @@ export function PropertiesPanel({
                       <Label className="text-xs text-muted-foreground">Preview</Label>
                       <div className="mt-1 border border-sidebar-border rounded-lg p-2 bg-sidebar-accent">
                         <img
-                          src={selectedElement.content || "/placeholder.svg"||""}
+                          src={selectedElement.content || "/placeholder.svg" || ""}
                           alt="Preview"
                           className="w-full h-32 object-contain rounded"
                         />
                       </div>
                     </div>
-                    
+
                     <div>
                       <Label className="text-xs text-muted-foreground">Image URL</Label>
                       <Input
                         placeholder="https://example.com/image.jpg"
-                        value={selectedElement.content||""}
+                        value={selectedElement.content || ""}
                         onChange={(e) => updateElementContent(e.target.value)}
                         className="bg-sidebar-accent border-sidebar-border mt-1 text-xs"
                       />
@@ -3393,7 +3392,7 @@ export function PropertiesPanel({
                         Choose Image
                       </Button>
                     </div>
-                    
+
                     {/* Image Rotation */}
                     <div>
                       <Label className="text-xs text-muted-foreground">Rotation</Label>
@@ -3402,8 +3401,8 @@ export function PropertiesPanel({
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => updateElementProps({ 
-                            rotation: ((selectedElement.props?.rotation || 0) - 90) % 360 
+                          onClick={() => updateElementProps({
+                            rotation: ((selectedElement.props?.rotation || 0) - 90) % 360
                           })}
                           className="flex-1"
                         >
@@ -3413,8 +3412,8 @@ export function PropertiesPanel({
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => updateElementProps({ 
-                            rotation: ((selectedElement.props?.rotation || 0) + 90) % 360 
+                          onClick={() => updateElementProps({
+                            rotation: ((selectedElement.props?.rotation || 0) + 90) % 360
                           })}
                           className="flex-1"
                         >
@@ -3435,8 +3434,8 @@ export function PropertiesPanel({
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => updateElementProps({ 
-                            rotation: ((selectedElement.props?.rotation || 0) + 180) % 360 
+                          onClick={() => updateElementProps({
+                            rotation: ((selectedElement.props?.rotation || 0) + 180) % 360
                           })}
                           className="flex-1"
                         >
@@ -3444,7 +3443,7 @@ export function PropertiesPanel({
                         </Button>
                       </div>
                     </div>
-                    
+
                     <div>
                       <Label className="text-xs text-muted-foreground">Alt Text</Label>
                       <Input
@@ -3610,7 +3609,7 @@ export function PropertiesPanel({
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file && file.type === 'application/pdf') {
-                            updateElementProps({ 
+                            updateElementProps({
                               uploadedFile: file,
                               fileName: file.name.replace('.pdf', ''),
                               pdfUrl: "" // Clear URL when uploading file
@@ -3682,16 +3681,16 @@ export function PropertiesPanel({
                         accept=".pdf,.doc,.docx,.txt"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file && (file.type === 'application/pdf' || 
-                                     file.type === 'application/msword' || 
-                                     file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-                                     file.type === 'text/plain')) {
-                            updateElementProps({ 
+                          if (file && (file.type === 'application/pdf' ||
+                            file.type === 'application/msword' ||
+                            file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+                            file.type === 'text/plain')) {
+                            updateElementProps({
                               uploadedFile: file,
                               fileName: file.name.replace(/\.[^/.]+$/, ""),
                               documentUrl: "", // Clear URL when uploading file
-                              documentType: file.type === 'application/pdf' ? 'pdf' : 
-                                          file.type.includes('word') ? 'doc' : 'txt'
+                              documentType: file.type === 'application/pdf' ? 'pdf' :
+                                file.type.includes('word') ? 'doc' : 'txt'
                             });
                           }
                         }}
@@ -3965,7 +3964,7 @@ export function PropertiesPanel({
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     {selectedElement.props?.logoType === "text" ? (
                       <div>
                         <Label className="text-xs text-muted-foreground">Logo Text</Label>
@@ -4003,7 +4002,7 @@ export function PropertiesPanel({
                         {selectedElement.props?.logoImageUrl && (
                           <div className="mt-2">
                             <div className="text-xs text-muted-foreground mb-1">Preview:</div>
-                            <img 
+                            <img
                               src={selectedElement.props.logoImageUrl}
                               alt="Logo preview"
                               className="max-w-20 max-h-8 object-contain border border-border rounded"
@@ -4192,7 +4191,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
-                    
+
                     <div>
                       <Label className="text-xs text-muted-foreground">Select Options</Label>
                       <div className="space-y-2 mt-1">
@@ -4309,12 +4308,12 @@ export function PropertiesPanel({
                               title: "Uploading...",
                               description: `Uploading ${file.name} to cloud storage. This may take a moment...`,
                             })
-                            
+
                             const result = await cloudinaryApi.uploadVideo(file)
-                            
+
                             if (result.success && result.data) {
                               updateElementContent(result.data.url)
-                              updateElementProps({ 
+                              updateElementProps({
                                 videoFileName: file.name,
                                 cloudinaryPublicId: result.data.publicId,
                                 videoWidth: result.data.width,
@@ -4402,7 +4401,7 @@ export function PropertiesPanel({
                             if (file) {
                               const url = URL.createObjectURL(file)
                               updateElementContent(url)
-                              updateElementProps({ 
+                              updateElementProps({
                                 audioFileName: file.name
                               })
                             }
@@ -4466,7 +4465,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
-                    
+
                     {/* Columns Management */}
                     <div>
                       <Label className="text-xs text-muted-foreground">Columns</Label>
@@ -4477,10 +4476,10 @@ export function PropertiesPanel({
                         >
                           -
                         </button>
-                      <Input
-                        type="number"
-                        value={selectedElement.props?.columns || 3}
-                        onChange={(e) => updateElementProps({ columns: parseInt(e.target.value) || 3 })}
+                        <Input
+                          type="number"
+                          value={selectedElement.props?.columns || 3}
+                          onChange={(e) => updateElementProps({ columns: parseInt(e.target.value) || 3 })}
                           className="bg-sidebar-accent border-sidebar-border text-center"
                           min="1"
                         />
@@ -4490,7 +4489,7 @@ export function PropertiesPanel({
                         >
                           +
                         </button>
-                    </div>
+                      </div>
                     </div>
 
                     {/* Rows Management */}
@@ -4503,10 +4502,10 @@ export function PropertiesPanel({
                         >
                           -
                         </button>
-                      <Input
-                        type="number"
-                        value={selectedElement.props?.rows || 4}
-                        onChange={(e) => updateElementProps({ rows: parseInt(e.target.value) || 4 })}
+                        <Input
+                          type="number"
+                          value={selectedElement.props?.rows || 4}
+                          onChange={(e) => updateElementProps({ rows: parseInt(e.target.value) || 4 })}
                           className="bg-sidebar-accent border-sidebar-border text-center"
                           min="1"
                         />
@@ -4529,7 +4528,7 @@ export function PropertiesPanel({
                           <div className="space-y-1">
                             {Array.from({ length: selectedElement.props?.columns || 3 }, (_, i) => (
                               <div key={`header-${i}`} className="border border-sidebar-border rounded-md">
-                                <div 
+                                <div
                                   className="flex items-center justify-between p-2 cursor-pointer hover:bg-sidebar-accent/30 transition-colors"
                                   onClick={() => toggleHeaderExpansion(i)}
                                 >
@@ -4548,11 +4547,11 @@ export function PropertiesPanel({
                                       onChange={(e) => {
                                         const headers = [...(selectedElement.props?.tableData?.headers || [])]
                                         headers[i] = e.target.value
-                                        updateElementProps({ 
-                                          tableData: { 
-                                            ...selectedElement.props?.tableData, 
-                                            headers 
-                                          } 
+                                        updateElementProps({
+                                          tableData: {
+                                            ...selectedElement.props?.tableData,
+                                            headers
+                                          }
                                         })
                                       }}
                                       className="bg-background border-sidebar-border text-xs"
@@ -4570,7 +4569,7 @@ export function PropertiesPanel({
                           <div className="space-y-1">
                             {Array.from({ length: selectedElement.props?.rows || 4 }, (_, rowIndex) => (
                               <div key={`row-${rowIndex}`} className="border border-sidebar-border rounded-md">
-                                <div 
+                                <div
                                   className="flex items-center justify-between p-2 cursor-pointer hover:bg-sidebar-accent/30 transition-colors"
                                   onClick={() => toggleRowExpansion(rowIndex)}
                                 >
@@ -4591,11 +4590,11 @@ export function PropertiesPanel({
                                             const rows = [...(selectedElement.props?.tableData?.rows || [])]
                                             if (!rows[rowIndex]) rows[rowIndex] = []
                                             rows[rowIndex][colIndex] = e.target.value
-                                            updateElementProps({ 
-                                              tableData: { 
-                                                ...selectedElement.props?.tableData, 
-                                                rows 
-                                              } 
+                                            updateElementProps({
+                                              tableData: {
+                                                ...selectedElement.props?.tableData,
+                                                rows
+                                              }
                                             })
                                           }}
                                           className="bg-background border-sidebar-border text-xs"
@@ -4741,12 +4740,12 @@ export function PropertiesPanel({
                     <div>
                       <Label className="text-xs text-muted-foreground">Progress Value (%)</Label>
                       <div className="flex items-center gap-2 mt-1">
-                      <Slider
-                        value={[selectedElement.props?.value || 50]}
-                        onValueChange={([value]) => updateElementProps({ value })}
-                        max={100}
-                        min={0}
-                        step={1}
+                        <Slider
+                          value={[selectedElement.props?.value || 50]}
+                          onValueChange={([value]) => updateElementProps({ value })}
+                          max={100}
+                          min={0}
+                          step={1}
                           className="flex-1"
                         />
                         <Input
@@ -4945,9 +4944,9 @@ export function PropertiesPanel({
                         </SelectTrigger>
                         <SelectContent>
                           {(() => {
-                            const defaultPlans = Array.from({ length: selectedElement.props?.plans || 3 }).map((_, i) => ({ 
-                              name: ['Basic','Pro','Enterprise'][i] || 'Plan ' + (i+1), 
-                              price: ['$9','$29','$99'][i] || '$0' 
+                            const defaultPlans = Array.from({ length: selectedElement.props?.plans || 3 }).map((_, i) => ({
+                              name: ['Basic', 'Pro', 'Enterprise'][i] || 'Plan ' + (i + 1),
+                              price: ['$9', '$29', '$99'][i] || '$0'
                             }))
                             const currentPlans = selectedElement.props?.plansArray || defaultPlans
                             return currentPlans.map((p: any, idx: number) => (
@@ -4959,7 +4958,7 @@ export function PropertiesPanel({
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     {/* Plans Management */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
@@ -4971,16 +4970,16 @@ export function PropertiesPanel({
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            const defaultPlans = Array.from({ length: selectedElement.props?.plans || 3 }).map((_, i) => ({ 
-                              name: ['Basic','Pro','Enterprise'][i] || 'Plan ' + (i+1), 
-                              price: ['$9','$29','$99'][i] || '$0' 
+                            const defaultPlans = Array.from({ length: selectedElement.props?.plans || 3 }).map((_, i) => ({
+                              name: ['Basic', 'Pro', 'Enterprise'][i] || 'Plan ' + (i + 1),
+                              price: ['$9', '$29', '$99'][i] || '$0'
                             }))
                             const currentPlans = selectedElement.props?.plansArray || defaultPlans
                             const newPlan = {
                               name: 'New Plan',
                               price: '$0'
                             }
-                            updateElementProps({ 
+                            updateElementProps({
                               plansArray: [...currentPlans, newPlan],
                               plans: currentPlans.length + 1
                             })
@@ -4991,15 +4990,15 @@ export function PropertiesPanel({
                           Add Plan
                         </Button>
                       </div>
-                      
+
                       <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
                         {(() => {
-                          const defaultPlans = Array.from({ length: selectedElement.props?.plans || 3 }).map((_, i) => ({ 
-                            name: ['Basic','Pro','Enterprise'][i] || 'Plan ' + (i+1), 
-                            price: ['$9','$29','$99'][i] || '$0' 
+                          const defaultPlans = Array.from({ length: selectedElement.props?.plans || 3 }).map((_, i) => ({
+                            name: ['Basic', 'Pro', 'Enterprise'][i] || 'Plan ' + (i + 1),
+                            price: ['$9', '$29', '$99'][i] || '$0'
                           }))
                           const currentPlans = selectedElement.props?.plansArray || defaultPlans
-                          
+
                           return currentPlans.map((p: any, idx: number) => (
                             <div key={idx} className="p-3 bg-sidebar-accent rounded border border-sidebar-border space-y-2">
                               <div className="flex items-center justify-between mb-1">
@@ -5011,14 +5010,14 @@ export function PropertiesPanel({
                                   onClick={(e) => {
                                     e.preventDefault()
                                     e.stopPropagation()
-                                    const defaultPlans = Array.from({ length: selectedElement.props?.plans || 3 }).map((_, i) => ({ 
-                                      name: ['Basic','Pro','Enterprise'][i] || 'Plan ' + (i+1), 
-                                      price: ['$9','$29','$99'][i] || '$0' 
+                                    const defaultPlans = Array.from({ length: selectedElement.props?.plans || 3 }).map((_, i) => ({
+                                      name: ['Basic', 'Pro', 'Enterprise'][i] || 'Plan ' + (i + 1),
+                                      price: ['$9', '$29', '$99'][i] || '$0'
                                     }))
                                     const currentPlans = selectedElement.props?.plansArray || defaultPlans
                                     const arr = [...currentPlans]
                                     arr.splice(idx, 1)
-                                    updateElementProps({ 
+                                    updateElementProps({
                                       plansArray: arr,
                                       plans: arr.length
                                     })
@@ -5029,16 +5028,16 @@ export function PropertiesPanel({
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
                               </div>
-                              
+
                               <div className="space-y-2">
                                 <div>
                                   <Label className="text-xs text-muted-foreground">Name</Label>
                                   <Input
                                     value={p.name}
                                     onChange={(e) => {
-                                      const defaultPlans = Array.from({ length: selectedElement.props?.plans || 3 }).map((_, i) => ({ 
-                                        name: ['Basic','Pro','Enterprise'][i] || 'Plan ' + (i+1), 
-                                        price: ['$9','$29','$99'][i] || '$0' 
+                                      const defaultPlans = Array.from({ length: selectedElement.props?.plans || 3 }).map((_, i) => ({
+                                        name: ['Basic', 'Pro', 'Enterprise'][i] || 'Plan ' + (i + 1),
+                                        price: ['$9', '$29', '$99'][i] || '$0'
                                       }))
                                       const currentPlans = selectedElement.props?.plansArray || defaultPlans
                                       const arr = [...currentPlans]
@@ -5054,9 +5053,9 @@ export function PropertiesPanel({
                                   <Input
                                     value={p.price}
                                     onChange={(e) => {
-                                      const defaultPlans = Array.from({ length: selectedElement.props?.plans || 3 }).map((_, i) => ({ 
-                                        name: ['Basic','Pro','Enterprise'][i] || 'Plan ' + (i+1), 
-                                        price: ['$9','$29','$99'][i] || '$0' 
+                                      const defaultPlans = Array.from({ length: selectedElement.props?.plans || 3 }).map((_, i) => ({
+                                        name: ['Basic', 'Pro', 'Enterprise'][i] || 'Plan ' + (i + 1),
+                                        price: ['$9', '$29', '$99'][i] || '$0'
                                       }))
                                       const currentPlans = selectedElement.props?.plansArray || defaultPlans
                                       const arr = [...currentPlans]
@@ -5104,7 +5103,7 @@ export function PropertiesPanel({
                             ]
                             const currentFeatures = selectedElement.props?.featuresArray || defaultFeatures
                             const newFeature = { text: 'New Feature' }
-                            updateElementProps({ 
+                            updateElementProps({
                               featuresArray: [...currentFeatures, newFeature]
                             })
                           }}
@@ -5114,7 +5113,7 @@ export function PropertiesPanel({
                           Add Feature
                         </Button>
                       </div>
-                      
+
                       <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
                         {(() => {
                           const defaultFeatures = [
@@ -5123,7 +5122,7 @@ export function PropertiesPanel({
                             { text: 'Feature 3' }
                           ]
                           const currentFeatures = selectedElement.props?.featuresArray || defaultFeatures
-                          
+
                           return currentFeatures.map((f: any, idx: number) => (
                             <div key={idx} className="p-3 bg-sidebar-accent rounded border border-sidebar-border space-y-2">
                               <div className="flex items-center justify-between mb-1">
@@ -5151,7 +5150,7 @@ export function PropertiesPanel({
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
                               </div>
-                              
+
                               <div>
                                 <Label className="text-xs text-muted-foreground">Text</Label>
                                 <Input
@@ -5189,7 +5188,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
-                    
+
                     {/* Description */}
                     <div>
                       <Label className="text-xs text-muted-foreground">Description</Label>
@@ -5200,7 +5199,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border min-h-[60px] mt-1"
                       />
                     </div>
-                    
+
                     {/* Primary Button Text */}
                     <div>
                       <Label className="text-xs text-muted-foreground">Primary Button Text</Label>
@@ -5211,7 +5210,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
-                    
+
                     {/* Secondary Button Text */}
                     <div>
                       <Label className="text-xs text-muted-foreground">Secondary Button Text</Label>
@@ -5251,11 +5250,11 @@ export function PropertiesPanel({
                               { question: 'How does it work?', answer: 'It works by...' }
                             ]
                             const currentFAQs = selectedElement.props?.faqArray || defaultFAQs
-                            const newFAQ = { 
-                              question: 'New Question?', 
-                              answer: 'Answer goes here...' 
+                            const newFAQ = {
+                              question: 'New Question?',
+                              answer: 'Answer goes here...'
                             }
-                            updateElementProps({ 
+                            updateElementProps({
                               faqArray: [...currentFAQs, newFAQ]
                             })
                           }}
@@ -5265,7 +5264,7 @@ export function PropertiesPanel({
                           Add FAQ
                         </Button>
                       </div>
-                      
+
                       <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
                         {(() => {
                           const defaultFAQs = [
@@ -5273,7 +5272,7 @@ export function PropertiesPanel({
                             { question: 'How does it work?', answer: 'It works by...' }
                           ]
                           const currentFAQs = selectedElement.props?.faqArray || defaultFAQs
-                          
+
                           return currentFAQs.map((faq: any, idx: number) => (
                             <div key={idx} className="p-3 bg-sidebar-accent rounded border border-sidebar-border space-y-2">
                               <div className="flex items-center justify-between mb-1">
@@ -5300,7 +5299,7 @@ export function PropertiesPanel({
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
                               </div>
-                              
+
                               <div className="space-y-2">
                                 <div>
                                   <Label className="text-xs text-muted-foreground">Question</Label>
@@ -5399,9 +5398,9 @@ export function PropertiesPanel({
                       <div className="space-y-2">
                         {selectedElement.props?.imageUrl && (
                           <div className="relative w-full h-32 rounded border border-sidebar-border overflow-hidden">
-                            <img 
-                              src={selectedElement.props.imageUrl || ""} 
-                              alt="Blog" 
+                            <img
+                              src={selectedElement.props.imageUrl || ""}
+                              alt="Blog"
                               className="w-full h-full object-cover"
                             />
                             <Button
@@ -5494,7 +5493,7 @@ export function PropertiesPanel({
                             { label: 'ROI: 300%' }
                           ];
                           const currentMetrics = selectedElement.props?.metricsArray || defaultMetrics;
-                          
+
                           return currentMetrics.map((metric: any, index: number) => (
                             <div key={index} className="p-3 border border-sidebar-border rounded-lg space-y-2">
                               <div className="flex items-center justify-between">
@@ -5542,9 +5541,9 @@ export function PropertiesPanel({
                       <div className="space-y-2">
                         {selectedElement.props?.imageUrl && (
                           <div className="relative w-full h-32 rounded border border-sidebar-border overflow-hidden">
-                            <img 
-                              src={selectedElement.props.imageUrl} 
-                              alt="Case Study" 
+                            <img
+                              src={selectedElement.props.imageUrl}
+                              alt="Case Study"
                               className="w-full h-full object-cover"
                             />
                             <Button
@@ -5591,7 +5590,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
-                    
+
                     {/* Description */}
                     <div>
                       <Label className="text-xs text-muted-foreground">Description</Label>
@@ -5602,7 +5601,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border min-h-[60px] mt-1"
                       />
                     </div>
-                    
+
                     {/* Button Text */}
                     <div>
                       <Label className="text-xs text-muted-foreground">Button Text</Label>
@@ -6314,7 +6313,7 @@ export function PropertiesPanel({
                             if (files.length > 0) {
                               const imageUrls = files.map(file => URL.createObjectURL(file))
                               const imageNames = files.map(file => file.name)
-                              updateElementProps({ 
+                              updateElementProps({
                                 images: imageUrls,
                                 imageNames: imageNames,
                                 imageCount: files.length
@@ -6401,7 +6400,7 @@ export function PropertiesPanel({
                             const file = e.target.files?.[0]
                             if (file) {
                               const url = URL.createObjectURL(file)
-                              updateElementProps({ 
+                              updateElementProps({
                                 iconImage: url,
                                 iconFileName: file.name
                               })
@@ -6447,11 +6446,11 @@ export function PropertiesPanel({
                         onValueChange={(value) => {
                           const newSize = value[0]
                           updateElementProps({ size: newSize.toString() })
-                          
+
                           // Auto-adjust icon container size to fit the icon
                           const padding = 20 // Add some padding around icon
                           const containerSize = newSize + padding
-                          
+
                           if (selectedElement.position) {
                             onUpdateElementPosition(selectedElement.id, {
                               x: selectedElement.position.x || 0,
@@ -6531,7 +6530,7 @@ export function PropertiesPanel({
                             const file = e.target.files?.[0]
                             if (file) {
                               const url = URL.createObjectURL(file)
-                              updateElementProps({ 
+                              updateElementProps({
                                 src: url,
                                 avatarFileName: file.name
                               })
@@ -6573,7 +6572,7 @@ export function PropertiesPanel({
                         value={selectedElement.props?.avatarSize || "60"}
                         onValueChange={(value) => {
                           updateElementProps({ avatarSize: value })
-                          
+
                           // Update container size to match
                           const size = parseInt(value)
                           if (selectedElement.position) {
@@ -6883,7 +6882,7 @@ export function PropertiesPanel({
                     <div>
                       <Label className="text-xs text-muted-foreground">Tabs</Label>
                       <div className="space-y-2 mt-1">
-                        {(selectedElement.props?.tabs || []).map((tab: {id: string, title: string, content: string}, index: number) => (
+                        {(selectedElement.props?.tabs || []).map((tab: { id: string, title: string, content: string }, index: number) => (
                           <div key={tab.id} className="border border-sidebar-border rounded-lg p-3 space-y-2">
                             <div className="flex items-center gap-2">
                               <Input
@@ -6909,7 +6908,7 @@ export function PropertiesPanel({
                                 <Trash2 className="h-3 w-3" />
                               </Button>
                             </div>
-                      <Textarea
+                            <Textarea
                               value={tab.content}
                               onChange={(e) => {
                                 const newTabs = [...(selectedElement.props?.tabs || [])]
@@ -6981,9 +6980,9 @@ export function PropertiesPanel({
                                       // If there are existing images, append new ones
                                       const existingImages = selectedElement.props?.uploadedImages || []
                                       const allImages = [...existingImages, ...imageUrls]
-                                      updateElementProps({ 
+                                      updateElementProps({
                                         uploadedImages: allImages,
-                                        slideCount: allImages.length 
+                                        slideCount: allImages.length
                                       })
                                     }
                                   }
@@ -7015,7 +7014,7 @@ export function PropertiesPanel({
                                       const currentImages = selectedElement.props?.uploadedImages
                                       if (currentImages) {
                                         const newImages = currentImages.filter((_: string, i: number) => i !== index)
-                                        updateElementProps({ 
+                                        updateElementProps({
                                           uploadedImages: newImages,
                                           slideCount: newImages.length || 5
                                         })
@@ -7044,12 +7043,12 @@ export function PropertiesPanel({
                       </div>
                     </div>
                     <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={selectedElement.props?.autoplay || false}
-                        onCheckedChange={(checked) => updateElementProps({ autoplay: checked })}
-                      />
-                      <Label className="text-xs text-muted-foreground">Autoplay</Label>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={selectedElement.props?.autoplay || false}
+                          onCheckedChange={(checked) => updateElementProps({ autoplay: checked })}
+                        />
+                        <Label className="text-xs text-muted-foreground">Autoplay</Label>
                       </div>
                       {selectedElement.props?.autoplay && (
                         <div>
@@ -7098,26 +7097,26 @@ export function PropertiesPanel({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => updateElementProps({ 
-                            eventCount: Math.max(1, (selectedElement.props?.eventCount || 4) - 1) 
+                          onClick={() => updateElementProps({
+                            eventCount: Math.max(1, (selectedElement.props?.eventCount || 4) - 1)
                           })}
                           className="bg-sidebar-accent border-sidebar-border h-8 w-8 p-0"
                         >
                           -
                         </Button>
-                      <Input
-                        type="number"
+                        <Input
+                          type="number"
                           min="1"
                           max="20"
-                        value={selectedElement.props?.eventCount || 4}
+                          value={selectedElement.props?.eventCount || 4}
                           onChange={(e) => updateElementProps({ eventCount: Math.max(1, Math.min(20, parseInt(e.target.value) || 4)) })}
                           className="bg-sidebar-accent border-sidebar-border h-8 text-center text-xs"
                         />
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => updateElementProps({ 
-                            eventCount: Math.min(20, (selectedElement.props?.eventCount || 4) + 1) 
+                          onClick={() => updateElementProps({
+                            eventCount: Math.min(20, (selectedElement.props?.eventCount || 4) + 1)
                           })}
                           className="bg-sidebar-accent border-sidebar-border h-8 w-8 p-0"
                         >
@@ -7125,7 +7124,7 @@ export function PropertiesPanel({
                         </Button>
                       </div>
                     </div>
-                    
+
                     {/* Timeline Events */}
                     <div>
                       <Label className="text-xs text-muted-foreground mb-2 block">Timeline Events</Label>
@@ -7143,7 +7142,7 @@ export function PropertiesPanel({
                                     onClick={() => {
                                       const events = [...(selectedElement.props?.timelineEvents || [])]
                                       events.splice(index, 1)
-                                      updateElementProps({ 
+                                      updateElementProps({
                                         timelineEvents: events,
                                         eventCount: Math.max(1, (selectedElement.props?.eventCount || 4) - 1)
                                       })
@@ -7243,26 +7242,26 @@ export function PropertiesPanel({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => updateElementProps({ 
-                            statCount: Math.max(1, (selectedElement.props?.statCount || 3) - 1) 
+                          onClick={() => updateElementProps({
+                            statCount: Math.max(1, (selectedElement.props?.statCount || 3) - 1)
                           })}
                           className="bg-sidebar-accent border-sidebar-border h-8 w-8 p-0"
                         >
                           -
                         </Button>
-                      <Input
-                        type="number"
+                        <Input
+                          type="number"
                           min="1"
                           max="12"
-                        value={selectedElement.props?.statCount || 3}
+                          value={selectedElement.props?.statCount || 3}
                           onChange={(e) => updateElementProps({ statCount: Math.max(1, Math.min(12, parseInt(e.target.value) || 3)) })}
                           className="bg-sidebar-accent border-sidebar-border h-8 text-center text-xs"
                         />
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => updateElementProps({ 
-                            statCount: Math.min(12, (selectedElement.props?.statCount || 3) + 1) 
+                          onClick={() => updateElementProps({
+                            statCount: Math.min(12, (selectedElement.props?.statCount || 3) + 1)
                           })}
                           className="bg-sidebar-accent border-sidebar-border h-8 w-8 p-0"
                         >
@@ -7270,7 +7269,7 @@ export function PropertiesPanel({
                         </Button>
                       </div>
                     </div>
-                    
+
                     {/* Stats Data */}
                     <div>
                       <Label className="text-xs text-muted-foreground mb-2 block">Stats Data</Label>
@@ -7288,7 +7287,7 @@ export function PropertiesPanel({
                                     onClick={() => {
                                       const stats = [...(selectedElement.props?.stats || [])]
                                       stats.splice(index, 1)
-                                      updateElementProps({ 
+                                      updateElementProps({
                                         stats: stats,
                                         statCount: Math.max(1, (selectedElement.props?.statCount || 3) - 1)
                                       })
@@ -7780,9 +7779,9 @@ export function PropertiesPanel({
                       <div className="space-y-2 mt-1">
                         {selectedElement.props?.memberImage && (
                           <div className="relative">
-                            <img 
-                              src={selectedElement.props.memberImage} 
-                              alt="Member preview" 
+                            <img
+                              src={selectedElement.props.memberImage}
+                              alt="Member preview"
                               className="w-full h-32 object-cover rounded border border-sidebar-border"
                             />
                             <Button
@@ -7863,7 +7862,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
-                    
+
                     {/* Description */}
                     <div>
                       <Label className="text-xs text-muted-foreground">Description</Label>
@@ -7874,7 +7873,7 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border min-h-[80px] mt-1"
                       />
                     </div>
-                    
+
                     {/* Stats Management */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
@@ -7891,11 +7890,11 @@ export function PropertiesPanel({
                               { value: '50+', label: 'Clients' }
                             ]
                             const currentStats = selectedElement.props?.statsArray || defaultStats
-                            const newStat = { 
-                              value: '10+', 
-                              label: 'New Stat' 
+                            const newStat = {
+                              value: '10+',
+                              label: 'New Stat'
                             }
-                            updateElementProps({ 
+                            updateElementProps({
                               statsArray: [...currentStats, newStat]
                             })
                           }}
@@ -7905,7 +7904,7 @@ export function PropertiesPanel({
                           Add Stat
                         </Button>
                       </div>
-                      
+
                       <div className="space-y-2 max-h-[300px] overflow-y-auto">
                         {(() => {
                           const defaultStats = [
@@ -7913,7 +7912,7 @@ export function PropertiesPanel({
                             { value: '50+', label: 'Clients' }
                           ]
                           const currentStats = selectedElement.props?.statsArray || defaultStats
-                          
+
                           return currentStats.map((stat: any, index: number) => (
                             <div key={index} className="p-3 bg-sidebar-accent border border-sidebar-border rounded-lg space-y-2">
                               <div className="flex items-center justify-between mb-2">
@@ -7944,7 +7943,7 @@ export function PropertiesPanel({
                                     e.preventDefault()
                                     e.stopPropagation()
                                     const stats = selectedElement.props?.statsArray || defaultStats
-                                    const updatedStats = stats.map((s: any, i: number) => 
+                                    const updatedStats = stats.map((s: any, i: number) =>
                                       i === index ? { ...s, value: e.target.value } : s
                                     )
                                     updateElementProps({ statsArray: updatedStats })
@@ -7961,7 +7960,7 @@ export function PropertiesPanel({
                                     e.preventDefault()
                                     e.stopPropagation()
                                     const stats = selectedElement.props?.statsArray || defaultStats
-                                    const updatedStats = stats.map((s: any, i: number) => 
+                                    const updatedStats = stats.map((s: any, i: number) =>
                                       i === index ? { ...s, label: e.target.value } : s
                                     )
                                     updateElementProps({ statsArray: updatedStats })
@@ -7995,8 +7994,8 @@ export function PropertiesPanel({
                             // Update all existing items to set isActive to false
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const updatedItems = currentItems.map((item: any) => ({ ...item, isActive: false }));
-                            updateElementProps({ 
-                              items: [...updatedItems, newItem] 
+                            updateElementProps({
+                              items: [...updatedItems, newItem]
                             });
                           }}
                           className="h-6 px-2 text-xs"
@@ -8061,11 +8060,10 @@ export function PropertiesPanel({
                                     });
                                     updateElementProps({ items: newItems });
                                   }}
-                                  className={`h-7 px-2 text-xs ${
-                                    item.isActive 
-                                      ? "bg-primary text-primary-foreground" 
+                                  className={`h-7 px-2 text-xs ${item.isActive
+                                      ? "bg-primary text-primary-foreground"
                                       : "bg-background"
-                                  }`}
+                                    }`}
                                 >
                                   {item.isActive ? "Active" : "Inactive"}
                                 </Button>
@@ -8110,8 +8108,8 @@ export function PropertiesPanel({
                             // Update all items to set isLast to false except the new one
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const updatedItems = currentItems.map((item: any) => ({ ...item, isLast: false }));
-                            updateElementProps({ 
-                              items: [...updatedItems, newItem] 
+                            updateElementProps({
+                              items: [...updatedItems, newItem]
                             });
                           }}
                           className="h-6 px-2 text-xs"
@@ -8194,8 +8192,8 @@ export function PropertiesPanel({
                               label: `Option ${currentOptions.length + 1}`,
                               checked: false
                             };
-                            updateElementProps({ 
-                              options: [...currentOptions, newOption] 
+                            updateElementProps({
+                              options: [...currentOptions, newOption]
                             });
                           }}
                           className="h-6 px-2 text-xs"
@@ -11321,7 +11319,7 @@ export function PropertiesPanel({
                           </SelectContent>
                         </Select>
                       </div>
-                      
+
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Size</Label>
                         <div className="flex items-center gap-2 mt-1">
@@ -12153,7 +12151,7 @@ export function PropertiesPanel({
               {selectedElement.type === "footer" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Font Family (Common) */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -12375,7 +12373,7 @@ export function PropertiesPanel({
               {selectedElement.type === "header" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Font Family (Common) */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -12597,7 +12595,7 @@ export function PropertiesPanel({
               {selectedElement.type === "sidebar" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Font Family (Common) */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -13183,7 +13181,7 @@ export function PropertiesPanel({
               {selectedElement.type === "separator" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Layout className="w-4 h-4" />
@@ -13204,7 +13202,7 @@ export function PropertiesPanel({
                           {Number.parseInt(selectedElement.props?.thickness) || 1}px
                         </div>
                       </div>
-                      
+
                       <div>
                         <Label className="text-xs text-muted-foreground">Orientation</Label>
                         <Select
@@ -13270,14 +13268,14 @@ export function PropertiesPanel({
               {selectedElement.type === "tooltip" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Trigger Text Styling */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Trigger Text Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -13377,7 +13375,7 @@ export function PropertiesPanel({
                       <Type className="w-4 h-4" />
                       Tooltip Text Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -13475,14 +13473,14 @@ export function PropertiesPanel({
               {selectedElement.type === "dropdown" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Dropdown Label Styling */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Dropdown Label Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -13582,7 +13580,7 @@ export function PropertiesPanel({
                       <Type className="w-4 h-4" />
                       Options Text Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -13680,7 +13678,7 @@ export function PropertiesPanel({
               {selectedElement.type === "tabs" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Tab Title Styling */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -13885,7 +13883,7 @@ export function PropertiesPanel({
               {selectedElement.type === "table" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Header Styling */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -13986,7 +13984,7 @@ export function PropertiesPanel({
                   </div>
 
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Content Styling */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -14095,7 +14093,7 @@ export function PropertiesPanel({
               {selectedElement.type === "progress" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Progress Title Font Styling */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -14281,7 +14279,7 @@ export function PropertiesPanel({
               {selectedElement.type === "timeline" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Timeline Title Font Styling */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -15214,14 +15212,14 @@ export function PropertiesPanel({
               {selectedElement.type === "input" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Input Text Styling */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Input Text Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -15325,14 +15323,14 @@ export function PropertiesPanel({
               {selectedElement.type === "textarea" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Textarea Text Styling */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Textarea Text Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -15430,14 +15428,14 @@ export function PropertiesPanel({
               {selectedElement.type === "checkbox" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Checkbox Text Styling */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Checkbox Text Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -15535,14 +15533,14 @@ export function PropertiesPanel({
               {selectedElement.type === "radio" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Radio Text Styling */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Radio Text Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -15640,14 +15638,14 @@ export function PropertiesPanel({
               {selectedElement.type === "switch" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Switch Text Styling */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Switch Text Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -15762,13 +15760,13 @@ export function PropertiesPanel({
               {selectedElement.type === "alert" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Alert Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -15867,13 +15865,13 @@ export function PropertiesPanel({
               {selectedElement.type === "code-block" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Code Block Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -15886,13 +15884,13 @@ export function PropertiesPanel({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="inherit">Inherit</SelectItem>
-                            
+
                             {/* System Fonts */}
                             <SelectItem value="system-ui">System UI</SelectItem>
                             <SelectItem value="Inter">Inter</SelectItem>
                             <SelectItem value="Segoe UI">Segoe UI</SelectItem>
                             <SelectItem value="Roboto">Roboto</SelectItem>
-                            
+
                             {/* Sans Serif */}
                             <SelectItem value="Arial">Arial</SelectItem>
                             <SelectItem value="Helvetica">Helvetica</SelectItem>
@@ -15904,7 +15902,7 @@ export function PropertiesPanel({
                             <SelectItem value="Century Gothic">Century Gothic</SelectItem>
                             <SelectItem value="Impact">Impact</SelectItem>
                             <SelectItem value="Comic Sans MS">Comic Sans MS</SelectItem>
-                            
+
                             {/* Modern Web Fonts */}
                             <SelectItem value="Open Sans">Open Sans</SelectItem>
                             <SelectItem value="Lato">Lato</SelectItem>
@@ -15914,7 +15912,7 @@ export function PropertiesPanel({
                             <SelectItem value="Source Sans Pro">Source Sans Pro</SelectItem>
                             <SelectItem value="Raleway">Raleway</SelectItem>
                             <SelectItem value="Oswald">Oswald</SelectItem>
-                            
+
                             {/* Serif Fonts */}
                             <SelectItem value="Georgia">Georgia</SelectItem>
                             <SelectItem value="Times New Roman">Times New Roman</SelectItem>
@@ -15934,7 +15932,7 @@ export function PropertiesPanel({
                             <SelectItem value="Arvo">Arvo</SelectItem>
                             <SelectItem value="Vollkorn">Vollkorn</SelectItem>
                             <SelectItem value="Alegreya">Alegreya</SelectItem>
-                            
+
                             {/* Monospace Fonts */}
                             <SelectItem value="monospace">Monospace</SelectItem>
                             <SelectItem value="Courier New">Courier New</SelectItem>
@@ -16037,13 +16035,13 @@ export function PropertiesPanel({
               {selectedElement.type === "markdown" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Markdown Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -16213,13 +16211,13 @@ export function PropertiesPanel({
               {selectedElement.type === "rich-text" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Rich Text Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -16368,13 +16366,13 @@ export function PropertiesPanel({
               {selectedElement.type === "typography" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Typography Style
                     </Label>
-                    
+
                     <div className="space-y-4">
                       {/* Heading Style */}
                       <div>
@@ -16591,13 +16589,13 @@ export function PropertiesPanel({
               {selectedElement.type === "link" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Link Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -16724,13 +16722,13 @@ export function PropertiesPanel({
               {selectedElement.type === "tag" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Tag Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -16885,13 +16883,13 @@ export function PropertiesPanel({
               {selectedElement.type === "label" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Label Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -17047,13 +17045,13 @@ export function PropertiesPanel({
               {selectedElement.type === "file-upload" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       File Upload Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -17265,13 +17263,13 @@ export function PropertiesPanel({
               {selectedElement.type === "file-download" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       File Download Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -17443,13 +17441,13 @@ export function PropertiesPanel({
               {selectedElement.type === "pdf-viewer" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       PDF Viewer Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -17621,13 +17619,13 @@ export function PropertiesPanel({
               {selectedElement.type === "document" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Document Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -17799,13 +17797,13 @@ export function PropertiesPanel({
               {selectedElement.type === "folder" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Folder Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -17977,13 +17975,13 @@ export function PropertiesPanel({
               {selectedElement.type === "loading" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Loading Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Text Size</Label>
@@ -17995,7 +17993,7 @@ export function PropertiesPanel({
                           className="bg-sidebar-accent border-sidebar-border mt-1"
                         />
                       </div>
-                      
+
                       <div>
                         <Label className="text-xs text-muted-foreground">Text Color</Label>
                         <Input
@@ -18138,13 +18136,13 @@ export function PropertiesPanel({
               {selectedElement.type === "progress-ring" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Circle className="w-4 h-4" />
                       Progress Ring Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Progress Value</Label>
@@ -18303,13 +18301,13 @@ export function PropertiesPanel({
               {selectedElement.type === "notification" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Bell className="w-4 h-4" />
                       Notification Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Badge Count</Label>
@@ -18321,7 +18319,7 @@ export function PropertiesPanel({
                           className="bg-sidebar-accent border-sidebar-border mt-1"
                         />
                       </div>
-                      
+
                       <div>
                         <Label className="text-xs text-muted-foreground">Badge Color</Label>
                         <div className="flex items-center gap-2 mt-1">
@@ -18421,13 +18419,13 @@ export function PropertiesPanel({
               {selectedElement.type === "success-message" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Check className="w-4 h-4" />
                       Success Message Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Size</Label>
@@ -18564,13 +18562,13 @@ export function PropertiesPanel({
               {selectedElement.type === "error-message" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <X className="w-4 h-4" />
                       Error Message Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Size</Label>
@@ -18707,13 +18705,13 @@ export function PropertiesPanel({
               {selectedElement.type === "warning-message" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <AlertCircle className="w-4 h-4" />
                       Warning Message Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Size</Label>
@@ -18850,13 +18848,13 @@ export function PropertiesPanel({
               {selectedElement.type === "toast" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Toast Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -18972,13 +18970,13 @@ export function PropertiesPanel({
               {selectedElement.type === "pagination" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Pagination Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -19147,13 +19145,13 @@ export function PropertiesPanel({
               {selectedElement.type === "breadcrumb" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Breadcrumb Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -19286,13 +19284,13 @@ export function PropertiesPanel({
               {selectedElement.type === "filter" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Filter Title Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -19384,13 +19382,13 @@ export function PropertiesPanel({
                   </div>
 
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Filter Options Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -19487,13 +19485,13 @@ export function PropertiesPanel({
               {selectedElement.type === "search-bar" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Search Bar Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -19590,13 +19588,13 @@ export function PropertiesPanel({
               {selectedElement.type === "calendar" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Type className="w-4 h-4" />
                       Calendar Title Style
                     </Label>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">Font Family</Label>
@@ -21273,7 +21271,7 @@ export function PropertiesPanel({
               {selectedElement.type === "hero" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Title Typography */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -21690,7 +21688,7 @@ export function PropertiesPanel({
               {selectedElement.type === "about" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   {/* Title Typography */}
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
@@ -22041,7 +22039,7 @@ export function PropertiesPanel({
               {selectedElement.type === "feature-list" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -22187,7 +22185,7 @@ export function PropertiesPanel({
               {selectedElement.type !== "modal" && selectedElement.type !== "cart" && selectedElement.type !== "checkout" && selectedElement.type !== "notification" && selectedElement.type !== "success-message" && selectedElement.type !== "error-message" && selectedElement.type !== "warning-message" && selectedElement.type !== "progress-ring" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Palette className="w-4 h-4" />
@@ -22338,7 +22336,7 @@ export function PropertiesPanel({
               {selectedElement.type === "quote" && (
                 <>
                   <Separator className="bg-sidebar-border" />
-                  
+
                   <div>
                     <Label className="text-sm font-medium flex items-center gap-2 mb-3">
                       <Layout className="w-4 h-4" />
@@ -22351,7 +22349,7 @@ export function PropertiesPanel({
                           <Input
                             placeholder="100"
                             value={selectedElement.position?.x || ""}
-                            onChange={(e) => onUpdateElementPosition(selectedElement.id, { 
+                            onChange={(e) => onUpdateElementPosition(selectedElement.id, {
                               x: Number.parseInt(e.target.value) || 0,
                               y: selectedElement.position?.y || 0,
                               width: selectedElement.position?.width,
@@ -22365,7 +22363,7 @@ export function PropertiesPanel({
                           <Input
                             placeholder="100"
                             value={selectedElement.position?.y || ""}
-                            onChange={(e) => onUpdateElementPosition(selectedElement.id, { 
+                            onChange={(e) => onUpdateElementPosition(selectedElement.id, {
                               x: selectedElement.position?.x || 0,
                               y: Number.parseInt(e.target.value) || 0,
                               width: selectedElement.position?.width,
@@ -22381,7 +22379,7 @@ export function PropertiesPanel({
                           <Input
                             placeholder="450"
                             value={selectedElement.position?.width || ""}
-                            onChange={(e) => onUpdateElementPosition(selectedElement.id, { 
+                            onChange={(e) => onUpdateElementPosition(selectedElement.id, {
                               x: selectedElement.position?.x || 0,
                               y: selectedElement.position?.y || 0,
                               width: Number.parseInt(e.target.value) || 200,
@@ -22395,7 +22393,7 @@ export function PropertiesPanel({
                           <Input
                             placeholder="140"
                             value={selectedElement.position?.height || ""}
-                            onChange={(e) => onUpdateElementPosition(selectedElement.id, { 
+                            onChange={(e) => onUpdateElementPosition(selectedElement.id, {
                               x: selectedElement.position?.x || 0,
                               y: selectedElement.position?.y || 0,
                               width: selectedElement.position?.width,
@@ -22405,14 +22403,14 @@ export function PropertiesPanel({
                           />
                         </div>
                       </div>
-                      
+
                       <div className="pt-2">
                         <Label className="text-xs text-muted-foreground">Quick Actions</Label>
                         <div className="flex gap-2 mt-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => onUpdateElementPosition(selectedElement.id, { 
+                            onClick={() => onUpdateElementPosition(selectedElement.id, {
                               x: 50,
                               y: 50,
                               width: selectedElement.position?.width,
@@ -22425,7 +22423,7 @@ export function PropertiesPanel({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => onUpdateElementPosition(selectedElement.id, { 
+                            onClick={() => onUpdateElementPosition(selectedElement.id, {
                               x: selectedElement.position?.x || 0,
                               y: selectedElement.position?.y || 0,
                               width: 450,
