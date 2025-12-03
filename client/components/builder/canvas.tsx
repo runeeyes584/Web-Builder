@@ -2664,11 +2664,11 @@ export function BuilderCanvas({
     const scale = zoom / 100
     const startX = (e.clientX - rect.left) / scale
     const startY = (e.clientY - rect.top) / scale
-    
+
     // Determine which elements are affected (multi-select drag support)
     // Only drag multiple elements if this element was already selected AND multi-select key is held
     let idsToDrag: string[] = [elementId]
-    
+
     if (isAlreadySelected && isMultiSelectKey && selectedElements.length > 1) {
       // Element was already selected and multi-select key is held - drag all selected elements
       idsToDrag = selectedElements
@@ -3919,7 +3919,7 @@ export function BuilderCanvas({
           }
           {
             element.type === "button" && (
-              <button 
+              <button
                 className={`text-card-foreground w-full h-full hover:opacity-90 transition-opacity ${(element.props?.buttonPreviewMode || isPreviewMode) && element.props?.href ? 'cursor-pointer' : ''}`}
                 style={elementStyles}
                 onMouseDown={(e) => {
@@ -3935,10 +3935,10 @@ export function BuilderCanvas({
                     e.preventDefault()
                     const url = element.props.href
                     // Ensure URL has protocol
-                    const finalUrl = url.startsWith('http://') || url.startsWith('https://') 
-                      ? url 
+                    const finalUrl = url.startsWith('http://') || url.startsWith('https://')
+                      ? url
                       : `https://${url}`
-                    
+
                     if (element.props?.openInNewTab) {
                       window.open(finalUrl, '_blank', 'noopener,noreferrer')
                     } else {

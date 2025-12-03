@@ -3,11 +3,11 @@
 import { Card } from "@/components/ui/card"
 import type { BuilderElement } from "@/lib/builder-types"
 import { componentCategories } from "@/lib/component-categories"
-import { ChevronDown, Move, Search, Sparkles } from "lucide-react"
+import { ChevronDown, Move, Search } from "lucide-react"
 import React, { useCallback, useMemo, useState } from "react"
 import { useDrag } from "react-dnd"
 import { getEmptyImage } from "react-dnd-html5-backend"
-import { TemplateLibrary } from "./template-library"
+
 
 interface ComponentLibraryProps {
   onAddTemplate?: (elements: BuilderElement[]) => void
@@ -51,7 +51,7 @@ export const ComponentLibrary = React.memo(function ComponentLibrary({ onAddTemp
 
     // Set the preview image with optimized options
     React.useEffect(() => {
-      preview(getEmptyImage(), { 
+      preview(getEmptyImage(), {
         captureDraggingState: true,
         anchorX: 0.5,
         anchorY: 0.5
@@ -61,57 +61,50 @@ export const ComponentLibrary = React.memo(function ComponentLibrary({ onAddTemp
     return (
       <Card
         ref={dragRef as unknown as React.Ref<HTMLDivElement>}
-        className={`group/card relative p-3 cursor-grab transition-all duration-200 border-sidebar-border/30 bg-gradient-to-r from-sidebar-accent/30 to-sidebar-accent/15 backdrop-blur-sm active:cursor-grabbing ${
-          isDragging 
-            ? "opacity-30 scale-95 shadow-xl border-primary/50 bg-gradient-to-r from-primary/20 to-primary/10" 
+        className={`group/card relative p-3 cursor-grab transition-all duration-200 border-sidebar-border/30 bg-gradient-to-r from-sidebar-accent/30 to-sidebar-accent/15 backdrop-blur-sm active:cursor-grabbing ${isDragging
+            ? "opacity-30 scale-95 shadow-xl border-primary/50 bg-gradient-to-r from-primary/20 to-primary/10"
             : "hover:bg-gradient-to-r hover:from-sidebar-accent/80 hover:to-sidebar-accent/50 hover:shadow-lg hover:scale-[1.02] hover:border-primary/40 hover:ring-1 hover:ring-primary/20"
-        }`}
+          }`}
         style={{
           willChange: isDragging ? 'transform, opacity' : 'auto',
           transform: isDragging ? 'translateZ(0)' : 'none'
         }}
       >
         <div className="relative flex items-center gap-3">
-          <div className={`w-8 h-8 bg-gradient-to-br rounded-lg flex items-center justify-center transition-all duration-300 shadow-sm ${
-            isDragging
+          <div className={`w-8 h-8 bg-gradient-to-br rounded-lg flex items-center justify-center transition-all duration-300 shadow-sm ${isDragging
               ? "from-primary/40 via-primary/30 to-primary/20 scale-110 rotate-12"
               : "from-primary/20 via-primary/15 to-primary/10 group-hover/card:from-primary/30 group-hover/card:via-primary/25 group-hover/card:to-primary/20 group-hover/card:scale-110 group-hover/card:rotate-3"
-          }`}>
-            <component.icon className={`w-4 h-4 text-primary transition-transform duration-300 ${
-              isDragging ? "scale-125" : "group-hover/card:scale-110"
-            }`} />
+            }`}>
+            <component.icon className={`w-4 h-4 text-primary transition-transform duration-300 ${isDragging ? "scale-125" : "group-hover/card:scale-110"
+              }`} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className={`text-sm font-semibold transition-colors duration-300 mb-1 ${
-              isDragging 
-                ? "text-primary font-bold" 
+            <p className={`text-sm font-semibold transition-colors duration-300 mb-1 ${isDragging
+                ? "text-primary font-bold"
                 : "text-sidebar-foreground group-hover/card:text-primary"
-            }`}>
+              }`}>
               {component.name}
             </p>
-            <p className={`text-xs line-clamp-1 leading-relaxed transition-colors duration-300 ${
-              isDragging 
-                ? "text-primary/70" 
+            <p className={`text-xs line-clamp-1 leading-relaxed transition-colors duration-300 ${isDragging
+                ? "text-primary/70"
                 : "text-muted-foreground group-hover/card:text-muted-foreground/80"
-            }`}>
+              }`}>
               {component.description}
             </p>
           </div>
-          <div className={`transition-all duration-300 ${
-            isDragging 
-              ? "opacity-100 scale-125 rotate-12" 
+          <div className={`transition-all duration-300 ${isDragging
+              ? "opacity-100 scale-125 rotate-12"
               : "opacity-0 group-hover/card:opacity-100 group-hover/card:scale-110"
-          }`}>
-            <div className={`w-6 h-6 rounded-md flex items-center justify-center ${
-              isDragging 
-                ? "bg-primary/30 shadow-lg" 
-                : "bg-primary/10"
             }`}>
+            <div className={`w-6 h-6 rounded-md flex items-center justify-center ${isDragging
+                ? "bg-primary/30 shadow-lg"
+                : "bg-primary/10"
+              }`}>
               <Move className={`w-3 h-3 text-primary ${isDragging ? "animate-pulse" : ""}`} />
             </div>
           </div>
         </div>
-        
+
         {/* Animated border when dragging */}
         {isDragging && (
           <div className="absolute inset-0 rounded-lg border-2 border-dashed border-primary/60 animate-pulse pointer-events-none"></div>
@@ -173,77 +166,68 @@ export const ComponentLibrary = React.memo(function ComponentLibrary({ onAddTemp
             </div>
           ) : (
             filteredCategories.map((category, categoryIndex) => {
-            const isExpanded = expandedCategories.has(category.name)
-            return (
-              <div key={category.name} className="isolate" style={{ animationDelay: `${categoryIndex * 50}ms` }}>
-                {/* Compact Category Header */}
-                <button
-                  onClick={() => toggleCategory(category.name)}
-                  className={`relative flex items-center justify-between w-full p-3 rounded-lg transition-all duration-200 group/item ${
-                    isExpanded 
-                      ? "bg-primary/10 border border-primary/20 shadow-sm" 
-                      : "hover:bg-primary/15 hover:border-primary/30 border border-transparent hover:shadow-sm"
-                  }`}
-                >
-                  <div className="relative flex items-center gap-3">
-                    <div className={`w-2 h-6 rounded-full transition-all duration-200 ${
-                      isExpanded 
-                        ? "bg-primary" 
-                        : "bg-muted-foreground/30 group-hover/item:bg-primary"
-                    }`}></div>
-                    <div className="text-left">
-                      <h3 className={`text-sm font-semibold transition-colors duration-200 ${
-                        isExpanded 
-                          ? "text-primary" 
-                          : "text-sidebar-foreground group-hover/item:text-primary"
-                      }`}>
-                        {category.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        {category.components.length} components
-                      </p>
+              const isExpanded = expandedCategories.has(category.name)
+              return (
+                <div key={category.name} className="isolate" style={{ animationDelay: `${categoryIndex * 50}ms` }}>
+                  {/* Compact Category Header */}
+                  <button
+                    onClick={() => toggleCategory(category.name)}
+                    className={`relative flex items-center justify-between w-full p-3 rounded-lg transition-all duration-200 group/item ${isExpanded
+                        ? "bg-primary/10 border border-primary/20 shadow-sm"
+                        : "hover:bg-primary/15 hover:border-primary/30 border border-transparent hover:shadow-sm"
+                      }`}
+                  >
+                    <div className="relative flex items-center gap-3">
+                      <div className={`w-2 h-6 rounded-full transition-all duration-200 ${isExpanded
+                          ? "bg-primary"
+                          : "bg-muted-foreground/30 group-hover/item:bg-primary"
+                        }`}></div>
+                      <div className="text-left">
+                        <h3 className={`text-sm font-semibold transition-colors duration-200 ${isExpanded
+                            ? "text-primary"
+                            : "text-sidebar-foreground group-hover/item:text-primary"
+                          }`}>
+                          {category.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          {category.components.length} components
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium transition-all duration-200 ${
-                      isExpanded 
-                        ? "bg-primary/20 text-primary" 
-                        : "bg-muted/50 text-muted-foreground"
-                    }`}>
-                      {category.components.length}
-                    </span>
-                    <div className={`transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}>
-                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                  </div>
-                </button>
 
-                {/* Compact Components Grid */}
-                {isExpanded && (
-                  <div className="mt-2 ml-5 animate-in slide-in-from-top duration-300 space-y-1.5">
-                    <div className="grid grid-cols-1 gap-1.5">
-                      {category.components.map((component, componentIndex) => (
-                        <div key={component.name} style={{ animationDelay: `${(categoryIndex * 50) + (componentIndex * 30)}ms` }}>
-                          <DraggableCard component={component as any} />
-                        </div>
-                      ))}
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium transition-all duration-200 ${isExpanded
+                          ? "bg-primary/20 text-primary"
+                          : "bg-muted/50 text-muted-foreground"
+                        }`}>
+                        {category.components.length}
+                      </span>
+                      <div className={`transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}>
+                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )
-          })
+                  </button>
+
+                  {/* Compact Components Grid */}
+                  {isExpanded && (
+                    <div className="mt-2 ml-5 animate-in slide-in-from-top duration-300 space-y-1.5">
+                      <div className="grid grid-cols-1 gap-1.5">
+                        {category.components.map((component, componentIndex) => (
+                          <div key={component.name} style={{ animationDelay: `${(categoryIndex * 50) + (componentIndex * 30)}ms` }}>
+                            <DraggableCard component={component as any} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })
           )}
         </div>
       </div>
 
-      {/* Compact Footer */}
-      <div className="relative p-3 border-t border-sidebar-border/20 bg-gradient-to-r from-sidebar-accent/30 to-transparent backdrop-blur-sm">
-        <div className="relative">
-          <TemplateLibrary onAddTemplate={onAddTemplate || (() => {})} />
-        </div>
-      </div>
+
     </div>
   )
 })

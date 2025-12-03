@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { SignInButton } from "@clerk/nextjs"
+import { SignInButton, useUser } from "@clerk/nextjs"
 import {
   ArrowRight,
   CheckCircle,
@@ -16,10 +16,19 @@ import {
   Users,
   Zap
 } from "lucide-react"
-import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 export function WelcomePage() {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
+  const { isSignedIn, isLoaded } = useUser()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      router.push("/")
+    }
+  }, [isLoaded, isSignedIn, router])
 
   const features = [
     {
@@ -112,7 +121,7 @@ export function WelcomePage() {
                 {" "}chỉ trong vài phút
               </h2>
               <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-                Không cần biết code, không cần kinh nghiệm thiết kế. 
+                Không cần biết code, không cần kinh nghiệm thiết kế.
                 Chỉ cần kéo, thả và tạo ra website đẹp mắt với Website Builder.
               </p>
             </div>
@@ -125,9 +134,9 @@ export function WelcomePage() {
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </SignInButton>
-              <Button 
-                variant="outline" 
-                size="lg" 
+              <Button
+                variant="outline"
+                size="lg"
                 className="px-8 py-4 text-lg"
                 onClick={() => setIsVideoPlaying(true)}
               >
@@ -267,7 +276,7 @@ export function WelcomePage() {
             <p className="text-xl text-muted-foreground mb-8">
               Tham gia cùng hàng nghìn người dùng đang sử dụng Website Builder để tạo ra những website tuyệt vời
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <SignInButton mode="redirect">
                 <Button size="lg" className="px-8 py-4 text-lg font-semibold">

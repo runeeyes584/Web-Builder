@@ -183,7 +183,7 @@ export function useBuilderState() {
           const newHistory = [...hist.slice(0, historyIndex + 1), newElements]
           return addToHistory(newHistory)
         })
-        setHistoryIndex((idx) => idx + 1)
+        setHistoryIndex((idx) => Math.min(idx + 1, MAX_HISTORY_SIZE - 1))
 
         // Save to database (async, non-blocking)
         saveActionToDB('ADD', newElement)
@@ -234,7 +234,7 @@ export function useBuilderState() {
           const newHistory = [...hist.slice(0, historyIndex + 1), newElements]
           return addToHistory(newHistory)
         })
-        setHistoryIndex((idx) => idx + 1)
+        setHistoryIndex((idx) => Math.min(idx + 1, MAX_HISTORY_SIZE - 1))
 
         return { ...page, elements: newElements }
       })
@@ -285,7 +285,7 @@ export function useBuilderState() {
           const newHistory = [...hist.slice(0, historyIndex + 1), newElements]
           return addToHistory(newHistory)
         })
-        setHistoryIndex((idx) => idx + 1)
+        setHistoryIndex((idx) => Math.min(idx + 1, MAX_HISTORY_SIZE - 1))
 
         // Save to database (async)
         if (deletedElement) {
@@ -319,7 +319,7 @@ export function useBuilderState() {
             const newHistory = [...hist.slice(0, historyIndex + 1), newElements]
             return addToHistory(newHistory)
           })
-          setHistoryIndex((idx) => idx + 1)
+          setHistoryIndex((idx) => Math.min(idx + 1, MAX_HISTORY_SIZE - 1))
 
           // Save to database (async)
           saveActionToDB('DUPLICATE', newElement)
@@ -360,7 +360,7 @@ export function useBuilderState() {
             const newHistory = [...hist.slice(0, historyIndex + 1), newElements]
             return addToHistory(newHistory)
           })
-          setHistoryIndex((idx) => idx + 1)
+          setHistoryIndex((idx) => Math.min(idx + 1, MAX_HISTORY_SIZE - 1))
 
           return { ...page, elements: newElements }
         })
@@ -378,6 +378,8 @@ export function useBuilderState() {
       const newIndex = historyIndex - 1
       setHistoryIndex(newIndex)
       const historyElements = history[newIndex]
+
+      if (!historyElements) return
 
       // Deep clone to avoid shared references
       const newElements = historyElements.map(deepCloneElement)
@@ -417,7 +419,7 @@ export function useBuilderState() {
       const newHistory = [...prev.slice(0, historyIndex + 1), clonedElements]
       return addToHistory(newHistory)
     })
-    setHistoryIndex((prev) => prev + 1)
+    setHistoryIndex((prev) => Math.min(prev + 1, MAX_HISTORY_SIZE - 1))
   }, [pages, activePageId, historyIndex, addToHistory])
 
   const loadProject = useCallback((newPages: BuilderPage[]) => {

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import type { Breakpoint, BuilderElement, BuilderPage } from "@/lib/builder-types"
 import { Monitor, Smartphone, Tablet, X } from "lucide-react"
-import { useState, useMemo } from "react"
+import { useMemo, useState } from "react"
 
 interface PreviewModalProps {
   isOpen: boolean
@@ -259,10 +259,10 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
           if (element.props?.href) {
             const url = element.props.href
             // Ensure URL has protocol
-            const finalUrl = url.startsWith('http://') || url.startsWith('https://') 
-              ? url 
+            const finalUrl = url.startsWith('http://') || url.startsWith('https://')
+              ? url
               : `https://${url}`
-            
+
             if (element.props?.openInNewTab) {
               window.open(finalUrl, '_blank', 'noopener,noreferrer')
             } else {
@@ -271,9 +271,9 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
           }
         }
         return (
-          <button 
-            key={element.id} 
-            style={{ ...wrapperStyles, ...contentStyles }} 
+          <button
+            key={element.id}
+            style={{ ...wrapperStyles, ...contentStyles }}
             className="text-foreground hover:opacity-90 transition-opacity cursor-pointer"
             onClick={handleButtonClick}
           >
@@ -2886,7 +2886,7 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
               </div>
             </div>
           </div>
-        </div>
+        </div >
 
         <div className="p-4 border-t bg-muted/50">
           <div className="flex justify-between items-center">
@@ -2897,7 +2897,7 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </DialogContent >
+    </Dialog >
   )
 }
