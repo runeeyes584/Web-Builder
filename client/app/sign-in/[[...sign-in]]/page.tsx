@@ -12,7 +12,7 @@ export default function SignInPage() {
     const checkAdminAndRedirect = async () => {
       if (isLoaded && user?.id) {
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/users/status/${user.id}`)
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/users/status/${user.id}`)
           if (response.ok) {
             const data = await response.json()
             if (data.role === "admin") {
