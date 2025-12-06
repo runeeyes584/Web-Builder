@@ -2294,6 +2294,7 @@ export function BuilderCanvas({
         position: { x: 100, y: 100, width: 300, height: 250 },
 
       },
+
       "newsletter-signup": {
         content: "Newsletter Signup",
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center" },

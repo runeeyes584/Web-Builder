@@ -5,13 +5,222 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import type { Breakpoint, BuilderElement, BuilderPage } from "@/lib/builder-types"
 import { Monitor, Smartphone, Tablet, X } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 interface PreviewModalProps {
   isOpen: boolean
   onClose: () => void
   elements: BuilderElement[]
   pages?: BuilderPage[]
+}
+
+// Counter Component with Animation (Copied from Canvas)
+function CounterComponent({ element, currentBreakpoint }: { element: BuilderElement, currentBreakpoint: Breakpoint }) {
+  const [currentValue, setCurrentValue] = useState(0)
+  const [isAnimating, setIsAnimating] = useState(false)
+
+  const targetValue = element.props?.targetValue || 1000
+  const duration = element.props?.duration || 2000
+  const suffix = element.props?.suffix || ""
+  const prefix = element.props?.prefix || ""
+  const showLabel = element.props?.showLabel !== false
+  const animated = element.props?.animated !== false
+
+  // Calculate element styles
+  const elementStyles = {
+    ...element.styles,
+    ...(currentBreakpoint === 'tablet' ? element.responsiveStyles?.tablet : {}),
+    ...(currentBreakpoint === 'mobile' ? element.responsiveStyles?.mobile : {}),
+  }
+
+  // Animation effect
+  useEffect(() => {
+    if (animated && targetValue > 0) {
+      setIsAnimating(true)
+      const startTime = Date.now()
+      const startValue = 0
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime
+        const progress = Math.min(elapsed / duration, 1)
+
+        // Easing function for smooth animation
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+        const current = Math.floor(startValue + (targetValue - startValue) * easeOutQuart)
+
+        setCurrentValue(current)
+
+        if (progress < 1) {
+          requestAnimationFrame(animate)
+        } else {
+          setCurrentValue(targetValue)
+          setIsAnimating(false)
+        }
+      }
+
+      requestAnimationFrame(animate)
+    } else {
+      setCurrentValue(targetValue)
+    }
+  }, [targetValue, duration, animated])
+
+  // Format number with commas
+  const formatNumber = (num: number) => {
+    return num.toLocaleString()
+  }
+
+  return (
+    <div className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-6 flex flex-col items-center justify-center" style={elementStyles}>
+      <div className="text-center">
+        <div
+          className={`text-4xl font-bold mb-2 transition-all duration-300 ${isAnimating ? 'scale-110' : 'scale-100'}`}
+          style={{
+            fontFamily: element.props?.valueFontFamily || undefined,
+            fontSize: element.props?.valueFontSize ? `${element.props.valueFontSize}px` : undefined,
+            fontWeight: element.props?.valueFontWeight || undefined,
+            color: element.props?.valueTextColor || undefined,
+          }}
+        >
+          {prefix}{formatNumber(currentValue)}{suffix}
+        </div>
+        {showLabel && element.content && (
+          <div
+            className="text-sm text-muted-foreground"
+            style={{
+              fontFamily: element.props?.labelFontFamily || undefined,
+              fontSize: element.props?.labelFontSize ? `${element.props.labelFontSize}px` : undefined,
+              fontWeight: element.props?.labelFontWeight || undefined,
+              color: element.props?.labelTextColor || undefined,
+            }}
+          >
+            {element.content}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Carousel Component (Copied from Canvas)
+function CarouselComponent({ element }: { element: BuilderElement }) {
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(false)
+
+  // Sync with element props
+  useEffect(() => {
+    setIsPlaying(element.props?.autoplay || false)
+  }, [element.props?.autoplay])
+
+  const slideCount = element.props?.slideCount || 5
+  const uploadedImages = element.props?.uploadedImages || []
+
+  // Create slides array
+  const slides = Array.from({ length: slideCount }, (_, i) => ({
+    id: `slide-${i}`,
+    image: uploadedImages[i] || `https://picsum.photos/400/300?random=${i + 1}`
+  }))
+
+  // Autoplay functionality
+  useEffect(() => {
+    if (isPlaying) {
+      const intervalTime = (element.props?.autoplayInterval || 3) * 1000
+      const interval = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % slideCount)
+      }, intervalTime)
+      return () => clearInterval(interval)
+    }
+  }, [isPlaying, slideCount, element.props?.autoplayInterval])
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % slideCount)
+  }
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + slideCount) % slideCount)
+  }
+
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index)
+  }
+
+  return (
+    <div className="text-card-foreground bg-card border border-border rounded-lg overflow-hidden w-full h-full relative">
+      {/* Carousel Container */}
+      <div className="relative w-full h-full">
+        {/* Slides */}
+        <div className="relative w-full h-full overflow-hidden">
+          {slides.map((slide, index) => (
+            <div
+              key={slide.id}
+              className={`absolute inset-0 transition-transform duration-500 ease-in-out ${index === currentSlide ? 'translate-x-0' :
+                index < currentSlide ? '-translate-x-full' : 'translate-x-full'
+                }`}
+            >
+              <div className="w-full h-full flex items-center justify-center p-4">
+                <img
+                  src={slide.image}
+                  alt={`Slide ${index + 1}`}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Navigation Arrows */}
+        <button
+          onClick={prevSlide}
+          className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        <button
+          onClick={nextSlide}
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
+        {/* Dots Indicator */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => goToSlide(index)}
+              className={`w-2 h-2 rounded-full transition-colors ${index === currentSlide ? 'bg-primary' : 'bg-white/50 hover:bg-white/70'
+                }`}
+            />
+          ))}
+        </div>
+
+        {/* Play/Pause Button */}
+        <button
+          onClick={() => setIsPlaying(!isPlaying)}
+          className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
+        >
+          {isPlaying ? (
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+        </button>
+
+        {/* Slide Counter */}
+        <div className="absolute top-4 left-4 bg-black/50 text-white px-2 py-1 rounded text-xs">
+          {currentSlide + 1} / {slideCount}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewModalProps) {
@@ -34,15 +243,17 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
   const getScaleFactor = (breakpoint: Breakpoint): number => {
     switch (breakpoint) {
       case "tablet":
-        return 768 / CANVAS_REFERENCE_WIDTH // ~0.64
+        return 1 // No scaling for tablet - auto-stack
       case "mobile":
-        return 375 / CANVAS_REFERENCE_WIDTH // ~0.3125
+        return 1 // No scaling for mobile - auto-stack
       default:
         return 1 // desktop - no scaling
     }
   }
 
   const scaleFactor = getScaleFactor(currentBreakpoint)
+  // Stacked view applies to both mobile and tablet for true responsiveness
+  const isStackedView = currentBreakpoint === "mobile" || currentBreakpoint === "tablet"
 
   const breakpointIcons = {
     desktop: Monitor,
@@ -55,6 +266,65 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
     const responsiveStyles = element.responsiveStyles?.[currentBreakpoint] || {}
     return { ...baseStyles, ...responsiveStyles }
   }
+
+  // Sort elements by Y position for stacked view
+  const sortedElements = useMemo(() => {
+    if (!isStackedView) return currentElements
+    return [...currentElements].sort((a, b) => {
+      const posA_Y = a.position?.y || 0
+      const posB_Y = b.position?.y || 0
+
+      // If Y positions are close (within 50px), sort by X to maintain row order
+      if (Math.abs(posA_Y - posB_Y) < 50) {
+        return (a.position?.x || 0) - (b.position?.x || 0)
+      }
+      return posA_Y - posB_Y
+    })
+  }, [currentElements, isStackedView])
+
+  // Determine grid spans for Tablet view based on desktop visual rows
+  const elementSpans = useMemo(() => {
+    // Only calculate for tablet
+    if (currentBreakpoint !== "tablet") return new Map<string, string>()
+
+    const spans = new Map<string, string>()
+    // Use sorted elements to iterate visually top-to-bottom
+    const sorted = [...sortedElements]
+
+    let i = 0
+    while (i < sorted.length) {
+      const currentRow = [sorted[i]]
+      const currentY = sorted[i].position?.y || 0
+
+      // Look ahead for neighbors in the same "visual row"
+      let j = i + 1
+      while (j < sorted.length) {
+        const nextEl = sorted[j]
+        const nextY = nextEl.position?.y || 0
+
+        // If Y difference is small (less than 50px), consider them in the same row
+        if (Math.abs(nextY - currentY) < 50) {
+          currentRow.push(nextEl)
+          j++
+        } else {
+          break
+        }
+      }
+
+      // Assign spans based on row density
+      if (currentRow.length > 1) {
+        // Multiple items in row: they sit side-by-side (span 1)
+        currentRow.forEach(el => spans.set(el.id, 'span 1'))
+      } else {
+        // Single item in row: spans full width (span 2)
+        spans.set(currentRow[0].id, 'span 2')
+      }
+
+      i = j // Advance main loop
+    }
+
+    return spans
+  }, [sortedElements, currentBreakpoint])
 
   // Calculate canvas height based on elements positions
   const canvasHeight = useMemo(() => {
@@ -82,7 +352,7 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
     if (isHidden) return null // Don't render hidden elements in preview
 
     // Wrapper styles with absolute positioning - CRITICAL for layout preservation
-    const wrapperStyles: React.CSSProperties = {
+    let wrapperStyles: React.CSSProperties = {
       position: 'absolute',
       left: position.x,
       top: position.y,
@@ -93,12 +363,46 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
       transformOrigin: 'center center',
     }
 
+    // Override validation for stacked view (Mobile/Tablet)
+    if (isStackedView) {
+      const isTablet = currentBreakpoint === "tablet"
+      const isWideElement = (position.width || 0) > 500 // Threshold for full-span elements on tablet
+
+      wrapperStyles = {
+        position: 'relative',
+        width: '100%',
+        height: 'auto', // Allow content to dictate height
+        marginBottom: isTablet ? '0' : '1rem', // Grid handles gap in tablet
+        zIndex: zIndex,
+        // Apply calculated span for Tablet, default to full width (span 2) if not found or for single items
+        gridColumn: isTablet ? (elementSpans.get(element.id) || 'span 2') : undefined,
+        // Reset absolute positioning props
+        left: undefined,
+        top: undefined,
+        transform: undefined,
+      }
+    }
+
     // Content styles (applied to inner elements)
     const contentStyles: React.CSSProperties = {
       ...styles,
     }
 
     switch (element.type) {
+      case "counter":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <CounterComponent element={element} currentBreakpoint={currentBreakpoint} />
+          </div>
+        )
+
+      case "carousel":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <CarouselComponent element={element} />
+          </div>
+        )
+
       case "heading":
         return (
           <h1 key={element.id} style={{ ...wrapperStyles, ...contentStyles }} className="text-foreground">
@@ -131,7 +435,7 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
                     className="w-full h-full object-contain"
                     style={{ objectFit: rest.objectFit || 'contain' }}
                   />
-                </div>
+                </div >
               )
             })()}
           </div>
@@ -1694,6 +1998,7 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
           </div>
         )
 
+      case "form":
       case "contact-form":
         return (
           <div key={element.id} style={wrapperStyles}>
@@ -2869,23 +3174,36 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
             >
               {/* Preview canvas with absolute positioning - exactly like builder canvas */}
               {/* For tablet/mobile, we scale down the entire canvas content to fit the viewport */}
+              {/* Preview canvas */}
               <div
-                className="relative w-full overflow-hidden"
-                style={{ height: `${scaledCanvasHeight}px` }}
+                className={
+                  currentBreakpoint === "mobile"
+                    ? "flex flex-col p-4 bg-background min-h-full space-y-4"
+                    : currentBreakpoint === "tablet"
+                      ? "grid grid-cols-2 gap-4 p-6 bg-background min-h-full content-start"
+                      : "relative w-full overflow-hidden"
+                }
+                style={isStackedView ? { minHeight: '600px' } : { height: `${scaledCanvasHeight}px` }}
               >
-                <div
-                  className="absolute top-0 left-0 origin-top-left"
-                  style={{
-                    width: `${CANVAS_REFERENCE_WIDTH}px`,
-                    height: `${canvasHeight}px`,
-                    transform: scaleFactor !== 1 ? `scale(${scaleFactor})` : undefined,
-                  }}
-                >
-                  {currentElements.map(renderElement)}
-                </div>
+                {isStackedView ? (
+                  // Stacked renders directly
+                  sortedElements.map(renderElement)
+                ) : (
+                  // Desktop renders with scaling container
+                  <div
+                    className="absolute top-0 left-0 origin-top-left"
+                    style={{
+                      width: `${CANVAS_REFERENCE_WIDTH}px`,
+                      height: `${canvasHeight}px`,
+                      transform: scaleFactor !== 1 ? `scale(${scaleFactor})` : undefined,
+                    }}
+                  >
+                    {currentElements.map(renderElement)}
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
+            </div >
+          </div >
         </div >
 
         <div className="p-4 border-t bg-muted/50">

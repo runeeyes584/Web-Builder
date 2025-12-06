@@ -28,7 +28,7 @@ export const componentCategories = [
   {
     name: "Forms & Inputs",
     components: [
-      { name: "Form", icon: FormInput, description: "Contact forms", type: "form" },
+      { name: "Form", icon: FormInput, description: "Contact forms", type: "contact-form" },
       { name: "Input", icon: FormInput, description: "Text inputs", type: "input" },
       { name: "Textarea", icon: AlignLeft, description: "Multi-line text", type: "textarea" },
       { name: "Select", icon: ChevronDown, description: "Dropdown menus", type: "select" },
