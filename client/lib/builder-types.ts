@@ -20,12 +20,7 @@ export interface BuilderElement {
     width?: number
     height?: number
   }
-  animations?: {
-    type: "fadeIn" | "slideIn" | "zoomIn" | "bounce" | "pulse" | "shake" | "none"
-    duration: number
-    delay: number
-    direction?: "up" | "down" | "left" | "right"
-  }
+
 }
 
 export interface DragData {

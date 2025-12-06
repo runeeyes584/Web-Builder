@@ -12,13 +12,11 @@ export default clerkMiddleware(async (auth, request) => {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // Special handling for root path
+  // Special handling for root path - Delegates to client-side protection to avoid loops
   if (pathname === '/') {
-    if (!authObject.userId) {
-      // Not authenticated - redirect to welcome
-      return NextResponse.redirect(new URL('/welcome', request.url))
-    }
-    // Authenticated - allow access to root
+    // We allow access to root even if not authenticated initially, 
+    // to let the Client Component handle the redirect if needed.
+    // This prevents middleware/client state mismatch loops.
     return NextResponse.next()
   }
 

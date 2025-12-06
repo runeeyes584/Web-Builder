@@ -769,7 +769,7 @@ export function BuilderCanvas({
           mobile: { fontSize: "1.5rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 60 },
-        animations: { type: "fadeIn", duration: 600, delay: 0, direction: "up" },
+
       },
       paragraph: {
         content: "New paragraph text. Click to edit this content.",
@@ -780,7 +780,7 @@ export function BuilderCanvas({
           mobile: { fontSize: "0.9rem", lineHeight: "1.4" },
         },
         position: { x: 100, y: 100, width: 400, height: 80 },
-        animations: { type: "slideIn", duration: 800, delay: 200, direction: "up" },
+
       },
       image: {
         content: "/placeholder.svg?height=250&width=300",
@@ -791,7 +791,7 @@ export function BuilderCanvas({
           mobile: { width: "100%" },
         },
         position: { x: 100, y: 100, width: 300, height: 250 },
-        animations: { type: "zoomIn", duration: 700, delay: 100 },
+
       },
       button: {
         content: "Click Me",
@@ -810,7 +810,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.6rem 1rem", fontSize: "0.9rem" },
         },
         position: { x: 100, y: 100, width: 150, height: 50 },
-        animations: { type: "bounce", duration: 600, delay: 300 },
+
       },
       section: {
         content: "New Section",
@@ -827,7 +827,7 @@ export function BuilderCanvas({
           mobile: { padding: "1rem" },
         },
         position: { x: 100, y: 100, width: 600, height: 250 },
-        animations: { type: "slideIn", duration: 800, delay: 0, direction: "up" },
+
       },
       card: {
         content: "Card Content",
@@ -845,7 +845,7 @@ export function BuilderCanvas({
           mobile: { padding: "1rem" },
         },
         position: { x: 100, y: 100, width: 350, height: 250 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       quote: {
         content: "This is an inspiring quote that will motivate your visitors.",
@@ -868,7 +868,7 @@ export function BuilderCanvas({
           mobile: { fontSize: "0.95rem" },
         },
         position: { x: 100, y: 100, width: 450, height: 140 },
-        animations: { type: "slideIn", duration: 700, delay: 100, direction: "left" },
+
       },
       separator: {
         content: "",
@@ -884,7 +884,7 @@ export function BuilderCanvas({
           orientation: "horizontal",
           separatorStyle: "solid"
         },
-        animations: { type: "fadeIn", duration: 500, delay: 0 },
+
       },
       list: {
         content: "• First item\n• Second item\n• Third item",
@@ -900,7 +900,7 @@ export function BuilderCanvas({
           mobile: { fontSize: "0.9rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 140 },
-        animations: { type: "slideIn", duration: 600, delay: 200, direction: "up" },
+
       },
       input: {
         content: "Enter text here...",
@@ -919,7 +919,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.6rem", fontSize: "0.9rem" },
         },
         position: { x: 100, y: 100, width: 250, height: 50 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       textarea: {
         content: "Enter your message here...",
@@ -939,7 +939,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.6rem", fontSize: "0.9rem" },
         },
         position: { x: 100, y: 100, width: 350, height: 120 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       select: {
         content: "Select an option",
@@ -958,7 +958,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.6rem", fontSize: "0.9rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 60 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       checkbox: {
         content: "Checkbox option",
@@ -975,7 +975,7 @@ export function BuilderCanvas({
           mobile: { fontSize: "0.9rem" },
         },
         position: { x: 100, y: 100, width: 150, height: 30 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       radio: {
         content: "Radio option",
@@ -992,7 +992,7 @@ export function BuilderCanvas({
           mobile: { fontSize: "0.9rem" },
         },
         position: { x: 100, y: 100, width: 150, height: 30 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       switch: {
         content: "Toggle switch",
@@ -1009,7 +1009,7 @@ export function BuilderCanvas({
           mobile: { fontSize: "0.9rem" },
         },
         position: { x: 100, y: 100, width: 150, height: 30 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       video: {
         content: "/placeholder.svg?height=300&width=500",
@@ -1025,7 +1025,7 @@ export function BuilderCanvas({
           mobile: { width: "100%", height: "100%" },
         },
         position: { x: 100, y: 100, width: 500, height: 300 },
-        animations: { type: "zoomIn", duration: 700, delay: 100 },
+
       },
       audio: {
         content: "Audio Player",
@@ -1043,7 +1043,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 80 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       gallery: {
         content: "Image Gallery",
@@ -1061,7 +1061,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 200 },
-        animations: { type: "zoomIn", duration: 700, delay: 100 },
+
       },
       icon: {
         content: "⭐",
@@ -1076,7 +1076,7 @@ export function BuilderCanvas({
           mobile: { fontSize: "1.5rem" },
         },
         position: { x: 100, y: 100, width: 60, height: 60 },
-        animations: { type: "bounce", duration: 600, delay: 300 },
+
       },
       badge: {
         content: "New",
@@ -1094,7 +1094,7 @@ export function BuilderCanvas({
           mobile: { fontSize: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 60, height: 30 },
-        animations: { type: "pulse", duration: 1000, delay: 0 },
+
       },
       avatar: {
         content: "👤",
@@ -1114,7 +1114,7 @@ export function BuilderCanvas({
           mobile: { width: "40px", height: "40px", fontSize: "1rem" },
         },
         position: { x: 100, y: 100, width: 60, height: 60 },
-        animations: { type: "zoomIn", duration: 600, delay: 200 },
+
       },
       modal: {
         content: "Modal Content",
@@ -1133,7 +1133,7 @@ export function BuilderCanvas({
           mobile: { padding: "1rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 200 },
-        animations: { type: "zoomIn", duration: 500, delay: 0 },
+
       },
       tooltip: {
         content: "Tooltip text",
@@ -1151,7 +1151,7 @@ export function BuilderCanvas({
           mobile: { fontSize: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 120, height: 40 },
-        animations: { type: "fadeIn", duration: 300, delay: 0 },
+
       },
       dropdown: {
         content: "Dropdown Menu",
@@ -1169,7 +1169,7 @@ export function BuilderCanvas({
           mobile: { fontSize: "0.9rem" },
         },
         position: { x: 100, y: 100, width: 200, height: 40 },
-        animations: { type: "slideIn", duration: 300, delay: 0, direction: "down" },
+
       },
       tabs: {
         content: "Tab Content",
@@ -1186,7 +1186,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 150 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       carousel: {
         content: "Image Carousel",
@@ -1204,7 +1204,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 200 },
-        animations: { type: "slideIn", duration: 600, delay: 200, direction: "left" },
+
       },
       table: {
         content: "Data Table",
@@ -1222,7 +1222,7 @@ export function BuilderCanvas({
           mobile: { fontSize: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 400, height: 200 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       chart: {
         content: "Data Chart",
@@ -1240,7 +1240,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 200 },
-        animations: { type: "zoomIn", duration: 700, delay: 100 },
+
       },
       progress: {
         content: "Progress Bar",
@@ -1257,7 +1257,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.3rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 40 },
-        animations: { type: "slideIn", duration: 500, delay: 100, direction: "left" },
+
       },
       timeline: {
         content: "Timeline Event",
@@ -1275,7 +1275,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 100 },
-        animations: { type: "slideIn", duration: 600, delay: 200, direction: "left" },
+
       },
       stats: {
         content: "Statistics",
@@ -1294,7 +1294,7 @@ export function BuilderCanvas({
           mobile: { padding: "1rem" },
         },
         position: { x: 100, y: 100, width: 200, height: 120 },
-        animations: { type: "zoomIn", duration: 600, delay: 200 },
+
       },
       counter: {
         content: "0",
@@ -1313,7 +1313,7 @@ export function BuilderCanvas({
           mobile: { fontSize: "1.5rem" },
         },
         position: { x: 100, y: 100, width: 80, height: 80 },
-        animations: { type: "bounce", duration: 600, delay: 300 },
+
       },
       "product-card": {
         content: "Product Name",
@@ -1332,7 +1332,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 200, height: 250 },
-        animations: { type: "zoomIn", duration: 600, delay: 200 },
+
       },
       price: {
         content: "99.99",
@@ -1348,7 +1348,7 @@ export function BuilderCanvas({
           mobile: { fontSize: "1.125rem" },
         },
         position: { x: 100, y: 100, width: 100, height: 40 },
-        animations: { type: "bounce", duration: 600, delay: 300 },
+
       },
       rating: {
         content: "⭐⭐⭐⭐⭐",
@@ -1363,7 +1363,7 @@ export function BuilderCanvas({
           mobile: { fontSize: "1rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 200 },
-        animations: { type: "pulse", duration: 1000, delay: 0 },
+
         props: {
           value: 4,
           maxStars: 5,
@@ -1392,7 +1392,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.6rem 1rem", fontSize: "0.9rem" },
         },
         position: { x: 100, y: 100, width: 120, height: 40 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       checkout: {
         content: "Checkout",
@@ -1412,7 +1412,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem 1.5rem", fontSize: "0.95rem" },
         },
         position: { x: 100, y: 100, width: 120, height: 50 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       "social-links": {
         content: "Social Media",
@@ -1430,7 +1430,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 200, height: 80 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
         props: {
           socialLinks: [
             { platform: "Facebook", url: "https://facebook.com" },
@@ -1454,7 +1454,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 250, height: 120 },
-        animations: { type: "slideIn", duration: 600, delay: 200, direction: "up" },
+
       },
       map: {
         content: "Map Location",
@@ -1472,7 +1472,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 200 },
-        animations: { type: "zoomIn", duration: 700, delay: 100 },
+
       },
       newsletter: {
         content: "Newsletter Signup",
@@ -1490,7 +1490,7 @@ export function BuilderCanvas({
           mobile: { padding: "1rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 150 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       team: {
         content: "Team Member",
@@ -1508,7 +1508,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 200, height: 250 },
-        animations: { type: "zoomIn", duration: 600, delay: 200 },
+
       },
       testimonial: {
         content: "Customer Review",
@@ -1527,7 +1527,7 @@ export function BuilderCanvas({
           mobile: { padding: "1rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 150 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       grid: {
         content: "Grid Layout",
@@ -1548,7 +1548,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 200 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       navigation: {
         content: "Navigation Menu",
@@ -1575,7 +1575,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 400, height: 60 },
-        animations: { type: "slideIn", duration: 500, delay: 100, direction: "down" },
+
       },
       footer: {
         content: "Footer Content",
@@ -1593,7 +1593,7 @@ export function BuilderCanvas({
           mobile: { padding: "1rem" },
         },
         position: { x: 100, y: 100, width: 400, height: 120 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       header: {
         content: "Header Content",
@@ -1611,7 +1611,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 400, height: 100 },
-        animations: { type: "slideIn", duration: 500, delay: 100, direction: "down" },
+
       },
       sidebar: {
         content: "Sidebar Content",
@@ -1628,7 +1628,7 @@ export function BuilderCanvas({
           mobile: { padding: "0.75rem" },
         },
         position: { x: 100, y: 100, width: 200, height: 300 },
-        animations: { type: "slideIn", duration: 500, delay: 100, direction: "left" },
+
       },
       form: {
         content: "Contact Form",
@@ -1645,7 +1645,7 @@ export function BuilderCanvas({
           mobile: { padding: "1rem" },
         },
         position: { x: 100, y: 100, width: 300, height: 250 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       // Advanced UI Components
       calendar: {
@@ -1660,7 +1660,7 @@ export function BuilderCanvas({
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 300, height: 200 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       "search-bar": {
         content: "Search...",
@@ -1673,7 +1673,7 @@ export function BuilderCanvas({
         styles: { padding: "0", border: "none", borderRadius: "0", backgroundColor: "transparent", width: "100%" },
         responsiveStyles: { desktop: { padding: "0" }, tablet: { padding: "0" }, mobile: { padding: "0" } },
         position: { x: 100, y: 100, width: 300, height: 48 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       filter: {
         content: "Filter Options",
@@ -1696,7 +1696,7 @@ export function BuilderCanvas({
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 120 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       breadcrumb: {
         content: "Home > About > Contact",
@@ -1717,7 +1717,7 @@ export function BuilderCanvas({
         styles: { padding: "0.5rem", backgroundColor: "var(--color-muted)", borderRadius: "0.375rem", color: "var(--color-foreground)", fontSize: "0.875rem" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 35 },
-        animations: { type: "fadeIn", duration: 400, delay: 0 },
+
       },
       pagination: {
         content: "1 2 3 ... 10",
@@ -1743,21 +1743,21 @@ export function BuilderCanvas({
         styles: { padding: "0.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.375rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center", fontSize: "0.875rem" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 40 },
-        animations: { type: "fadeIn", duration: 400, delay: 0 },
+
       },
       spinner: {
         content: "Loading...",
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", textAlign: "center", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 120, height: 80 },
-        animations: { type: "pulse", duration: 1000, delay: 0 },
+
       },
       skeleton: {
         content: "Loading skeleton",
         styles: { padding: "1rem", backgroundColor: "var(--color-muted)", borderRadius: "0.5rem", color: "var(--color-muted-foreground)", fontSize: "0.875rem" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 100 },
-        animations: { type: "pulse", duration: 1500, delay: 0 },
+
       },
       alert: {
         content: "Alert message",
@@ -1771,7 +1771,7 @@ export function BuilderCanvas({
         styles: { padding: "0.75rem", backgroundColor: "var(--color-destructive)", color: "var(--color-destructive-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", textAlign: "center" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 50 },
-        animations: { type: "shake", duration: 500, delay: 0 },
+
       },
       toast: {
         content: "Toast notification",
@@ -1786,7 +1786,7 @@ export function BuilderCanvas({
         styles: { padding: "0.75rem", backgroundColor: "var(--color-card)", color: "var(--color-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", textAlign: "center", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 50 },
-        animations: { type: "slideIn", duration: 300, delay: 0, direction: "up" },
+
       },
       // Content & Text Components
       "code-block": {
@@ -1801,7 +1801,7 @@ export function BuilderCanvas({
         styles: { padding: "1rem", backgroundColor: "var(--color-muted)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", fontFamily: "monospace", fontSize: "0.875rem" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 300, height: 100 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       markdown: {
         content: "# Markdown Content\n\nThis is **bold** text and *italic* text.\n\n## Features\n- Easy to write\n- **Bold** and *italic*\n- `code snippets`\n\n> This is a blockquote",
@@ -1818,7 +1818,7 @@ export function BuilderCanvas({
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", fontSize: "0.875rem", lineHeight: "1.6" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 300, height: 200 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       "rich-text": {
         content: "Rich Text Editor",
@@ -1835,7 +1835,7 @@ export function BuilderCanvas({
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", fontSize: "0.875rem" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 300, height: 200 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       typography: {
         content: "Typography\nFont styles and sizes",
@@ -1855,7 +1855,7 @@ export function BuilderCanvas({
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", fontSize: "1.125rem", fontWeight: "600" },
         responsiveStyles: { desktop: { fontSize: "1.125rem" }, tablet: { fontSize: "1rem" }, mobile: { fontSize: "0.95rem" } },
         position: { x: 100, y: 100, width: 250, height: 100 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       link: {
         content: "External Link",
@@ -1871,7 +1871,7 @@ export function BuilderCanvas({
         styles: { padding: "0.5rem", backgroundColor: "transparent", color: "var(--color-primary)", fontSize: "0.875rem", cursor: "pointer" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 120, height: 30 },
-        animations: { type: "fadeIn", duration: 400, delay: 0 },
+
       },
       tag: {
         content: "Tag",
@@ -1887,7 +1887,7 @@ export function BuilderCanvas({
         styles: {},
         responsiveStyles: { desktop: { fontSize: "0.75rem" }, tablet: { fontSize: "0.7rem" }, mobile: { fontSize: "0.65rem" } },
         position: { x: 100, y: 100, width: 60, height: 25 },
-        animations: { type: "bounce", duration: 600, delay: 300 },
+
       },
       label: {
         content: "Label Text",
@@ -1903,7 +1903,7 @@ export function BuilderCanvas({
         styles: {},
         responsiveStyles: { desktop: { fontSize: "0.75rem" }, tablet: { fontSize: "0.7rem" }, mobile: { fontSize: "0.65rem" } },
         position: { x: 100, y: 100, width: 80, height: 25 },
-        animations: { type: "fadeIn", duration: 400, delay: 0 },
+
       },
       // File & Media Components
       "file-upload": {
@@ -1923,7 +1923,7 @@ export function BuilderCanvas({
         styles: {},
         responsiveStyles: { desktop: { padding: "0.75rem", fontSize: "0.875rem" }, tablet: { padding: "0.65rem", fontSize: "0.8rem" }, mobile: { padding: "0.6rem", fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 80 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       "file-download": {
         content: "Download File",
@@ -1941,7 +1941,7 @@ export function BuilderCanvas({
         styles: {},
         responsiveStyles: { desktop: { padding: "0.75rem", fontSize: "0.875rem" }, tablet: { padding: "0.65rem", fontSize: "0.8rem" }, mobile: { padding: "0.6rem", fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 150, height: 50 },
-        animations: { type: "bounce", duration: 600, delay: 300 },
+
       },
       "pdf-viewer": {
         content: "PDF Document",
@@ -1964,7 +1964,7 @@ export function BuilderCanvas({
         styles: {},
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 300, height: 200 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       document: {
         content: "Document Viewer",
@@ -1988,7 +1988,7 @@ export function BuilderCanvas({
         styles: {},
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 250, height: 150 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       folder: {
         content: "Folder Name",
@@ -2015,21 +2015,21 @@ export function BuilderCanvas({
         styles: {},
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 250, height: 200 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       "image-gallery": {
         content: "Image Gallery",
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 300, height: 200 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       "video-gallery": {
         content: "Video Gallery",
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.5rem" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 300, height: 200 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       // Navigation & Menu Components
       menu: {
@@ -2037,42 +2037,42 @@ export function BuilderCanvas({
         styles: { padding: "0.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.375rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", fontSize: "0.875rem" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 150, height: 40 },
-        animations: { type: "slideIn", duration: 300, delay: 0, direction: "down" },
+
       },
       "tab-nav": {
         content: "Tab Navigation",
         styles: { padding: "0.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.375rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", display: "flex", gap: "0.5rem" },
         responsiveStyles: { desktop: { padding: "0.5rem" }, tablet: { padding: "0.4rem" }, mobile: { padding: "0.3rem" } },
         position: { x: 100, y: 100, width: 300, height: 50 },
-        animations: { type: "slideIn", duration: 400, delay: 100, direction: "up" },
+
       },
       "side-menu": {
         content: "Side Menu",
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", width: "200px" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 300 },
-        animations: { type: "slideIn", duration: 500, delay: 100, direction: "left" },
+
       },
       "mobile-menu": {
         content: "Mobile Menu",
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", display: "flex", flexDirection: "column", gap: "0.5rem" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 250, height: 200 },
-        animations: { type: "slideIn", duration: 500, delay: 100, direction: "down" },
+
       },
       "back-button": {
         content: "← Back",
         styles: { padding: "0.5rem 1rem", backgroundColor: "var(--color-muted)", color: "var(--color-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", cursor: "pointer" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 80, height: 35 },
-        animations: { type: "fadeIn", duration: 400, delay: 0 },
+
       },
       "home-button": {
         content: "🏠 Home",
         styles: { padding: "0.5rem 1rem", backgroundColor: "var(--color-primary)", color: "var(--color-primary-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", cursor: "pointer" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 80, height: 35 },
-        animations: { type: "bounce", duration: 600, delay: 300 },
+
       },
       // Feedback & Status Components
       loading: {
@@ -2080,7 +2080,7 @@ export function BuilderCanvas({
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", textAlign: "center", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 120, height: 80 },
-        animations: { type: "pulse", duration: 1000, delay: 0 },
+
       },
       "progress-ring": {
         content: "",
@@ -2099,7 +2099,7 @@ export function BuilderCanvas({
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "50%", border: "1px solid var(--color-border)", textAlign: "center", color: "var(--color-foreground)", width: "80px", height: "80px", display: "flex", alignItems: "center", justifyContent: "center" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 80, height: 80 },
-        animations: { type: "pulse", duration: 2000, delay: 0 },
+
       },
       notification: {
         content: "🔔",
@@ -2115,14 +2115,14 @@ export function BuilderCanvas({
         styles: { padding: "0.5rem", backgroundColor: "transparent", borderRadius: "0.375rem", textAlign: "center" },
         responsiveStyles: { desktop: { padding: "0.5rem" }, tablet: { padding: "0.375rem" }, mobile: { padding: "0.25rem" } },
         position: { x: 100, y: 100, width: 48, height: 48 },
-        animations: { type: "shake", duration: 500, delay: 0 },
+
       },
       "alert-banner": {
         content: "Important Notice",
         styles: { padding: "0.75rem", backgroundColor: "var(--color-destructive)", color: "var(--color-destructive-foreground)", borderRadius: "0.375rem", fontSize: "0.875rem", textAlign: "center" },
         responsiveStyles: { desktop: { fontSize: "0.875rem" }, tablet: { fontSize: "0.8rem" }, mobile: { fontSize: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 50 },
-        animations: { type: "shake", duration: 500, delay: 0 },
+
       },
       "success-message": {
         content: "Success!",
@@ -2138,7 +2138,7 @@ export function BuilderCanvas({
         styles: { padding: "0.75rem", backgroundColor: "var(--color-primary)", color: "var(--color-primary-foreground)", borderRadius: "0.375rem", textAlign: "center" },
         responsiveStyles: { desktop: { padding: "0.75rem" }, tablet: { padding: "0.625rem" }, mobile: { padding: "0.5rem" } },
         position: { x: 100, y: 100, width: 150, height: 50 },
-        animations: { type: "bounce", duration: 600, delay: 300 },
+
       },
       "error-message": {
         content: "Error!",
@@ -2154,7 +2154,7 @@ export function BuilderCanvas({
         styles: { padding: "0.75rem", backgroundColor: "var(--color-destructive)", color: "var(--color-destructive-foreground)", borderRadius: "0.375rem", textAlign: "center" },
         responsiveStyles: { desktop: { padding: "0.75rem" }, tablet: { padding: "0.625rem" }, mobile: { padding: "0.5rem" } },
         position: { x: 100, y: 100, width: 120, height: 50 },
-        animations: { type: "shake", duration: 500, delay: 0 },
+
       },
       "warning-message": {
         content: "Warning!",
@@ -2170,7 +2170,7 @@ export function BuilderCanvas({
         styles: { padding: "0.75rem", backgroundColor: "var(--color-secondary)", color: "var(--color-secondary-foreground)", borderRadius: "0.375rem", textAlign: "center" },
         responsiveStyles: { desktop: { padding: "0.75rem" }, tablet: { padding: "0.625rem" }, mobile: { padding: "0.5rem" } },
         position: { x: 100, y: 100, width: 130, height: 50 },
-        animations: { type: "shake", duration: 500, delay: 0 },
+
       },
       // Utility & Tools Components
       divider: {
@@ -2178,56 +2178,56 @@ export function BuilderCanvas({
         styles: { height: "1px", backgroundColor: "var(--color-border)", width: "100%" },
         responsiveStyles: { desktop: {}, tablet: {}, mobile: {} },
         position: { x: 100, y: 100, width: 200, height: 1 },
-        animations: { type: "fadeIn", duration: 400, delay: 0 },
+
       },
       spacer: {
         content: "",
         styles: { backgroundColor: "transparent", width: "100%", height: "2rem" },
         responsiveStyles: { desktop: { height: "2rem" }, tablet: { height: "1.5rem" }, mobile: { height: "1rem" } },
         position: { x: 100, y: 100, width: 200, height: 32 },
-        animations: { type: "fadeIn", duration: 400, delay: 0 },
+
       },
       container: {
         content: "Container",
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 300, height: 150 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       wrapper: {
         content: "Wrapper",
         styles: { padding: "0.5rem", backgroundColor: "var(--color-muted)", borderRadius: "0.375rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "0.5rem" }, tablet: { padding: "0.4rem" }, mobile: { padding: "0.3rem" } },
         position: { x: 100, y: 100, width: 250, height: 100 },
-        animations: { type: "fadeIn", duration: 400, delay: 0 },
+
       },
       flexbox: {
         content: "Flex Container",
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", display: "flex", gap: "0.5rem", alignItems: "center" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 300, height: 100 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       "grid-container": {
         content: "Grid Container",
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.5rem" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 300, height: 150 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       center: {
         content: "Centered Content",
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 100 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       stack: {
         content: "Stack Container",
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", display: "flex", flexDirection: "column", gap: "0.5rem" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 200, height: 150 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       // Business & Marketing Components
       "pricing-table": {
@@ -2235,56 +2235,56 @@ export function BuilderCanvas({
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
         position: { x: 100, y: 100, width: 300, height: 200 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       "feature-list": {
         content: "Feature Highlights",
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 300, height: 150 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       faq: {
         content: "FAQ Section",
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 300, height: 200 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       "blog-post": {
         content: "Blog Article",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
         position: { x: 100, y: 100, width: 300, height: 250 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       "case-study": {
         content: "Case Study",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
         position: { x: 100, y: 100, width: 300, height: 250 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       cta: {
         content: "Call to Action",
         styles: { padding: "2rem", backgroundColor: "var(--color-primary)", color: "var(--color-primary-foreground)", borderRadius: "0.75rem", textAlign: "center" },
         responsiveStyles: { desktop: { padding: "2rem" }, tablet: { padding: "1.5rem" }, mobile: { padding: "1rem" } },
         position: { x: 100, y: 100, width: 300, height: 150 },
-        animations: { type: "bounce", duration: 600, delay: 300 },
+
       },
       hero: {
         content: "Hero Section",
         styles: { padding: "3rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center" },
         responsiveStyles: { desktop: { padding: "3rem" }, tablet: { padding: "2rem" }, mobile: { padding: "1.5rem" } },
         position: { x: 100, y: 100, width: 400, height: 300 },
-        animations: { type: "fadeIn", duration: 800, delay: 200 },
+
       },
       about: {
         content: "About Us",
         styles: { padding: "2rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "2rem" }, tablet: { padding: "1.5rem" }, mobile: { padding: "1rem" } },
         position: { x: 100, y: 100, width: 350, height: 200 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       // Forms & Validation Components
       "contact-form": {
@@ -2292,56 +2292,56 @@ export function BuilderCanvas({
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
         position: { x: 100, y: 100, width: 300, height: 250 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       "newsletter-signup": {
         content: "Newsletter Signup",
         styles: { padding: "1rem", backgroundColor: "var(--color-card)", borderRadius: "0.5rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)", textAlign: "center" },
         responsiveStyles: { desktop: { padding: "1rem" }, tablet: { padding: "0.875rem" }, mobile: { padding: "0.75rem" } },
         position: { x: 100, y: 100, width: 400, height: 180 },
-        animations: { type: "fadeIn", duration: 500, delay: 100 },
+
       },
       "login-form": {
         content: "Login Form",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
         position: { x: 100, y: 100, width: 350, height: 280 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       "registration-form": {
         content: "Registration Form",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
         position: { x: 100, y: 100, width: 350, height: 320 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       "survey-form": {
         content: "Survey Form",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
         position: { x: 100, y: 100, width: 350, height: 310 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       "order-form": {
         content: "Order Form",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
         position: { x: 100, y: 100, width: 350, height: 270 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       "booking-form": {
         content: "Booking Form",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
         position: { x: 100, y: 100, width: 350, height: 280 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
       "feedback-form": {
         content: "Feedback Form",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
         position: { x: 100, y: 100, width: 350, height: 270 },
-        animations: { type: "fadeIn", duration: 600, delay: 200 },
+
       },
     }
 
@@ -2383,7 +2383,7 @@ export function BuilderCanvas({
         zIndex: maxZIndex + 1, // New elements appear on top
         rotation: 0, // Default rotation
       },
-      animations: elementTemplates[type]?.animations,
+
     }
   }
 

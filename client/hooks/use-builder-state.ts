@@ -19,7 +19,7 @@ const deepCloneElement = (el: BuilderElement): BuilderElement => {
       mobile: { ...el.responsiveStyles.mobile },
     } : undefined,
     position: el.position ? { ...el.position } : undefined,
-    animations: el.animations ? { ...el.animations } : undefined,
+
     props: el.props ? { ...el.props } : undefined,
     children: el.children ? el.children.map(deepCloneElement) : undefined,
   }
@@ -211,7 +211,7 @@ export function useBuilderState() {
                 mobile: { ...el.responsiveStyles?.mobile, ...updates.responsiveStyles.mobile },
               } : el.responsiveStyles,
               position: updates.position ? { ...el.position, ...updates.position } : el.position,
-              animations: updates.animations ? { ...el.animations, ...updates.animations } : el.animations,
+
               props: updates.props ? { ...el.props, ...updates.props } : el.props,
             };
 

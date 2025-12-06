@@ -34,8 +34,7 @@ import {
   Tablet,
   Trash2,
   Type,
-  X,
-  Zap
+  X
 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 
@@ -60,7 +59,7 @@ export function PropertiesPanel({
   isPreviewMode = false,
   onPreviewModeToggle,
 }: PropertiesPanelProps) {
-  const [activeTab, setActiveTab] = useState<"content" | "style" | "layout" | "effects" | "animations" | "advanced">("content")
+  const [activeTab, setActiveTab] = useState<"content" | "style" | "layout" | "effects" | "advanced">("content")
   const [responsiveMode, setResponsiveMode] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [expandedHeaders, setExpandedHeaders] = useState<Set<number>>(new Set())
@@ -3298,15 +3297,15 @@ export function PropertiesPanel({
             { id: "style", label: "Style", icon: Palette },
             { id: "layout", label: "Layout", icon: Layout },
             { id: "effects", label: "Effects", icon: Shadow },
-            { id: "animations", label: "Animate", icon: Zap },
+
             { id: "advanced", label: "Advanced", icon: Settings },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex-shrink-0 px-3 py-2 text-xs font-medium transition-all duration-200 relative min-w-[60px] ${activeTab === tab.id
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground border-b-2 border-primary shadow-sm"
-                  : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/30"
+                ? "bg-sidebar-accent text-sidebar-accent-foreground border-b-2 border-primary shadow-sm"
+                : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/30"
                 }`}
             >
               <div className="flex flex-col items-center gap-1">
@@ -8061,8 +8060,8 @@ export function PropertiesPanel({
                                     updateElementProps({ items: newItems });
                                   }}
                                   className={`h-7 px-2 text-xs ${item.isActive
-                                      ? "bg-primary text-primary-foreground"
-                                      : "bg-background"
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-background"
                                     }`}
                                 >
                                   {item.isActive ? "Active" : "Inactive"}
@@ -22573,100 +22572,7 @@ export function PropertiesPanel({
             </>
           )}
 
-          {/* Animations Tab */}
-          {activeTab === "animations" && (
-            <>
-              <div>
-                <Label className="text-sm font-medium flex items-center gap-2 mb-3">
-                  <Zap className="w-4 h-4" />
-                  Animation Type
-                </Label>
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Animation</Label>
-                    <Select
-                      value={selectedElement?.animations?.type || "none"}
-                      onValueChange={(value) => {
-                        if (selectedElement) {
-                          onUpdateElement(selectedElement.id, {
-                            animations: {
-                              type: value as "fadeIn" | "slideIn" | "zoomIn" | "bounce" | "pulse" | "shake" | "none",
-                              duration: selectedElement.animations?.duration || 600,
-                              delay: selectedElement.animations?.delay || 0,
-                              direction: selectedElement.animations?.direction,
-                            }
-                          })
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="fadeIn">Fade In</SelectItem>
-                        <SelectItem value="slideIn">Slide In</SelectItem>
-                        <SelectItem value="zoomIn">Zoom In</SelectItem>
-                        <SelectItem value="bounce">Bounce</SelectItem>
-                        <SelectItem value="pulse">Pulse</SelectItem>
-                        <SelectItem value="shake">Shake</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Duration (ms)</Label>
-                    <Slider
-                      value={[selectedElement?.animations?.duration || 600]}
-                      onValueChange={([value]) => {
-                        if (selectedElement) {
-                          onUpdateElement(selectedElement.id, {
-                            animations: {
-                              type: selectedElement.animations?.type || "none",
-                              duration: value,
-                              delay: selectedElement.animations?.delay || 0,
-                              direction: selectedElement.animations?.direction,
-                            }
-                          })
-                        }
-                      }}
-                      max={2000}
-                      min={100}
-                      step={100}
-                      className="mt-2"
-                    />
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {selectedElement?.animations?.duration || 600}ms
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Delay (ms)</Label>
-                    <Slider
-                      value={[selectedElement?.animations?.delay || 0]}
-                      onValueChange={([value]) => {
-                        if (selectedElement) {
-                          onUpdateElement(selectedElement.id, {
-                            animations: {
-                              type: selectedElement.animations?.type || "none",
-                              duration: selectedElement.animations?.duration || 600,
-                              delay: value,
-                              direction: selectedElement.animations?.direction,
-                            }
-                          })
-                        }
-                      }}
-                      max={1000}
-                      min={0}
-                      step={50}
-                      className="mt-2"
-                    />
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {selectedElement?.animations?.delay || 0}ms
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
+
 
           {/* Advanced Tab */}
           {activeTab === "advanced" && (

@@ -98,7 +98,7 @@ export default function WebsiteBuilder() {
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!isLoaded) return
-      
+
       if (user?.id) {
         try {
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/users/status/${user.id}`)
@@ -113,11 +113,18 @@ export default function WebsiteBuilder() {
           console.error("Failed to check admin status:", error)
         }
       }
-      
+
       setIsCheckingAdmin(false)
     }
 
     checkAdminStatus()
+  }, [isLoaded, user?.id, router])
+
+  // Redirect to welcome if not signed in
+  useEffect(() => {
+    if (isLoaded && !user?.id) {
+      router.push("/welcome")
+    }
   }, [isLoaded, user?.id, router])
 
   // Auto-save hook - only enabled when user has edit permission and project is open
