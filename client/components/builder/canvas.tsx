@@ -9063,25 +9063,6 @@ export function BuilderCanvas({
         />
       )}
 
-      {/* Enhanced Breakpoint indicator - Fixed size regardless of zoom - hidden in preview mode */}
-      {!isPreviewMode && (
-        <div
-          className="absolute z-30 animate-in slide-in-from-top duration-500"
-          style={{
-            top: `${16 / (zoom / 100)}px`,
-            left: '50%',
-            transform: `translateX(-50%) scale(${100 / zoom})`,
-            transformOrigin: 'center',
-          }}
-        >
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-muted to-muted/80 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-muted-foreground border border-border shadow-lg">
-            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-            <span>Editing for:</span>
-            <span className="font-medium text-foreground capitalize bg-primary/10 px-2 py-1 rounded-md">{currentBreakpoint}</span>
-          </div>
-        </div>
-      )}
-
       {/* Elements with animations */}
       {elements.map((element, index) => (
         <div

@@ -35,13 +35,13 @@ function TooltipTrigger({
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
   return (
-    <TooltipPrimitive.Trigger 
-      data-slot="tooltip-trigger" 
+    <TooltipPrimitive.Trigger
+      data-slot="tooltip-trigger"
       className={cn(
         'cursor-help transition-all duration-200 hover:scale-105 hover:brightness-110',
         className
       )}
-      {...props} 
+      {...props}
     />
   )
 }
@@ -85,19 +85,12 @@ function TooltipContent({
         <div className="relative z-10 font-medium leading-relaxed">
           {children}
         </div>
-        
-        {/* Enhanced arrow with gradient */}
-        <TooltipPrimitive.Arrow 
-          className={cn(
-            'z-[100] size-2.5 rounded-[2px]',
-            'bg-gradient-to-br from-popover via-popover to-popover/95',
-            'border border-border/50',
-            // Arrow positioning based on side
-            side === 'top' && 'translate-y-[calc(50%_+_2px)] rotate-45',
-            side === 'bottom' && 'translate-y-[calc(-50%_-_2px)] rotate-45',
-            side === 'left' && 'translate-x-[calc(50%_+_2px)] rotate-45',
-            side === 'right' && 'translate-x-[calc(-50%_-_2px)] rotate-45',
-          )} 
+
+        {/* Simplified arrow without border */}
+        <TooltipPrimitive.Arrow
+          className="fill-popover"
+          width={8}
+          height={4}
         />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>

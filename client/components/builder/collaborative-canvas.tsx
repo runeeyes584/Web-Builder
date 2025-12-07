@@ -1,10 +1,10 @@
 "use client"
 
+import type { ActiveUser } from "@/hooks/use-collaboration"
 import { useCollaboration } from "@/hooks/use-collaboration"
 import type { Breakpoint } from "@/lib/builder-types"
 import { useUser } from "@clerk/nextjs"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ActiveUsers } from "./active-users"
 import { BuilderCanvas as Canvas } from "./canvas"
 import { CollaborativeCursor } from "./collaborative-cursor"
 
@@ -38,6 +38,7 @@ interface CollaborativeCanvasProps {
   onSetActiveLeftPanel?: (panel: 'components' | 'pages' | 'siteStyle') => void
   activeTool?: 'select' | 'hand'
   onElementDoubleClick?: (elementId: string) => void
+  onActiveUsersChange?: (users: ActiveUser[]) => void
   [key: string]: any
 }
 
@@ -60,6 +61,7 @@ export function CollaborativeCanvas({
   onShowLeftSidebar,
   onSetActiveLeftPanel,
   onElementDoubleClick,
+  onActiveUsersChange,
   ...canvasProps
 }: CollaborativeCanvasProps) {
   const { user } = useUser()
@@ -124,6 +126,13 @@ export function CollaborativeCanvas({
       onLayoutChangeReady(sendLayoutChange)
     }
   }, [sendLayoutChange, onLayoutChangeReady])
+
+  // Expose activeUsers to parent component
+  useEffect(() => {
+    if (onActiveUsersChange) {
+      onActiveUsersChange(activeUsers)
+    }
+  }, [activeUsers, onActiveUsersChange])
 
   // Apply element changes from other users
   useEffect(() => {
@@ -353,16 +362,6 @@ export function CollaborativeCanvas({
 
   return (
     <div className="relative w-full h-full" id="builder-canvas" ref={canvasRef}>
-      {/* Active users display */}
-      {projectId && activeUsers.length > 0 && (
-        <div className="absolute top-4 right-4 z-50">
-          <ActiveUsers
-            users={activeUsers}
-            currentUserClerkId={user?.id || ""}
-          />
-        </div>
-      )}
-
       {/* Collaborative cursors - filter out current user and users on different pages */}
       <CollaborativeCursor
         users={activeUsers.filter(u => u.clerkId !== user?.id && u.pageId === pageId)}

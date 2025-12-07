@@ -1,9 +1,9 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { ActiveUser } from '@/hooks/use-collaboration';
 import { Circle } from 'lucide-react';
@@ -29,7 +29,7 @@ export function ActiveUsers({
       if (user.clerkId === currentUserClerkId) {
         return false;
       }
-      
+
       // Check if we already have this user (by clerkId)
       if (seen.has(user.clerkId)) {
         return false;
@@ -53,18 +53,17 @@ export function ActiveUsers({
 
   return (
     <TooltipProvider>
-      <div className="flex items-center gap-2">
-        <Circle className="h-2 w-2 fill-green-500 text-green-500" />
-        <div className="flex -space-x-2">
+      <div className="flex items-center gap-1.5 bg-background/90 backdrop-blur-md border border-border/50 rounded-full pl-1.5 pr-3 py-1.5 shadow-lg hover:shadow-xl transition-all hover:scale-105">
+        <div className="flex -space-x-1.5">
           {visibleUsers.map((user) => (
             <Tooltip key={user.clerkId}>
               <TooltipTrigger>
                 <Avatar
-                  className="h-8 w-8 border-2 border-background"
+                  className="h-6 w-6 border-2 border-background ring-1 ring-white/10 transition-transform hover:scale-110 hover:z-10"
                   style={{ borderColor: user.color }}
                 >
                   <AvatarFallback
-                    className="text-xs font-semibold"
+                    className="text-[10px] font-bold"
                     style={{ backgroundColor: user.color, color: 'white' }}
                   >
                     {user.username[0]?.toUpperCase() || '?'}
@@ -72,7 +71,7 @@ export function ActiveUsers({
                 </Avatar>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{user.username}</p>
+                <p className="text-xs">{user.username}</p>
               </TooltipContent>
             </Tooltip>
           ))}
@@ -80,21 +79,25 @@ export function ActiveUsers({
           {hiddenCount > 0 && (
             <Tooltip>
               <TooltipTrigger>
-                <Avatar className="h-8 w-8 border-2 border-background">
-                  <AvatarFallback className="text-xs">
+                <Avatar className="h-6 w-6 border-2 border-background ring-1 ring-white/10">
+                  <AvatarFallback className="text-[10px] font-bold bg-muted">
                     +{hiddenCount}
                   </AvatarFallback>
                 </Avatar>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{hiddenCount} more online</p>
+                <p className="text-xs">{hiddenCount} more online</p>
               </TooltipContent>
             </Tooltip>
           )}
         </div>
-        <span className="text-sm text-muted-foreground">
-          {uniqueUsers.length} {uniqueUsers.length === 1 ? 'person' : 'people'} online
-        </span>
+
+        <div className="flex items-center gap-1.5 ml-0.5">
+          <Circle className="h-1.5 w-1.5 fill-green-500 text-green-500 animate-pulse" />
+          <span className="text-xs font-medium text-foreground/90">
+            {uniqueUsers.length}
+          </span>
+        </div>
       </div>
     </TooltipProvider>
   );

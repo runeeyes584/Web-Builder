@@ -1,5 +1,6 @@
 "use client"
 
+import { ActiveUsers } from "@/components/builder/active-users"
 import { CollaborativeCanvas } from "@/components/builder/collaborative-canvas"
 import { ComponentLibrary } from "@/components/builder/component-library"
 import { LayersPanel } from "@/components/builder/layers-panel"
@@ -9,6 +10,7 @@ import { TopToolbar } from "@/components/builder/top-toolbar"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { useAutoSave } from "@/hooks/use-auto-save"
 import { useBuilderState } from "@/hooks/use-builder-state"
+import type { ActiveUser } from "@/hooks/use-collaboration"
 import type { BuilderElement, BuilderPage, RegionsLayout } from "@/lib/builder-types"
 import { componentCategories } from "@/lib/component-categories"
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs"
@@ -85,6 +87,7 @@ export default function WebsiteBuilder() {
   const [isProjectOwner, setIsProjectOwner] = useState(true)
   const [isProjectPublic, setIsProjectPublic] = useState(false)
   const [userRole, setUserRole] = useState<'OWNER' | 'EDITOR' | 'VIEWER'>('OWNER')
+  const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([])
 
   // Get current user info from Clerk
   const { user, isLoaded } = useUser()
@@ -904,6 +907,27 @@ export default function WebsiteBuilder() {
                 {/* Center Canvas */}
                 <ResizablePanel defaultSize={60} minSize={30}>
                   <div className="h-full bg-canvas canvas-grid overflow-hidden relative">
+                    {/* Editing for indicator - Fixed at top center */}
+                    {!isPreviewMode && (
+                      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50">
+                        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-muted to-muted/80 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-muted-foreground border border-border shadow-lg">
+                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                          <span>Editing for:</span>
+                          <span className="font-medium text-foreground capitalize bg-primary/10 px-2 py-1 rounded-md">{currentBreakpoint}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Active Users - Fixed within canvas area */}
+                    {currentProjectId && activeUsers.length > 0 && (
+                      <div className="absolute top-4 right-4 z-50">
+                        <ActiveUsers
+                          users={activeUsers}
+                          currentUserClerkId={user?.id || ""}
+                        />
+                      </div>
+                    )}
+
                     {/* Enhanced glow effect background - adapts to theme */}
                     <div className="absolute inset-0 pointer-events-none">
                       {/* Radial gradient overlay for spotlight effect */}
@@ -964,6 +988,7 @@ export default function WebsiteBuilder() {
                           onShowLeftSidebar={() => setShowLeftSidebar(true)}
                           onSetActiveLeftPanel={(panel) => setActiveLeftPanel(panel)}
                           onElementDoubleClick={handleElementDoubleClick}
+                          onActiveUsersChange={setActiveUsers}
                         />
                       </div>
                     </div>
