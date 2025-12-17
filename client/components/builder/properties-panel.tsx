@@ -6100,6 +6100,40 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Link URL</Label>
+                      <Input
+                        placeholder="https://example.com"
+                        value={selectedElement.props?.buttonHref || ""}
+                        onChange={(e) => updateElementProps({ buttonHref: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={selectedElement.props?.buttonOpenInNewTab || false}
+                        onCheckedChange={(checked) => updateElementProps({ buttonOpenInNewTab: checked })}
+                      />
+                      <Label className="text-xs text-muted-foreground">Open in new tab</Label>
+                    </div>
+                    <Separator className="bg-sidebar-border" />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label className="text-xs font-medium">Preview Mode</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Click button on canvas to test link
+                        </p>
+                      </div>
+                      <Switch
+                        checked={selectedElement.props?.cardPreviewMode || false}
+                        onCheckedChange={(checked) => updateElementProps({ cardPreviewMode: checked })}
+                      />
+                    </div>
+                    {selectedElement.props?.cardPreviewMode && (
+                      <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                        ⚠️ Preview mode is ON. Clicking the button will navigate to the link.
+                      </div>
+                    )}
                     <div className="flex items-center justify-between pt-1">
                       <div>
                         <Label className="text-xs text-muted-foreground">Container function</Label>
@@ -22330,6 +22364,189 @@ export function PropertiesPanel({
                   </div>
                 </div>
               </div>
+
+              {/* List Column Layout Settings */}
+              {selectedElement.type === "list" && (
+                <>
+                  <Separator className="bg-sidebar-border" />
+
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Layout className="w-4 h-4" />
+                      Column Layout
+                    </Label>
+
+                    {/* Column Presets */}
+                    <div className="mb-4">
+                      <Label className="text-xs text-muted-foreground mb-2 block">Presets</Label>
+                      <div className="flex gap-2">
+                        {/* One Column */}
+                        <button
+                          onClick={() => updateElementProps({ 
+                            columnCount: 1, 
+                            columnWidths: [100] 
+                          })}
+                          className={`flex-1 p-2 border rounded-md hover:bg-sidebar-accent transition-colors ${
+                            (selectedElement.props?.columnCount || 1) === 1 ? 'border-primary bg-primary/10' : 'border-sidebar-border'
+                          }`}
+                          title="One"
+                        >
+                          <div className="flex justify-center">
+                            <div className="w-6 h-8 border border-current rounded-sm"></div>
+                          </div>
+                          <span className="text-xs mt-1 block">One</span>
+                        </button>
+
+                        {/* Two Columns */}
+                        <button
+                          onClick={() => updateElementProps({ 
+                            columnCount: 2, 
+                            columnWidths: [50, 50] 
+                          })}
+                          className={`flex-1 p-2 border rounded-md hover:bg-sidebar-accent transition-colors ${
+                            selectedElement.props?.columnCount === 2 ? 'border-primary bg-primary/10' : 'border-sidebar-border'
+                          }`}
+                          title="Two"
+                        >
+                          <div className="flex justify-center gap-0.5">
+                            <div className="w-3 h-8 border border-current rounded-sm"></div>
+                            <div className="w-3 h-8 border border-current rounded-sm"></div>
+                          </div>
+                          <span className="text-xs mt-1 block">Two</span>
+                        </button>
+
+                        {/* Three Columns */}
+                        <button
+                          onClick={() => updateElementProps({ 
+                            columnCount: 3, 
+                            columnWidths: [33.33, 33.33, 33.34] 
+                          })}
+                          className={`flex-1 p-2 border rounded-md hover:bg-sidebar-accent transition-colors ${
+                            selectedElement.props?.columnCount === 3 ? 'border-primary bg-primary/10' : 'border-sidebar-border'
+                          }`}
+                          title="Three"
+                        >
+                          <div className="flex justify-center gap-0.5">
+                            <div className="w-2 h-8 border border-current rounded-sm"></div>
+                            <div className="w-2 h-8 border border-current rounded-sm"></div>
+                            <div className="w-2 h-8 border border-current rounded-sm"></div>
+                          </div>
+                          <span className="text-xs mt-1 block">Three</span>
+                        </button>
+
+                        {/* Left (larger left column) */}
+                        <button
+                          onClick={() => updateElementProps({ 
+                            columnCount: 2, 
+                            columnWidths: [65, 35] 
+                          })}
+                          className={`flex-1 p-2 border rounded-md hover:bg-sidebar-accent transition-colors ${
+                            selectedElement.props?.columnCount === 2 && 
+                            selectedElement.props?.columnWidths?.[0] > 60 ? 'border-primary bg-primary/10' : 'border-sidebar-border'
+                          }`}
+                          title="Left"
+                        >
+                          <div className="flex justify-center gap-0.5">
+                            <div className="w-4 h-8 border border-current rounded-sm"></div>
+                            <div className="w-2 h-8 border border-current rounded-sm"></div>
+                          </div>
+                          <span className="text-xs mt-1 block">Left</span>
+                        </button>
+
+                        {/* Right (larger right column) */}
+                        <button
+                          onClick={() => updateElementProps({ 
+                            columnCount: 2, 
+                            columnWidths: [35, 65] 
+                          })}
+                          className={`flex-1 p-2 border rounded-md hover:bg-sidebar-accent transition-colors ${
+                            selectedElement.props?.columnCount === 2 && 
+                            selectedElement.props?.columnWidths?.[1] > 60 ? 'border-primary bg-primary/10' : 'border-sidebar-border'
+                          }`}
+                          title="Right"
+                        >
+                          <div className="flex justify-center gap-0.5">
+                            <div className="w-2 h-8 border border-current rounded-sm"></div>
+                            <div className="w-4 h-8 border border-current rounded-sm"></div>
+                          </div>
+                          <span className="text-xs mt-1 block">Right</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Width and Spacing Manual Controls */}
+                    <div className="space-y-3">
+                      <Label className="text-xs text-muted-foreground block">Width and Spacing</Label>
+                      
+                      {/* Column Headers */}
+                      <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground">
+                        <div className="col-span-2">Col #:</div>
+                        <div className="col-span-5">Width:</div>
+                        <div className="col-span-5">Spacing:</div>
+                      </div>
+
+                      {/* Column Rows */}
+                      {Array.from({ length: selectedElement.props?.columnCount || 1 }).map((_, index) => (
+                        <div key={index} className="grid grid-cols-12 gap-2 items-center">
+                          <div className="col-span-2 text-xs text-muted-foreground">{index + 1}:</div>
+                          <div className="col-span-5">
+                            <Input
+                              type="number"
+                              placeholder="Width %"
+                              value={selectedElement.props?.columnWidths?.[index] || (100 / (selectedElement.props?.columnCount || 1))}
+                              onChange={(e) => {
+                                const newWidths = [...(selectedElement.props?.columnWidths || Array(selectedElement.props?.columnCount || 1).fill(100 / (selectedElement.props?.columnCount || 1)))]
+                                newWidths[index] = parseFloat(e.target.value) || 0
+                                updateElementProps({ columnWidths: newWidths })
+                              }}
+                              className="bg-sidebar-accent border-sidebar-border h-8 text-xs"
+                              min={0}
+                              max={100}
+                              step={0.1}
+                            />
+                          </div>
+                          <div className="col-span-5">
+                            {index === 0 ? (
+                              <Input
+                                type="number"
+                                placeholder="Spacing px"
+                                value={selectedElement.props?.columnSpacing || 16}
+                                onChange={(e) => updateElementProps({ columnSpacing: parseInt(e.target.value) || 0 })}
+                                className="bg-sidebar-accent border-sidebar-border h-8 text-xs"
+                                min={0}
+                                max={100}
+                                step={1}
+                              />
+                            ) : (
+                              <div className="text-xs text-muted-foreground italic pl-2">—</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Equal Column Width Toggle */}
+                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-sidebar-border">
+                        <Switch
+                          checked={selectedElement.props?.equalColumnWidth !== false}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              const count = selectedElement.props?.columnCount || 1
+                              const equalWidth = 100 / count
+                              updateElementProps({ 
+                                equalColumnWidth: true,
+                                columnWidths: Array(count).fill(equalWidth)
+                              })
+                            } else {
+                              updateElementProps({ equalColumnWidth: false })
+                            }
+                          }}
+                        />
+                        <Label className="text-xs text-muted-foreground">Equal column width</Label>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Quote Position Settings */}
               {selectedElement.type === "quote" && (

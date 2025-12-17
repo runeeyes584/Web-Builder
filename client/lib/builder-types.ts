@@ -20,7 +20,6 @@ export interface BuilderElement {
     width?: number
     height?: number
   }
-
 }
 
 export interface DragData {

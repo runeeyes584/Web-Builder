@@ -17,8 +17,6 @@ export const componentCategories = [
   {
     name: "Layout",
     components: [
-      { name: "Section", icon: Layout, description: "Content sections", type: "section" },
-      { name: "Grid", icon: Grid3X3, description: "Grid layouts", type: "grid" },
       { name: "Navigation", icon: Navigation, description: "Nav menus", type: "navigation" },
       { name: "Footer", icon: FileText, description: "Page footers", type: "footer" },
       { name: "Header", icon: Layout, description: "Page headers", type: "header" },

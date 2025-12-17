@@ -223,6 +223,364 @@ function CarouselComponent({ element }: { element: BuilderElement }) {
   )
 }
 
+// Tabs Component with interactive functionality for Preview
+function TabsPreviewComponent({ element, styles }: { element: BuilderElement, styles: React.CSSProperties }) {
+  const [activeTabIndex, setActiveTabIndex] = useState(0)
+
+  const tabs = element.props?.tabs || []
+  const activeTab = tabs[activeTabIndex]
+
+  return (
+    <div className="text-card-foreground bg-card border border-border rounded-lg p-4 flex flex-col w-full h-full" style={styles}>
+      {tabs.length > 0 ? (
+        <>
+          <div className="flex border-b border-border mb-3 flex-shrink-0">
+            {tabs.map((tab: { id: string, title: string, content: string }, index: number) => (
+              <div
+                key={tab.id}
+                onClick={() => setActiveTabIndex(index)}
+                className={`px-3 py-2 text-sm cursor-pointer transition-colors ${index === activeTabIndex
+                  ? 'font-medium border-b-2 border-primary text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                style={{
+                  ...(element.props?.tabTitleFontFamily && element.props.tabTitleFontFamily !== 'default' && element.props.tabTitleFontFamily !== 'inherit' && { fontFamily: element.props.tabTitleFontFamily }),
+                  ...(element.props?.tabTitleFontSize && { fontSize: element.props.tabTitleFontSize + 'px' }),
+                  ...(element.props?.tabTitleFontWeight && { fontWeight: element.props.tabTitleFontWeight }),
+                  ...(element.props?.tabTitleTextColor && { color: element.props.tabTitleTextColor })
+                }}
+              >
+                {tab.title || `Tab ${index + 1}`}
+              </div>
+            ))}
+          </div>
+          <div className="text-sm flex-1 overflow-auto">
+            <div
+              style={{
+                ...(element.props?.tabContentFontFamily && element.props.tabContentFontFamily !== 'default' && element.props.tabContentFontFamily !== 'inherit' && { fontFamily: element.props.tabContentFontFamily }),
+                ...(element.props?.tabContentFontSize && { fontSize: element.props.tabContentFontSize + 'px' }),
+                ...(element.props?.tabContentFontWeight && { fontWeight: element.props.tabContentFontWeight }),
+                ...(element.props?.tabContentTextColor && { color: element.props.tabContentTextColor })
+              }}
+            >
+              {activeTab?.content || 'Tab content goes here'}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="flex items-center justify-center flex-1 text-muted-foreground">
+          <div className="text-center">
+            <div className="w-12 h-12 bg-muted/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+              <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+            </div>
+            <p className="text-sm">No tabs added yet</p>
+            <p className="text-xs mt-1">Add tabs in the properties panel</p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Tooltip Component for Preview
+function TooltipPreviewComponent({ element, styles }: { element: BuilderElement, styles: React.CSSProperties }) {
+  const [showTooltip, setShowTooltip] = useState(false)
+
+  return (
+    <div 
+      className="w-full h-full flex items-center justify-center relative"
+      style={styles}
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      <span 
+        className="text-sm text-muted-foreground hover:text-foreground cursor-help transition-colors duration-200"
+        style={{
+          ...(element.props?.triggerFontFamily && element.props.triggerFontFamily !== 'inherit' && { fontFamily: element.props.triggerFontFamily }),
+          ...(element.props?.triggerFontSize && { fontSize: element.props.triggerFontSize + 'px' }),
+          ...(element.props?.triggerFontWeight && { fontWeight: element.props.triggerFontWeight }),
+          ...(element.props?.triggerTextColor && { color: element.props.triggerTextColor })
+        }}
+      >
+        {element.props?.triggerText || 'Hover me'}
+      </span>
+
+      {/* Tooltip */}
+      {showTooltip && (
+        <div
+          className="absolute z-50 w-fit origin-center rounded-lg px-3 py-2 text-xs text-balance shadow-lg bg-gradient-to-br from-popover via-popover to-popover/95 border border-border/50 backdrop-blur-sm text-popover-foreground animate-in fade-in-0 zoom-in-95 duration-200"
+          style={{
+            ...(element.props?.position === 'top' && { bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: '4px' }),
+            ...(element.props?.position === 'bottom' && { top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: '4px' }),
+            ...(element.props?.position === 'left' && { right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: '4px' }),
+            ...(element.props?.position === 'right' && { left: '100%', top: '50%', transform: 'translateY(-50%)', marginLeft: '4px' }),
+            ...(!element.props?.position && { bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: '4px' }),
+            ...(element.props?.tooltipFontFamily && element.props.tooltipFontFamily !== 'inherit' && { fontFamily: element.props.tooltipFontFamily }),
+            ...(element.props?.tooltipFontSize && { fontSize: element.props.tooltipFontSize + 'px' }),
+            ...(element.props?.tooltipFontWeight && { fontWeight: element.props.tooltipFontWeight }),
+            ...(element.props?.tooltipTextColor && { color: element.props.tooltipTextColor })
+          }}
+        >
+          {element.content || 'Tooltip text'}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Modal Component for Preview
+function ModalPreviewComponent({ element, styles }: { element: BuilderElement, styles: React.CSSProperties }) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const modalType = element.props?.modalType || 'default'
+  const modalSize = element.props?.modalSize || 'medium'
+  const showInputs = element.props?.showInputs || false
+
+  // Modal type colors and icons
+  const typeConfig: Record<string, any> = {
+    default: {
+      bg: 'bg-card',
+      icon: '',
+      iconColor: '',
+      cancelBg: 'bg-muted hover:bg-muted/80',
+      cancelText: 'text-foreground',
+      confirmBg: 'bg-primary hover:bg-primary/90',
+      confirmText: 'text-primary-foreground'
+    },
+    success: {
+      bg: 'bg-green-950',
+      icon: '✓',
+      iconColor: 'text-green-400',
+      cancelBg: 'bg-green-900/50 hover:bg-green-900/70',
+      cancelText: 'text-green-200',
+      confirmBg: 'bg-green-600 hover:bg-green-700',
+      confirmText: 'text-white'
+    },
+    error: {
+      bg: 'bg-red-950',
+      icon: '✕',
+      iconColor: 'text-red-400',
+      cancelBg: 'bg-red-900/50 hover:bg-red-900/70',
+      cancelText: 'text-red-200',
+      confirmBg: 'bg-red-600 hover:bg-red-700',
+      confirmText: 'text-white'
+    },
+    warning: {
+      bg: 'bg-yellow-950',
+      icon: '⚠',
+      iconColor: 'text-yellow-400',
+      cancelBg: 'bg-yellow-900/50 hover:bg-yellow-900/70',
+      cancelText: 'text-yellow-200',
+      confirmBg: 'bg-yellow-600 hover:bg-yellow-700',
+      confirmText: 'text-white'
+    },
+    info: {
+      bg: 'bg-blue-950',
+      icon: 'ℹ',
+      iconColor: 'text-blue-400',
+      cancelBg: 'bg-blue-900/50 hover:bg-blue-900/70',
+      cancelText: 'text-blue-200',
+      confirmBg: 'bg-blue-600 hover:bg-blue-700',
+      confirmText: 'text-white'
+    }
+  }
+
+  // Modal size styles
+  const sizeStyles: Record<string, React.CSSProperties> = {
+    small: { width: '384px', maxWidth: '90%' },
+    medium: { width: '448px', maxWidth: '90%' },
+    large: { width: '672px', maxWidth: '90%' },
+    fullscreen: { width: '95%', height: '95%', maxHeight: '95vh', overflow: 'auto' }
+  }
+
+  return (
+    <div className="w-full h-full flex items-center justify-center" style={styles}>
+      <button
+        onClick={() => setIsModalOpen(true)}
+        className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+        style={{
+          ...(element.props?.buttonFontFamily && element.props.buttonFontFamily !== 'inherit' && { fontFamily: element.props.buttonFontFamily }),
+          ...(element.props?.buttonFontSize && { fontSize: element.props.buttonFontSize + 'px' }),
+          ...(element.props?.buttonFontWeight && { fontWeight: element.props.buttonFontWeight }),
+          ...(element.props?.buttonTextColor && { color: element.props.buttonTextColor }),
+          ...(element.props?.buttonBgColor && { backgroundColor: element.props.buttonBgColor })
+        }}
+      >
+        {element.props?.buttonText || 'Open Modal'}
+      </button>
+
+      {/* Modal Overlay */}
+      {isModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-[300] p-4"
+          onClick={(e) => e.target === e.currentTarget && setIsModalOpen(false)}
+        >
+          <div
+            className={`${typeConfig[modalType].bg} border border-border rounded-lg shadow-2xl p-6`}
+            style={sizeStyles[modalSize]}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                {typeConfig[modalType].icon && (
+                  <div className={`text-2xl ${typeConfig[modalType].iconColor}`}>
+                    {typeConfig[modalType].icon}
+                  </div>
+                )}
+                <h3
+                  className="text-lg font-semibold"
+                  style={{
+                    ...(element.props?.titleFontFamily && element.props.titleFontFamily !== 'inherit' && { fontFamily: element.props.titleFontFamily }),
+                    ...(element.props?.titleFontSize && { fontSize: element.props.titleFontSize + 'px' }),
+                    ...(element.props?.titleFontWeight && { fontWeight: element.props.titleFontWeight }),
+                    ...(element.props?.titleColor && { color: element.props.titleColor })
+                  }}
+                >
+                  {element.content || 'Modal Title'}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-muted-foreground hover:text-foreground text-xl leading-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div
+              className="text-sm text-muted-foreground mb-4"
+              style={{
+                ...(element.props?.contentFontFamily && element.props.contentFontFamily !== 'inherit' && { fontFamily: element.props.contentFontFamily }),
+                ...(element.props?.contentFontSize && { fontSize: element.props.contentFontSize + 'px' }),
+                ...(element.props?.contentFontWeight && { fontWeight: element.props.contentFontWeight }),
+                ...(element.props?.contentColor && { color: element.props.contentColor })
+              }}
+            >
+              {element.props?.modalContent || 'Modal Content'}
+            </div>
+
+            {/* Input fields */}
+            {showInputs && (
+              <div className="space-y-3 my-4">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">
+                    {element.props?.input1Label || 'Email'}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={element.props?.input1Placeholder || 'Enter your email'}
+                    className="w-full px-3 py-2 bg-sidebar-accent border border-sidebar-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">
+                    {element.props?.input2Label || 'Password'}
+                  </label>
+                  <input
+                    type="password"
+                    placeholder={element.props?.input2Placeholder || 'Enter your password'}
+                    className="w-full px-3 py-2 bg-sidebar-accent border border-sidebar-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="mt-6 flex justify-end gap-2">
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className={`px-4 py-2 text-sm rounded-md transition-colors ${typeConfig[modalType].cancelBg} ${typeConfig[modalType].cancelText}`}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  const confirmAction = element.props?.confirmAction || 'close'
+                  if (confirmAction === 'link' && element.props?.confirmUrl) {
+                    window.open(element.props.confirmUrl, '_blank')
+                  } else if (confirmAction === 'alert') {
+                    alert(element.props?.alertMessage || 'Action completed!')
+                  }
+                  setIsModalOpen(false)
+                }}
+                className={`px-4 py-2 text-sm rounded-md transition-colors ${typeConfig[modalType].confirmBg} ${typeConfig[modalType].confirmText}`}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Dropdown Component for Preview
+function DropdownPreviewComponent({ element, styles }: { element: BuilderElement, styles: React.CSSProperties }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [selectedValue, setSelectedValue] = useState(element.props?.defaultValue || '')
+
+  const options = element.props?.options || []
+
+  return (
+    <div className="w-full h-full flex items-center relative" style={styles}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full h-auto min-h-[40px] text-card-foreground hover:bg-card/80 transition-colors flex items-center justify-between px-3 py-2 bg-card border border-border rounded-md"
+        style={{
+          ...(element.props?.labelFontFamily && element.props.labelFontFamily !== 'inherit' && element.props.labelFontFamily !== 'default' && { fontFamily: element.props.labelFontFamily }),
+          ...(element.props?.labelFontSize && { fontSize: element.props.labelFontSize + 'px' }),
+          ...(element.props?.labelFontWeight && { fontWeight: element.props.labelFontWeight }),
+          ...(element.props?.labelTextColor && { color: element.props.labelTextColor })
+        }}
+      >
+        <span>{selectedValue || element.content || "Select option"}</span>
+        <svg 
+          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Dropdown Options */}
+      {isOpen && (
+        <div className="absolute top-full left-0 w-full mt-1 bg-popover border border-border rounded-md shadow-lg z-50 max-h-60 overflow-auto">
+          {options.length > 0 ? (
+            options.map((option: string, index: number) => (
+              <div
+                key={index}
+                onClick={() => {
+                  setSelectedValue(option)
+                  setIsOpen(false)
+                }}
+                className="px-3 py-2 text-sm hover:bg-accent cursor-pointer transition-colors"
+                style={{
+                  ...(element.props?.optionFontFamily && element.props.optionFontFamily !== 'inherit' && element.props.optionFontFamily !== 'default' && { fontFamily: element.props.optionFontFamily }),
+                  ...(element.props?.optionFontSize && { fontSize: element.props.optionFontSize + 'px' }),
+                  ...(element.props?.optionFontWeight && { fontWeight: element.props.optionFontWeight }),
+                  ...(element.props?.optionTextColor && { color: element.props.optionTextColor })
+                }}
+              >
+                {option}
+              </div>
+            ))
+          ) : (
+            <div className="px-3 py-2 text-sm text-muted-foreground">
+              No options available
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewModalProps) {
   const [currentBreakpoint, setCurrentBreakpoint] = useState<Breakpoint>("desktop")
   const [activePageIndex, setActivePageIndex] = useState(0)
@@ -589,20 +947,50 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
         return (
           <div key={element.id} style={wrapperStyles}>
             <div className="text-card-foreground w-full h-full" style={contentStyles}>
-              <h3 className="mb-2" style={{
-                fontSize: element.props?.titleFontSize || "1.125rem",
-                fontWeight: element.props?.titleFontWeight || "600",
-                textAlign: element.props?.titleTextAlign || "left",
-              }}>
-                {element.props?.title || "Card Title"}
-              </h3>
-              <p className="text-sm text-muted-foreground" style={{
-                fontSize: element.props?.descriptionFontSize || "0.875rem",
-                fontWeight: element.props?.descriptionFontWeight || "400",
-                textAlign: element.props?.descriptionTextAlign || "left",
-              }}>
-                {element.props?.description || element.content}
-              </p>
+              {!element.props?.hideDefaultContent && (
+                <>
+                  <h3 className="mb-2" style={{
+                    fontSize: element.props?.titleFontSize || "1.125rem",
+                    fontWeight: element.props?.titleFontWeight || "600",
+                    textAlign: element.props?.titleTextAlign || "left",
+                    fontFamily: element.props?.fontFamily || "inherit",
+                  }}>
+                    {element.props?.title || "Card Title"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground" style={{
+                    fontSize: element.props?.descriptionFontSize || "0.875rem",
+                    fontWeight: element.props?.descriptionFontWeight || "400",
+                    textAlign: element.props?.descriptionTextAlign || "left",
+                    fontFamily: element.props?.fontFamily || "inherit",
+                  }}>
+                    {element.props?.description || element.content}
+                  </p>
+                  {element.props?.buttonText && (
+                    <button
+                      className="mt-3 px-3 py-1 bg-primary text-primary-foreground text-xs rounded hover:opacity-90 transition-opacity"
+                      style={{
+                        fontSize: element.props?.buttonFontSize || "0.75rem",
+                        fontWeight: element.props?.buttonFontWeight || "500",
+                        fontFamily: element.props?.fontFamily || "inherit",
+                        cursor: element.props?.buttonHref ? "pointer" : "default",
+                      }}
+                      onClick={(e) => {
+                        if (element.props?.buttonHref) {
+                          e.stopPropagation()
+                          e.preventDefault()
+                          if (element.props?.buttonOpenInNewTab) {
+                            window.open(element.props.buttonHref, "_blank", "noopener,noreferrer")
+                          } else {
+                            window.location.href = element.props.buttonHref
+                          }
+                        }
+                      }}
+                    >
+                      {element.props.buttonText}
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
         )
@@ -1035,21 +1423,28 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
       case "tabs":
         return (
           <div key={element.id} style={wrapperStyles}>
-            <div className="w-full h-full bg-card border border-border rounded-lg p-4" style={contentStyles}>
-              <div className="flex border-b border-border mb-4">
-                {Array.from({ length: element.props?.tabCount || 3 }, (_, i) => (
-                  <button
-                    key={i}
-                    className={`px-4 py-2 text-sm font-medium ${i === 0 ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
-                  >
-                    {element.props?.tabs?.[i]?.label || `Tab ${i + 1}`}
-                  </button>
-                ))}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {element.props?.tabs?.[0]?.content || "Tab content here..."}
-              </div>
-            </div>
+            <TabsPreviewComponent element={element} styles={contentStyles} />
+          </div>
+        )
+
+      case "tooltip":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <TooltipPreviewComponent element={element} styles={contentStyles} />
+          </div>
+        )
+
+      case "modal":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <ModalPreviewComponent element={element} styles={contentStyles} />
+          </div>
+        )
+
+      case "dropdown":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <DropdownPreviewComponent element={element} styles={contentStyles} />
           </div>
         )
 
@@ -1082,18 +1477,94 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
           </div>
         )
 
-      case "list":
+      case "list": {
+        const listItems = element.props?.listItems || element.content?.split('\n') || ['Item 1', 'Item 2', 'Item 3']
+        const columnCount = element.props?.columnCount || 1
+        const columnSpacing = element.props?.columnSpacing || 16
+        const columnWidths = element.props?.columnWidths || Array(columnCount).fill(100 / columnCount)
+        
+        // Split items into columns
+        const itemsPerColumn = Math.ceil(listItems.length / columnCount)
+        const columns: string[][] = []
+        for (let i = 0; i < columnCount; i++) {
+          columns.push(listItems.slice(i * itemsPerColumn, (i + 1) * itemsPerColumn))
+        }
+        
         return (
           <div key={element.id} style={wrapperStyles}>
-            <div className="w-full h-full p-2" style={contentStyles}>
-              <ul className="list-disc list-inside space-y-1 text-foreground">
-                {(element.props?.items || ["Item 1", "Item 2", "Item 3"]).map((item: string, i: number) => (
-                  <li key={i} className="text-sm">{item}</li>
+            <div className="text-card-foreground w-full h-full" style={contentStyles}>
+              {element.props?.title && (
+                <h3
+                  className="mb-3"
+                  style={{
+                    fontSize: element.props?.titleFontSize || "1.125rem",
+                    fontWeight: element.props?.titleFontWeight || "600",
+                    textAlign: element.props?.titleTextAlign || "left",
+                    fontFamily: element.props?.fontFamily || "inherit",
+                    fontStyle: element.props?.titleFontStyle || "normal",
+                  }}
+                >
+                  {element.props.title}
+                </h3>
+              )}
+              <div 
+                className="flex w-full"
+                style={{ gap: `${columnSpacing}px` }}
+              >
+                {columns.map((columnItems, colIndex) => (
+                  <div 
+                    key={colIndex}
+                    className="flex-shrink-0"
+                    style={{
+                      width: columnCount > 1 ? `${columnWidths[colIndex] || (100 / columnCount)}%` : '100%',
+                      borderRight: colIndex < columnCount - 1 && columnCount > 1 ? '1px solid var(--border)' : 'none',
+                      paddingRight: colIndex < columnCount - 1 && columnCount > 1 ? `${columnSpacing / 2}px` : 0,
+                    }}
+                  >
+                    {element.props?.listType === "ol" ? (
+                      <ol
+                        className="space-y-1"
+                        style={{
+                          fontFamily: element.props?.fontFamily || "inherit",
+                          fontSize: element.props?.itemsFontSize || "0.875rem",
+                          fontWeight: element.props?.itemsFontWeight || "400",
+                          fontStyle: element.props?.itemsFontStyle || "normal",
+                          textAlign: element.props?.itemsTextAlign || "left",
+                        }}
+                      >
+                        {columnItems.map((item: string, index: number) => (
+                          <li key={index} className="flex items-center">
+                            <span className="mr-2 font-medium">{colIndex * itemsPerColumn + index + 1}.</span>
+                            {item.replace('• ', '')}
+                          </li>
+                        ))}
+                      </ol>
+                    ) : (
+                      <ul
+                        className="space-y-1"
+                        style={{
+                          fontFamily: element.props?.fontFamily || "inherit",
+                          fontSize: element.props?.itemsFontSize || "0.875rem",
+                          fontWeight: element.props?.itemsFontWeight || "400",
+                          fontStyle: element.props?.itemsFontStyle || "normal",
+                          textAlign: element.props?.itemsTextAlign || "left",
+                        }}
+                      >
+                        {columnItems.map((item: string, index: number) => (
+                          <li key={index} className="flex items-center">
+                            <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
+                            {item.replace('• ', '')}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           </div>
         )
+      }
 
       case "icon":
         return (
@@ -3093,14 +3564,170 @@ export function PreviewModal({ isOpen, onClose, elements, pages = [] }: PreviewM
           </div>
         )
 
-      case "section":
-      case "grid":
-      case "footer":
-      case "header":
       case "navigation":
         return (
-          <div key={element.id} style={{ ...wrapperStyles, ...contentStyles }} className="text-foreground">
-            {element.content}
+          <div key={element.id} style={wrapperStyles}>
+            <div 
+              className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center px-4" 
+              style={{
+                ...contentStyles,
+                justifyContent: element.props?.logoPosition === "center" ? "center" :
+                  element.props?.logoPosition === "right" ? "flex-end" : "space-between"
+              }}
+            >
+              {element.props?.logoType === "image" && element.props?.logoImageUrl ? (
+                <img
+                  src={element.props.logoImageUrl}
+                  alt="Logo"
+                  className="object-contain"
+                  style={{
+                    height: element.props?.autoScale ?
+                      `${Math.min(Number.parseInt(element.props?.logoImageHeight) || 32, (element.position?.height || 50) - 20)}px` :
+                      element.props?.logoImageHeight || '32px',
+                    width: element.props?.autoScale ?
+                      `${Math.min(Number.parseInt(element.props?.logoImageWidth) || 120, (element.position?.width || 300) * 0.4)}px` :
+                      element.props?.logoImageWidth || '120px',
+                    maxHeight: element.props?.logoImageHeight || '32px',
+                    maxWidth: element.props?.logoImageWidth || '120px'
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'
+                  }}
+                />
+              ) : (
+                <div
+                  className="font-semibold text-sm"
+                  style={{
+                    fontSize: element.props?.logoFontSize || '16px',
+                    fontWeight: element.props?.logoFontWeight || '600',
+                    fontFamily: element.props?.logoFontFamily || 'inherit'
+                  }}
+                >
+                  {element.props?.logo || 'Logo'}
+                </div>
+              )}
+              <div className="flex gap-4">
+                {(element.props?.menuItems || ['Home', 'About', 'Contact']).map((item: string, index: number) => (
+                  <span
+                    key={index}
+                    className="text-sm hover:text-primary cursor-pointer transition-colors"
+                    style={{
+                      fontSize: element.props?.menuItemFontSize || '14px',
+                      fontWeight: element.props?.menuItemFontWeight || '400',
+                      fontFamily: element.props?.menuItemFontFamily || 'inherit'
+                    }}
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+
+      case "footer":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div 
+              className="text-card-foreground w-full h-full bg-muted border border-border rounded-lg flex flex-col justify-center px-4" 
+              style={contentStyles}
+            >
+              <div className="w-full" style={{ fontFamily: element.props?.fontFamily || "inherit" }}>
+                <p
+                  className="mb-1"
+                  style={{
+                    fontSize: element.props?.titleFontSize || "18px",
+                    fontWeight: element.props?.titleFontWeight || "600",
+                    color: element.styles?.color || "#ffffff",
+                    textAlign: element.props?.titlePosition || "center"
+                  }}
+                >
+                  {element.content}
+                </p>
+                <p
+                  className="text-muted-foreground"
+                  style={{
+                    fontSize: element.props?.textFontSize || "14px",
+                    fontWeight: element.props?.textFontWeight || "400",
+                    color: element.styles?.color || "#ffffff",
+                    textAlign: element.props?.textPosition || "center"
+                  }}
+                >
+                  {element.props?.copyright || "© 2024 Your Company"}
+                </p>
+              </div>
+            </div>
+          </div>
+        )
+
+      case "header":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div 
+              className="text-card-foreground w-full h-full bg-card border border-border rounded-lg flex items-center justify-center px-4" 
+              style={contentStyles}
+            >
+              <div className="w-full" style={{ fontFamily: element.props?.fontFamily || "inherit" }}>
+                <h1
+                  className="mb-1"
+                  style={{
+                    fontSize: element.props?.titleFontSize || "24px",
+                    fontWeight: element.props?.titleFontWeight || "700",
+                    textAlign: element.props?.titlePosition || "center"
+                  }}
+                >
+                  {element.content}
+                </h1>
+                <p
+                  className="text-muted-foreground"
+                  style={{
+                    fontSize: element.props?.subtitleFontSize || "16px",
+                    fontWeight: element.props?.subtitleFontWeight || "400",
+                    textAlign: element.props?.subtitlePosition || "center"
+                  }}
+                >
+                  {element.props?.subtitle || "Welcome to our website"}
+                </p>
+              </div>
+            </div>
+          </div>
+        )
+
+      case "sidebar":
+        return (
+          <div key={element.id} style={wrapperStyles}>
+            <div 
+              className="text-card-foreground w-full h-full bg-card border border-border rounded-lg p-4" 
+              style={contentStyles}
+            >
+              <div className="space-y-3" style={{ fontFamily: element.props?.fontFamily || "inherit" }}>
+                <div
+                  className="font-medium"
+                  style={{
+                    fontSize: element.props?.titleFontSize || "14px",
+                    fontWeight: element.props?.titleFontWeight || "500",
+                    textAlign: element.props?.titlePosition || "left"
+                  }}
+                >
+                  {element.content || "Menu"}
+                </div>
+                <div className="space-y-2">
+                  {(element.props?.sidebarItems || ["Dashboard", "Settings", "Profile", "Logout"]).map((item: string, index: number) => (
+                    <div
+                      key={index}
+                      className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                      style={{
+                        fontSize: element.props?.itemFontSize || "12px",
+                        fontWeight: element.props?.itemFontWeight || "400",
+                        textAlign: element.props?.itemPosition || "left"
+                      }}
+                    >
+                      • {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         )
 

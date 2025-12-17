@@ -86,31 +86,49 @@ export function ProjectManagerComponent({ pages, onLoadProject, currentProjectNa
       // Check if updating existing project or creating new one
       if (currentProjectId) {
         // UPDATE existing project - save all pages
+        // Important: Send current pages state with correct IDs
+        const pagesToSave = (pages || []).map((page, index) => ({
+          id: page.id,
+          name: page.name,
+          elements: page.elements,
+          layout: page.layout,
+          metadata: page.metadata,
+          order: index, // Use index to ensure correct order
+        }))
+
+        console.log('Saving pages:', pagesToSave.map(p => ({ id: p.id, name: p.name, elementsCount: p.elements?.length })))
+
         const response = await projectsApi.update(currentProjectId, {
           name: projectName.trim(),
           description: "",
-          pages: (pages || []).map(page => ({
-            id: page.id,
-            name: page.name,
-            elements: page.elements,
-            layout: page.layout,
-            metadata: page.metadata,
-            order: page.order,
-          })),
+          pages: pagesToSave,
         })
 
         if (response.success) {
           // Update pages with real database IDs if returned
           if (response.data?.pages && response.data.pages.length > 0) {
-            const updatedPages: BuilderPage[] = response.data.pages.map((dbPage: any, index: number) => ({
-              id: dbPage.id,  // Use real database ID
-              name: dbPage.name,
-              elements: dbPage.json_structure?.elements || pages[index]?.elements || [],
-              layout: dbPage.json_structure?.layout || pages[index]?.layout,
-              metadata: dbPage.json_structure?.metadata || pages[index]?.metadata,
-              order: index,
-            }))
-            onLoadProject(updatedPages) // Reload with database IDs
+            // Create a map of page IDs to their database counterparts for proper matching
+            const dbPagesMap = new Map<string, any>()
+            response.data.pages.forEach((dbPage: any) => {
+              dbPagesMap.set(dbPage.id, dbPage)
+            })
+
+            // Map pages maintaining the same order as the current state
+            const updatedPages: BuilderPage[] = response.data.pages.map((dbPage: any, index: number) => {
+              const jsonStructure = dbPage.json_structure as any
+              return {
+                id: dbPage.id,  // Use real database ID
+                name: dbPage.name,
+                elements: jsonStructure?.elements || [],
+                layout: jsonStructure?.layout,
+                metadata: jsonStructure?.metadata,
+                order: index,
+              }
+            })
+
+            console.log('Updated pages from server:', updatedPages.map(p => ({ id: p.id, name: p.name, elementsCount: p.elements?.length })))
+
+            onLoadProject(updatedPages) // Reload with database IDs and fresh data
           }
 
           setSaveDialogOpen(false)
@@ -122,17 +140,19 @@ export function ProjectManagerComponent({ pages, onLoadProject, currentProjectNa
         }
       } else {
         // CREATE new project with all pages
+        const pagesToCreate = (pages || []).map((page, index) => ({
+          name: page.name,
+          elements: page.elements,
+          layout: page.layout,
+          metadata: page.metadata,
+          order: index,
+        }))
+
         const response = await projectsApi.create({
           clerk_id: user.id,
           name: projectName.trim(),
           description: "",
-          pages: (pages || []).map(page => ({
-            name: page.name,
-            elements: page.elements,
-            layout: page.layout,
-            metadata: page.metadata,
-            order: page.order,
-          })),
+          pages: pagesToCreate,
         })
 
         if (response.success && response.data) {
@@ -140,14 +160,17 @@ export function ProjectManagerComponent({ pages, onLoadProject, currentProjectNa
 
           // Update pages with real database IDs
           if (response.data.pages && response.data.pages.length > 0) {
-            const updatedPages: BuilderPage[] = response.data.pages.map((dbPage: any, index: number) => ({
-              id: dbPage.id,  // Use real database ID
-              name: dbPage.name,
-              elements: dbPage.json_structure?.elements || pages[index]?.elements || [],
-              layout: dbPage.json_structure?.layout || pages[index]?.layout,
-              metadata: dbPage.json_structure?.metadata || pages[index]?.metadata,
-              order: index,
-            }))
+            const updatedPages: BuilderPage[] = response.data.pages.map((dbPage: any, index: number) => {
+              const jsonStructure = dbPage.json_structure as any
+              return {
+                id: dbPage.id,  // Use real database ID
+                name: dbPage.name,
+                elements: jsonStructure?.elements || [],
+                layout: jsonStructure?.layout,
+                metadata: jsonStructure?.metadata,
+                order: index,
+              }
+            })
             onLoadProject(updatedPages) // Reload with database IDs
           }
 

@@ -812,23 +812,7 @@ export function BuilderCanvas({
         position: { x: 100, y: 100, width: 150, height: 50 },
 
       },
-      section: {
-        content: "New Section",
-        styles: {
-          padding: "2rem",
-          backgroundColor: "var(--color-muted)",
-          marginBottom: "1rem",
-          borderRadius: "0.75rem",
-          border: "1px solid var(--color-border)"
-        },
-        responsiveStyles: {
-          desktop: { padding: "2rem" },
-          tablet: { padding: "1.5rem" },
-          mobile: { padding: "1rem" },
-        },
-        position: { x: 100, y: 100, width: 600, height: 250 },
-
-      },
+  
       card: {
         content: "Card Content",
         styles: {
@@ -2681,8 +2665,9 @@ export function BuilderCanvas({
       idsToDrag = [elementId]
     }
 
-    // If dragging a section or card, also drag all elements inside it
-    if (element.type === 'section' || element.type === 'card') {
+    // If dragging a section, also drag all elements inside it
+    // Note: Card elements do NOT auto-include children - use explicit grouping instead
+    if (element.type === 'section') {
       const childrenIds = elements
         .filter(el => el.id !== elementId && isElementInsideSection(el, element))
         .map(el => el.id)
@@ -3997,6 +3982,18 @@ export function BuilderCanvas({
                           fontSize: element.props?.buttonFontSize || "0.75rem",
                           fontWeight: element.props?.buttonFontWeight || "500",
                           fontFamily: element.props?.fontFamily || "inherit",
+                          cursor: element.props?.cardPreviewMode && element.props?.buttonHref ? "pointer" : "default",
+                        }}
+                        onClick={(e) => {
+                          if (element.props?.cardPreviewMode && element.props?.buttonHref) {
+                            e.stopPropagation()
+                            e.preventDefault()
+                            if (element.props?.buttonOpenInNewTab) {
+                              window.open(element.props.buttonHref, "_blank", "noopener,noreferrer")
+                            } else {
+                              window.location.href = element.props.buttonHref
+                            }
+                          }
                         }}
                       >
                         {element.props.buttonText}
@@ -4065,61 +4062,92 @@ export function BuilderCanvas({
             )
           }
           {
-            element.type === "list" && (
-              <div className="text-card-foreground w-full h-full" style={elementStyles}>
-                {element.props?.title && (
-                  <h3
-                    className="mb-3"
-                    style={{
-                      fontSize: element.props?.titleFontSize || "1.125rem",
-                      fontWeight: element.props?.titleFontWeight || "600",
-                      textAlign: element.props?.titleTextAlign || "left",
-                      fontFamily: element.props?.fontFamily || "inherit",
-                      fontStyle: element.props?.titleFontStyle || "normal",
-                    }}
+            element.type === "list" && (() => {
+              const listItems = element.props?.listItems || element.content.split('\n')
+              const columnCount = element.props?.columnCount || 1
+              const columnSpacing = element.props?.columnSpacing || 16
+              const columnWidths = element.props?.columnWidths || Array(columnCount).fill(100 / columnCount)
+              
+              // Split items into columns
+              const itemsPerColumn = Math.ceil(listItems.length / columnCount)
+              const columns: string[][] = []
+              for (let i = 0; i < columnCount; i++) {
+                columns.push(listItems.slice(i * itemsPerColumn, (i + 1) * itemsPerColumn))
+              }
+              
+              return (
+                <div className="text-card-foreground w-full h-full" style={elementStyles}>
+                  {element.props?.title && (
+                    <h3
+                      className="mb-3"
+                      style={{
+                        fontSize: element.props?.titleFontSize || "1.125rem",
+                        fontWeight: element.props?.titleFontWeight || "600",
+                        textAlign: element.props?.titleTextAlign || "left",
+                        fontFamily: element.props?.fontFamily || "inherit",
+                        fontStyle: element.props?.titleFontStyle || "normal",
+                      }}
+                    >
+                      {element.props.title}
+                    </h3>
+                  )}
+                  <div 
+                    className="flex w-full"
+                    style={{ gap: `${columnSpacing}px` }}
                   >
-                    {element.props.title}
-                  </h3>
-                )}
-                {element.props?.listType === "ol" ? (
-                  <ol
-                    className="space-y-1"
-                    style={{
-                      fontFamily: element.props?.fontFamily || "inherit",
-                      fontSize: element.props?.itemsFontSize || "0.875rem",
-                      fontWeight: element.props?.itemsFontWeight || "400",
-                      fontStyle: element.props?.itemsFontStyle || "normal",
-                      textAlign: element.props?.itemsTextAlign || "left",
-                    }}
-                  >
-                    {(element.props?.listItems || element.content.split('\n')).map((item: string, index: number) => (
-                      <li key={index} className="flex items-center">
-                        <span className="mr-2 font-medium">{index + 1}.</span>
-                        {item.replace('• ', '')}
-                      </li>
+                    {columns.map((columnItems, colIndex) => (
+                      <div 
+                        key={colIndex}
+                        className="flex-shrink-0"
+                        style={{
+                          width: columnCount > 1 ? `${columnWidths[colIndex] || (100 / columnCount)}%` : '100%',
+                          borderRight: colIndex < columnCount - 1 && columnCount > 1 ? '1px solid var(--border)' : 'none',
+                          paddingRight: colIndex < columnCount - 1 && columnCount > 1 ? `${columnSpacing / 2}px` : 0,
+                        }}
+                      >
+                        {element.props?.listType === "ol" ? (
+                          <ol
+                            className="space-y-1"
+                            style={{
+                              fontFamily: element.props?.fontFamily || "inherit",
+                              fontSize: element.props?.itemsFontSize || "0.875rem",
+                              fontWeight: element.props?.itemsFontWeight || "400",
+                              fontStyle: element.props?.itemsFontStyle || "normal",
+                              textAlign: element.props?.itemsTextAlign || "left",
+                            }}
+                          >
+                            {columnItems.map((item: string, index: number) => (
+                              <li key={index} className="flex items-center">
+                                <span className="mr-2 font-medium">{colIndex * itemsPerColumn + index + 1}.</span>
+                                {item.replace('• ', '')}
+                              </li>
+                            ))}
+                          </ol>
+                        ) : (
+                          <ul
+                            className="space-y-1"
+                            style={{
+                              fontFamily: element.props?.fontFamily || "inherit",
+                              fontSize: element.props?.itemsFontSize || "0.875rem",
+                              fontWeight: element.props?.itemsFontWeight || "400",
+                              fontStyle: element.props?.itemsFontStyle || "normal",
+                              textAlign: element.props?.itemsTextAlign || "left",
+                            }}
+                          >
+                            {columnItems.map((item: string, index: number) => (
+                              <li key={index} className="flex items-center">
+                                <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
+                                {item.replace('• ', '')}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
                     ))}
-                  </ol>
-                ) : (
-                  <ul
-                    className="space-y-1"
-                    style={{
-                      fontFamily: element.props?.fontFamily || "inherit",
-                      fontSize: element.props?.itemsFontSize || "0.875rem",
-                      fontWeight: element.props?.itemsFontWeight || "400",
-                      fontStyle: element.props?.itemsFontStyle || "normal",
-                      textAlign: element.props?.itemsTextAlign || "left",
-                    }}
-                  >
-                    {(element.props?.listItems || element.content.split('\n')).map((item: string, index: number) => (
-                      <li key={index} className="flex items-center">
-                        <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
-                        {item.replace('• ', '')}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )
+                  </div>
+                </div>
+              )
+            })()
           }
           {
             element.type === "input" && (

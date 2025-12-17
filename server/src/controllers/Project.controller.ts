@@ -509,10 +509,31 @@ export const updateProject = async (req: Request, res: Response) => {
       });
     }
 
+    // Re-fetch the project with updated pages to return fresh data
+    const updatedProject = await prisma.project.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            first_name: true,
+            last_name: true,
+          },
+        },
+        pages: {
+          orderBy: {
+            created_at: "asc",
+          },
+        },
+      },
+    });
+
     return res.status(200).json({
       success: true,
       message: "Project updated successfully",
-      data: project,
+      data: updatedProject,
     });
   } catch (error) {
     console.error("Error updating project:", error);
