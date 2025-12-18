@@ -181,6 +181,12 @@ export function CollaborativeCanvas({
         return
       }
 
+      // Only apply layout changes for the current page
+      // If pageId is specified in the change, it must match the current pageId
+      if (change.pageId && change.pageId !== pageId) {
+        return
+      }
+
       // Apply the layout change
       onLayoutUpdate?.({
         headerHeight: change.headerHeight,
@@ -191,7 +197,7 @@ export function CollaborativeCanvas({
 
     // Clear processed layout changes
     clearLayoutChanges()
-  }, [layoutChanges, user?.id, clearLayoutChanges, onLayoutUpdate])
+  }, [layoutChanges, user?.id, pageId, clearLayoutChanges, onLayoutUpdate])
 
   // Wrap canvas callbacks to broadcast changes
   const handleAddElement = useCallback((element: any, position?: { x: number; y: number }) => {
@@ -328,6 +334,12 @@ export function CollaborativeCanvas({
     }
   }, [canEdit, projectId, onDuplicateElement, sendElementChange])
 
+  // Wrap sendLayoutChange to automatically include pageId for page-specific layouts
+  const handleSendLayoutChange = useCallback((layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number; name?: string }[] }) => {
+    if (!projectId || !pageId) return
+    sendLayoutChange(layout, pageId)
+  }, [projectId, pageId, sendLayoutChange])
+
   // Track mouse movement with throttling
   const lastCursorUpdate = useRef<number>(0)
 
@@ -382,7 +394,7 @@ export function CollaborativeCanvas({
         onElementDragMove={handleElementDragMove}
         onDeleteElement={handleDeleteElement}
         onDuplicateElement={handleDuplicateElement}
-        sendLayoutChange={sendLayoutChange}
+        sendLayoutChange={handleSendLayoutChange}
         onShowLeftSidebar={onShowLeftSidebar}
         onSetActiveLeftPanel={onSetActiveLeftPanel}
         activeTool={canvasProps.activeTool}

@@ -345,39 +345,100 @@ export function BuilderCanvas({
   const totalSectionsHeight = sections.reduce((sum, s) => sum + s.height, 0)
   const contentHeight = headerHeight + totalSectionsHeight + footerHeight
 
-  // Sync sections from initialLayout when section names change externally (e.g., from LayersPanel rename)
-  // Use a ref to track the previous initialLayout to detect external changes
+  // Track if this is the first render to skip initial sync
+  const isFirstRenderRef = useRef(true)
+  
+  // Track if we're in the middle of a page switch to skip element position adjustment
+  const isPageSwitchingRef = useRef(false)
+  
+  // Sync full layout from initialLayout when page changes (different sections structure)
+  // This handles switching between pages with different layouts
   const prevInitialLayoutRef = useRef(initialLayout)
   useEffect(() => {
-    // Skip if initialLayout is not available or hasn't changed
-    if (!initialLayout?.sections) {
-      prevInitialLayoutRef.current = initialLayout
+    // Skip on first render - state is already initialized from initialLayout
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false
       return
     }
 
     const prev = prevInitialLayoutRef.current
     prevInitialLayoutRef.current = initialLayout
 
-    // Skip on initial mount or if previous layout didn't exist
-    if (!prev?.sections) return
+    // Always reset when initialLayout changes significantly
+    if (initialLayout?.sections) {
+      // Check if this is a structural change (different section IDs or count)
+      const prevSectionIds = prev?.sections?.map(s => s.id) || []
+      const newSectionIds = initialLayout.sections.map(s => s.id)
+      
+      const isStructuralChange = 
+        !prev?.sections ||
+        initialLayout.sections.length !== prev.sections.length ||
+        !newSectionIds.every((id, idx) => id === prevSectionIds[idx])
 
-    // Only handle rename: same number of sections, same IDs
-    if (initialLayout.sections.length !== prev.sections.length) return
+      if (isStructuralChange) {
+        // Mark as page switching to skip element position adjustment
+        isPageSwitchingRef.current = true
+        
+        // Full layout reset for page switch or structural change
+        setHeaderHeight(initialLayout.headerHeight)
+        setFooterHeight(initialLayout.footerHeight)
+        setSections(initialLayout.sections.map(s => ({ 
+          id: s.id, 
+          height: Math.max(MIN_SECTION, s.height), 
+          name: s.name 
+        })))
+        
+        // Reset previousRegionHeightsRef to match new layout immediately
+        // This prevents incorrect position calculations when switching pages
+        previousRegionHeightsRef.current = {
+          header: initialLayout.headerHeight,
+          sections: initialLayout.sections.map(s => Math.max(MIN_SECTION, s.height)),
+          footer: initialLayout.footerHeight
+        }
+        
+        // Clear page switching flag after a short delay (after state updates propagate)
+        setTimeout(() => {
+          isPageSwitchingRef.current = false
+        }, 100)
+        
+        return
+      }
 
-    // Check if this is a rename operation (same IDs but different names)
-    const isRenameOperation = initialLayout.sections.every((s, idx) =>
-      s.id === prev.sections[idx]?.id
-    ) && initialLayout.sections.some((s, idx) =>
-      s.name !== prev.sections[idx]?.name
-    )
-
-    if (isRenameOperation) {
-      setSections(currentSections =>
-        currentSections.map((s, idx) => ({
-          ...s,
-          name: initialLayout.sections[idx]?.name
-        }))
+      // Check if this is a rename operation (same IDs but different names)
+      const isRenameOperation = initialLayout.sections.some((s, idx) =>
+        prev?.sections?.[idx] && s.name !== prev.sections[idx]?.name
       )
+
+      if (isRenameOperation) {
+        setSections(currentSections =>
+          currentSections.map((s, idx) => ({
+            ...s,
+            name: initialLayout.sections[idx]?.name
+          }))
+        )
+      }
+    } else if (prev?.sections) {
+      // initialLayout became null/undefined but we had sections before
+      // Mark as page switching
+      isPageSwitchingRef.current = true
+      
+      // Reset to default layout
+      const defaultHeight = 608
+      setHeaderHeight(96)
+      setFooterHeight(96)
+      setSections([{ id: `sec-${Date.now()}`, height: defaultHeight }])
+      
+      // Reset previousRegionHeightsRef to match default layout
+      previousRegionHeightsRef.current = {
+        header: 96,
+        sections: [defaultHeight],
+        footer: 96
+      }
+      
+      // Clear page switching flag after a short delay
+      setTimeout(() => {
+        isPageSwitchingRef.current = false
+      }, 100)
     }
   }, [initialLayout])
 
@@ -579,6 +640,11 @@ export function BuilderCanvas({
 
   // Effect to adjust element positions when regions are resized (Logic 2 - Updated)
   useEffect(() => {
+    // Skip if we're in the middle of a page switch - elements should keep their saved positions
+    if (isPageSwitchingRef.current) {
+      return
+    }
+    
     const prev = previousRegionHeightsRef.current
     const hasHeaderChanged = prev.header !== headerHeight
     const hasFooterChanged = prev.footer !== footerHeight
@@ -589,6 +655,9 @@ export function BuilderCanvas({
       return // No changes, skip adjustment
     }
 
+    // Calculate total previous sections height for boundary validation
+    const prevTotalSectionsHeight = prev.sections.reduce((sum, h) => sum + h, 0)
+
     // Adjust positions of all elements based on their region
     // NEW: Elements keep their size, only positions adjust
     elements.forEach(element => {
@@ -596,6 +665,7 @@ export function BuilderCanvas({
 
       const currentY = element.position.y
       const currentX = element.position.x
+      const elementHeight = element.position.height || 0
 
       // Determine which region this element belongs to using PREVIOUS heights
       let prevRegionTop = 0
@@ -640,12 +710,28 @@ export function BuilderCanvas({
         }
 
         if (!foundInSection) {
-          // Element must be in footer
-          regionType = 'footer'
-          prevRegionTop = prev.header + prev.sections.reduce((sum, h) => sum + h, 0)
-          prevRegionHeight = prev.footer
-          newRegionTop = headerHeight + totalSectionsHeight
-          newRegionHeight = footerHeight
+          // Check if element is in footer region
+          const prevFooterTop = prev.header + prevTotalSectionsHeight
+          if (currentY >= prevFooterTop) {
+            // Element is in footer
+            regionType = 'footer'
+            prevRegionTop = prevFooterTop
+            prevRegionHeight = prev.footer
+            newRegionTop = headerHeight + totalSectionsHeight
+            newRegionHeight = footerHeight
+          } else {
+            // Element is in unknown territory - try to place in last section
+            if (sections.length > 0) {
+              const lastSectionIdx = sections.length - 1
+              regionType = 'section'
+              sectionIdx = lastSectionIdx
+              newRegionTop = headerHeight + sections.slice(0, lastSectionIdx).reduce((sum, s) => sum + s.height, 0)
+              newRegionHeight = sections[lastSectionIdx].height
+              // Keep element at same relative position within region
+              prevRegionTop = newRegionTop
+              prevRegionHeight = newRegionHeight
+            }
+          }
         }
       }
 
@@ -654,7 +740,30 @@ export function BuilderCanvas({
       const relativeYPercent = prevRegionHeight > 0 ? relativeY / prevRegionHeight : 0.5
 
       // Calculate new position maintaining the same relative position
-      const newY = newRegionTop + (relativeYPercent * newRegionHeight)
+      let newY = newRegionTop + (relativeYPercent * newRegionHeight)
+
+      // BOUNDARY ENFORCEMENT: Ensure element stays within canvas bounds
+      const maxY = headerHeight + totalSectionsHeight + footerHeight - elementHeight
+      const minY = 0
+      
+      // Clamp Y position to valid canvas area
+      if (newY < minY) {
+        newY = minY
+      } else if (newY > maxY) {
+        // If element would go beyond footer, place it at the end of its region
+        if (regionType === 'section' && sectionIdx >= 0) {
+          // Keep element within its section
+          const sectionBottom = newRegionTop + newRegionHeight
+          newY = Math.min(newY, sectionBottom - elementHeight - 10)
+        } else if (regionType === 'footer') {
+          // Keep element within footer
+          newY = Math.min(newY, headerHeight + totalSectionsHeight + footerHeight - elementHeight - 10)
+        }
+        // Ensure we don't go negative
+        if (newY < newRegionTop) {
+          newY = newRegionTop + 10
+        }
+      }
 
       // NEW: Keep element size the same - DO NOT scale height
       // Elements maintain their original size when regions resize
@@ -4224,7 +4333,9 @@ export function BuilderCanvas({
                           color: element.props?.optionsTextColor || undefined,
                         }}
                       >
-                        {(element.props?.options || ["Option 1", "Option 2", "Option 3"]).map((option: string, index: number) => (
+                        {(element.props?.options || ["Option 1", "Option 2", "Option 3"])
+                          .filter((option: string) => option && option.trim() !== '')
+                          .map((option: string, index: number) => (
                           <SelectItem key={index} value={option}>
                             {option}
                           </SelectItem>
@@ -5202,7 +5313,9 @@ export function BuilderCanvas({
                     <SelectValue placeholder={element.content || "Select option"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {(element.props?.options || []).map((option: string, index: number) => (
+                    {(element.props?.options || [])
+                      .filter((option: string) => option && option.trim() !== '')
+                      .map((option: string, index: number) => (
                       <SelectItem
                         key={index}
                         value={option}
@@ -5216,7 +5329,7 @@ export function BuilderCanvas({
                         {option}
                       </SelectItem>
                     ))}
-                    {(element.props?.options || []).length === 0 && (
+                    {(element.props?.options || []).filter((option: string) => option && option.trim() !== '').length === 0 && (
                       <SelectItem value="no-options" disabled>
                         No options available
                       </SelectItem>

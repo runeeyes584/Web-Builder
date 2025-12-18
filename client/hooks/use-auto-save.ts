@@ -2,14 +2,32 @@ import { projectsApi } from '@/api/projects.api';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-interface UseAutoSaveOptions {
-  projectId: string | null;
-  projectName: string;
+interface PageData {
+  id: string;
+  name: string;
   elements: any[];
   layout?: {
     headerHeight: number;
     footerHeight: number;
-    sections: { id: string; height: number }[];
+    sections: { id: string; height: number; name?: string }[];
+  };
+  metadata?: {
+    title?: string;
+    description?: string;
+    keywords?: string[];
+  };
+  order: number;
+}
+
+interface UseAutoSaveOptions {
+  projectId: string | null;
+  projectName: string;
+  pages: PageData[]; // Multi-page support
+  activePageId: string; // Currently active page
+  layout?: {
+    headerHeight: number;
+    footerHeight: number;
+    sections: { id: string; height: number; name?: string }[];
   } | null;
   enabled?: boolean;
   interval?: number; // Auto-save interval in milliseconds (default: 30 seconds)
@@ -20,7 +38,8 @@ interface UseAutoSaveOptions {
 export function useAutoSave({
   projectId,
   projectName,
-  elements,
+  pages,
+  activePageId,
   layout,
   enabled = true,
   interval = 30000, // 30 seconds
@@ -34,13 +53,36 @@ export function useAutoSave({
   const isInitializedRef = useRef(false);
   const [saveCounter, setSaveCounter] = useState(0); // Trigger re-render after save
 
+  // Merge current layout into active page's layout before saving
+  const getPagesWithCurrentLayout = useCallback(() => {
+    if (!pages || pages.length === 0) return pages;
+    
+    return pages.map(page => {
+      if (page.id === activePageId && layout) {
+        // Merge current canvas layout into active page
+        return {
+          ...page,
+          layout: {
+            headerHeight: layout.headerHeight,
+            footerHeight: layout.footerHeight,
+            sections: layout.sections.map(s => ({ ...s })),
+          },
+        };
+      }
+      return page;
+    });
+  }, [pages, activePageId, layout]);
+
   const saveProject = useCallback(async () => {
     if (!projectId || !enabled || isSavingRef.current) {
       return;
     }
 
-    // Check if elements or layout have actually changed
-    const currentDataStr = JSON.stringify({ elements, layout });
+    // Get pages with current layout merged
+    const pagesToSave = getPagesWithCurrentLayout();
+
+    // Check if data has actually changed
+    const currentDataStr = JSON.stringify({ pages: pagesToSave });
     if (currentDataStr === lastSavedDataRef.current) {
       return; // No changes, skip save
     }
@@ -48,11 +90,18 @@ export function useAutoSave({
     try {
       isSavingRef.current = true;
       
+      // Use multi-page format for saving
       const response = await projectsApi.update(projectId, {
         name: projectName,
         description: '',
-        elements: elements,
-        layout: layout || undefined,
+        pages: pagesToSave.map((page, index) => ({
+          id: page.id,
+          name: page.name,
+          elements: page.elements,
+          layout: page.layout,
+          metadata: page.metadata,
+          order: index,
+        })),
       });
 
       if (response.success) {
@@ -77,24 +126,25 @@ export function useAutoSave({
     } finally {
       isSavingRef.current = false;
     }
-  }, [projectId, projectName, elements, layout, enabled, onSaveSuccess, onSaveError]);
+  }, [projectId, projectName, getPagesWithCurrentLayout, enabled, onSaveSuccess, onSaveError]);
 
-  // Initialize only when project changes (NOT when elements change)
+  // Initialize only when project changes (NOT when pages change)
   useEffect(() => {
     if (projectId) {
-      // Use setTimeout to ensure elements are fully loaded before marking as initialized
+      // Use setTimeout to ensure pages are fully loaded before marking as initialized
       setTimeout(() => {
-        lastSavedDataRef.current = JSON.stringify({ elements, layout });
+        const pagesToSave = getPagesWithCurrentLayout();
+        lastSavedDataRef.current = JSON.stringify({ pages: pagesToSave });
         isInitializedRef.current = true;
-      }, 100); // Small delay to ensure elements are loaded
+      }, 100); // Small delay to ensure pages are loaded
     } else {
       // Reset when no project is open
       isInitializedRef.current = false;
       lastSavedDataRef.current = '';
     }
-  }, [projectId]); // Only depend on projectId, NOT elements or layout!
+  }, [projectId]); // Only depend on projectId, NOT pages!
 
-  // Trigger auto-save when elements or layout change (with debounce)
+  // Trigger auto-save when pages or layout change (with debounce)
   useEffect(() => {
     if (!projectId || !enabled || !isInitializedRef.current) {
       return;
@@ -115,7 +165,7 @@ export function useAutoSave({
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [elements, layout, projectId, enabled, interval, saveProject]);
+  }, [pages, layout, projectId, enabled, interval, saveProject]);
 
   // Manual save function (can be called on blur or before closing)
   const manualSave = useCallback(() => {
@@ -133,10 +183,11 @@ export function useAutoSave({
   // Check if there are unsaved changes (only after initialization)
   const hasUnsavedChanges = useMemo(() => {
     if (!projectId || !isInitializedRef.current) return false;
-    const currentDataStr = JSON.stringify({ elements, layout });
+    const pagesToSave = getPagesWithCurrentLayout();
+    const currentDataStr = JSON.stringify({ pages: pagesToSave });
     const hasChanges = currentDataStr !== lastSavedDataRef.current;
     return hasChanges;
-  }, [projectId, elements, layout, saveCounter]); // saveCounter triggers recalculation after save
+  }, [projectId, pages, layout, getPagesWithCurrentLayout, saveCounter]); // saveCounter triggers recalculation after save
 
   return {
     manualSave,

@@ -26,6 +26,7 @@ export interface LayoutChange {
   userId: string;
   username: string;
   timestamp: number;
+  pageId?: string; // Page-specific layout change
 }
 
 interface UseCollaborationProps {
@@ -205,11 +206,12 @@ export function useCollaboration({
     }
   };
 
-  // Send layout change
-  const sendLayoutChange = (layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }) => {
+  // Send layout change - now includes pageId for page-specific layouts
+  const sendLayoutChange = (layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number }[] }, pageId?: string) => {
     if (socketRef.current?.connected) {
       socketRef.current.emit('layout-change', {
         ...layout,
+        pageId,
         userId: clerkId,
         username,
         timestamp: Date.now(),
