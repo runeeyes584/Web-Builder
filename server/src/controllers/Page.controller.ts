@@ -188,11 +188,30 @@ export const updatePage = async (req: Request, res: Response) => {
       });
     }
 
+    // Merge json_structure properly to preserve existing data
+    let updatedJsonStructure = pageExists.json_structure as any;
+    if (json_structure) {
+      // Deep merge: preserve existing fields while updating new ones
+      updatedJsonStructure = {
+        ...updatedJsonStructure,
+        ...json_structure,
+        // Ensure layout is properly updated if provided
+        layout: json_structure.layout ?? updatedJsonStructure?.layout,
+        // Ensure elements are properly updated if provided
+        elements: json_structure.elements ?? updatedJsonStructure?.elements ?? [],
+        // Ensure metadata is properly updated if provided
+        metadata: json_structure.metadata ?? updatedJsonStructure?.metadata,
+        // Always update version and timestamp
+        version: json_structure.version || updatedJsonStructure?.version || '1.0.0',
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
     const page = await prisma.page.update({
       where: { id },
       data: {
         name: name || pageExists.name,
-        json_structure: json_structure || pageExists.json_structure,
+        json_structure: updatedJsonStructure,
       },
       include: {
         project: {

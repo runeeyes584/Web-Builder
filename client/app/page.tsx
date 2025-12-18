@@ -53,6 +53,7 @@ export default function WebsiteBuilder() {
     renamePage,
     switchPage,
     updatePageMetadata,
+    updatePageLayout,
     activeTool,
     setActiveTool,
   } = useBuilderState()
@@ -131,10 +132,19 @@ export default function WebsiteBuilder() {
   }, [isLoaded, user?.id, router])
 
   // Auto-save hook - only enabled when user has edit permission and project is open
+  // Now uses multi-page format for saving
   const { hasUnsavedChanges } = useAutoSave({
     projectId: currentProjectId || null,
     projectName: currentProjectName,
-    elements: elements,
+    pages: pages.map((p, index) => ({
+      id: p.id,
+      name: p.name,
+      elements: p.elements,
+      layout: p.layout,
+      metadata: p.metadata,
+      order: index,
+    })),
+    activePageId: activePageId,
     layout: canvasLayout,
     enabled: canEdit && !!currentProjectId, // Only auto-save if can edit and project is open
     interval: 30000, // Auto-save every 30 seconds after last change
@@ -182,52 +192,86 @@ export default function WebsiteBuilder() {
     // Update local state immediately
     setCanvasLayout(newLayout)
 
+    // Also update the page's layout in pages state
+    if (activePageId) {
+      updatePageLayout(activePageId, newLayout)
+    }
+
     // Broadcast to collaborators via WebSocket immediately
     if (sendLayoutChangeRef.current) {
       sendLayoutChangeRef.current(newLayout)
     }
 
-    // Save to database if project is open
-    if (currentProjectId && canEdit) {
+    // Save to database if page is a valid database ID (not temporary page-xxx)
+    if (activePageId && !activePageId.startsWith('page-') && canEdit) {
       try {
-        const { projectsApi } = await import('@/api/projects.api')
-        await projectsApi.update(currentProjectId, {
-          name: currentProjectName,
-          elements: elements,
-          layout: newLayout,
+        const { pagesApi } = await import('@/api/pages.api')
+        
+        // Get current page elements to include in the update
+        const currentPage = pages.find(p => p.id === activePageId)
+        const pageElements = currentPage?.elements || elements
+        
+        await pagesApi.update(activePageId, {
+          json_structure: {
+            elements: pageElements,
+            layout: newLayout,
+            metadata: currentPage?.metadata,
+            version: '1.0.0',
+          }
         })
       } catch (error) {
         console.error('Failed to save layout after section rename:', error)
       }
     }
-  }, [canvasLayout, currentProjectId, canEdit, currentProjectName, elements])
+  }, [canvasLayout, activePageId, canEdit, pages, elements, updatePageLayout])
 
   // Handle immediate save when sections are added/removed (not debounced)
+  // This saves layout to the specific page, not project-level
   const handleSectionsChange = useCallback(async (sections: { id: string; height: number; name?: string }[], headerHeight: number, footerHeight: number) => {
-    if (!currentProjectId || !canEdit) return
+    // Check if user can edit (but allow local state updates even without project)
+    if (!canEdit) return
 
     const newLayout = { headerHeight, footerHeight, sections }
 
-    // Update local state immediately
+    // Update local state immediately - always do this
     setCanvasLayout(newLayout)
 
-    // Broadcast to collaborators via WebSocket immediately
-    if (sendLayoutChangeRef.current) {
-      sendLayoutChangeRef.current(newLayout)
+    // Also update the page's layout in pages state - always do this
+    if (activePageId) {
+      updatePageLayout(activePageId, newLayout)
     }
 
-    // Save to database immediately (no debounce for add/remove operations)
-    try {
-      const { projectsApi } = await import('@/api/projects.api')
-      await projectsApi.update(currentProjectId, {
-        name: currentProjectName,
-        elements: elements,
-        layout: newLayout,
-      })
-    } catch (error) {
-      console.error('Failed to save layout after section change:', error)
+    // Only broadcast and save to DB if we have a project
+    if (currentProjectId) {
+      // Broadcast to collaborators via WebSocket immediately (includes pageId)
+      if (sendLayoutChangeRef.current) {
+        sendLayoutChangeRef.current(newLayout)
+      }
+
+      // Save to database immediately via pagesApi (page-specific layout)
+      // Only save if pageId is a valid database ID (not temporary page-xxx)
+      if (activePageId && !activePageId.startsWith('page-')) {
+        try {
+          const { pagesApi } = await import('@/api/pages.api')
+          
+          // Get current page elements to include in the update
+          const currentPage = pages.find(p => p.id === activePageId)
+          const pageElements = currentPage?.elements || elements
+          
+          await pagesApi.update(activePageId, {
+            json_structure: {
+              elements: pageElements,
+              layout: newLayout,
+              metadata: currentPage?.metadata,
+              version: '1.0.0',
+            }
+          })
+        } catch (error) {
+          console.error('Failed to save layout after section change:', error)
+        }
+      }
     }
-  }, [currentProjectId, canEdit, currentProjectName, elements])
+  }, [currentProjectId, canEdit, activePageId, pages, elements, updatePageLayout])
 
   // Detect and broadcast changes between two element states
   const broadcastElementsDiff = useCallback((oldElements: BuilderElement[], newElements: BuilderElement[]) => {
@@ -386,6 +430,72 @@ export default function WebsiteBuilder() {
       setCanvasLayout(null) // Reset to default
     }
   }, [loadProject])
+
+  // Wrapper for addPage that updates canvasLayout for the new page
+  const handleAddPage = useCallback((name: string, metadata?: { title?: string; description?: string; keywords?: string[] }) => {
+    const newPage = addPage(name, metadata)
+    // Set canvas layout to the new page's default layout
+    if (newPage?.layout) {
+      setCanvasLayout({
+        headerHeight: newPage.layout.headerHeight,
+        footerHeight: newPage.layout.footerHeight,
+        sections: newPage.layout.sections.map(s => ({ ...s })),
+      })
+    } else {
+      // Fallback to default layout if page doesn't have one
+      const defaultSectionId = `sec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      setCanvasLayout({
+        headerHeight: 96,
+        footerHeight: 96,
+        sections: [{ id: defaultSectionId, height: 608 }],
+      })
+    }
+  }, [addPage])
+
+  // Wrapper for duplicatePage that updates canvasLayout for the new page
+  const handleDuplicatePage = useCallback((pageId: string) => {
+    const newPage = duplicatePage(pageId)
+    if (newPage?.layout) {
+      setCanvasLayout({
+        headerHeight: newPage.layout.headerHeight,
+        footerHeight: newPage.layout.footerHeight,
+        sections: newPage.layout.sections.map(s => ({ ...s })),
+      })
+    }
+  }, [duplicatePage])
+
+  // Wrapper for switchPage that updates canvasLayout for the new page
+  const handleSwitchPage = useCallback((pageId: string) => {
+    const pageLayout = switchPage(pageId)
+    if (pageLayout) {
+      setCanvasLayout({
+        headerHeight: pageLayout.headerHeight,
+        footerHeight: pageLayout.footerHeight,
+        sections: pageLayout.sections.map(s => ({ ...s })),
+      })
+    } else {
+      // Create default layout for pages without saved layout
+      const defaultSectionId = `sec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      setCanvasLayout({
+        headerHeight: 96,
+        footerHeight: 96,
+        sections: [{ id: defaultSectionId, height: 608 }],
+      })
+    }
+  }, [switchPage])
+
+  // Update page layout when canvasLayout changes (sync layout to page state)
+  const canvasLayoutRef = useRef(canvasLayout)
+  useEffect(() => {
+    // Skip if layout hasn't actually changed or is null
+    if (!canvasLayout || canvasLayout === canvasLayoutRef.current) return
+    canvasLayoutRef.current = canvasLayout
+
+    // Update the active page's layout in the pages state
+    if (activePageId) {
+      updatePageLayout(activePageId, canvasLayout)
+    }
+  }, [canvasLayout, activePageId, updatePageLayout])
 
   // Fetch role when project changes (important for refreshing role after owner changes it)
   useEffect(() => {
@@ -875,10 +985,10 @@ export default function WebsiteBuilder() {
                               <PageManager
                                 pages={pages}
                                 activePageId={activePageId}
-                                onPageSelect={switchPage}
-                                onPageCreate={addPage}
+                                onPageSelect={handleSwitchPage}
+                                onPageCreate={handleAddPage}
                                 onPageDelete={deletePage}
-                                onPageDuplicate={duplicatePage}
+                                onPageDuplicate={handleDuplicatePage}
                                 onPageRename={renamePage}
                                 onPageUpdateMetadata={updatePageMetadata}
                                 canEdit={canEdit}

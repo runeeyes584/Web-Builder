@@ -449,10 +449,20 @@ export function useBuilderState() {
 
   // Page management functions
   const addPage = useCallback((name: string, metadata?: PageMetadata) => {
+    // Generate unique IDs
+    const pageId = `page-${Date.now()}`
+    const sectionId = `sec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    
     const newPage: BuilderPage = {
-      id: `page-${Date.now()}`,
+      id: pageId,
       name,
       elements: [],
+      // Initialize with default layout so new pages have proper section structure
+      layout: {
+        headerHeight: 96,
+        footerHeight: 96,
+        sections: [{ id: sectionId, height: 608 }], // Default section
+      },
       order: pages.length,
       metadata: metadata || { title: name },
     }
@@ -462,6 +472,9 @@ export function useBuilderState() {
     setCurrentPageId(newPage.id)
     setHistory([[]])
     setHistoryIndex(0)
+    
+    // Return the new page so parent can update canvasLayout
+    return newPage
   }, [pages.length])
 
   const deletePage = useCallback(async (pageId: string) => {
@@ -499,7 +512,7 @@ export function useBuilderState() {
 
   const duplicatePage = useCallback((pageId: string) => {
     const pageToDuplicate = pages.find(p => p.id === pageId)
-    if (!pageToDuplicate) return
+    if (!pageToDuplicate) return null
 
     // Deep clone function for duplication with new IDs
     const deepCloneElementWithNewId = (el: BuilderElement): BuilderElement => {
@@ -511,6 +524,9 @@ export function useBuilderState() {
       }
     }
 
+    // Generate new section IDs to avoid conflicts between pages
+    const generateNewSectionId = () => `sec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
     const newPage: BuilderPage = {
       ...pageToDuplicate,
       id: `page-${Date.now()}`,
@@ -518,12 +534,20 @@ export function useBuilderState() {
       order: pages.length,
       // Deep clone all elements to avoid shared references
       elements: pageToDuplicate.elements.map(deepCloneElementWithNewId),
-      // Deep clone layout if exists
+      // Deep clone layout with new section IDs
       layout: pageToDuplicate.layout ? {
         headerHeight: pageToDuplicate.layout.headerHeight,
         footerHeight: pageToDuplicate.layout.footerHeight,
-        sections: pageToDuplicate.layout.sections.map(s => ({ ...s })),
-      } : undefined,
+        sections: pageToDuplicate.layout.sections.map(s => ({ 
+          ...s, 
+          id: generateNewSectionId() // New ID for each section
+        })),
+      } : {
+        // Default layout if original doesn't have one
+        headerHeight: 96,
+        footerHeight: 96,
+        sections: [{ id: generateNewSectionId(), height: 608 }],
+      },
       // Deep clone metadata if exists
       metadata: pageToDuplicate.metadata ? { ...pageToDuplicate.metadata } : undefined,
     }
@@ -531,6 +555,9 @@ export function useBuilderState() {
     setPages(prev => [...prev, newPage])
     setActivePageId(newPage.id)
     setCurrentPageId(newPage.id)
+    
+    // Return the new page so parent can update canvasLayout
+    return newPage
   }, [pages])
 
   const renamePage = useCallback(async (pageId: string, newName: string) => {
@@ -554,7 +581,7 @@ export function useBuilderState() {
 
   const switchPage = useCallback((pageId: string) => {
     const page = pages.find(p => p.id === pageId)
-    if (!page) return
+    if (!page) return null
 
     // Deep clone elements before setting to history to avoid shared references
     const clonedElements = page.elements.map(deepCloneElement)
@@ -564,7 +591,29 @@ export function useBuilderState() {
     setSelectedElements([])
     setHistory([clonedElements])
     setHistoryIndex(0)
+
+    // Return deep cloned layout so parent can update canvasLayout independently
+    // This prevents shared references between page.layout and canvasLayout
+    return page.layout ? {
+      headerHeight: page.layout.headerHeight,
+      footerHeight: page.layout.footerHeight,
+      sections: page.layout.sections.map(s => ({ ...s })),
+    } : null
   }, [pages])
+
+  // Update page layout - used to save layout changes to the specific page
+  const updatePageLayout = useCallback((pageId: string, layout: { headerHeight: number; footerHeight: number; sections: { id: string; height: number; name?: string }[] }) => {
+    setPages(prev =>
+      prev.map(p => p.id === pageId ? { 
+        ...p, 
+        layout: {
+          headerHeight: layout.headerHeight,
+          footerHeight: layout.footerHeight,
+          sections: layout.sections.map(s => ({ ...s })),
+        }
+      } : p)
+    )
+  }, [])
 
   const updatePageMetadata = useCallback((pageId: string, metadata: PageMetadata) => {
     setPages(prev =>
@@ -613,5 +662,6 @@ export function useBuilderState() {
     renamePage,
     switchPage,
     updatePageMetadata,
+    updatePageLayout,
   }
 }

@@ -29,6 +29,7 @@ interface LayoutChange {
   userId: string;
   username: string;
   timestamp: number;
+  pageId?: string; // Page-specific layout change
 }
 
 export class CollaborationSocket {
@@ -166,7 +167,7 @@ export class CollaborationSocket {
           return;
         }
 
-        // Broadcast to others in the room
+        // Broadcast to others in the room (include pageId for page-specific updates)
         socket.to(`project:${session.projectId}`).emit('layout-changed', {
           ...data,
           socketId: socket.id,
@@ -175,11 +176,14 @@ export class CollaborationSocket {
 
         // Auto-persist layout changes to database (Option C - Real-time persistence)
         // Debounced to prevent excessive writes during rapid changes (e.g., resize dragging)
-        this.debouncedSaveLayout(session.projectId, {
-          headerHeight: data.headerHeight,
-          footerHeight: data.footerHeight,
-          sections: data.sections,
-        });
+        // Only save if pageId is provided (page-specific layout)
+        if (data.pageId) {
+          this.debouncedSaveLayout(session.projectId, data.pageId, {
+            headerHeight: data.headerHeight,
+            footerHeight: data.footerHeight,
+            sections: data.sections,
+          });
+        }
       });
 
       // Typing indicator
@@ -414,9 +418,11 @@ export class CollaborationSocket {
   /**
    * Save layout changes directly to database (Option C - Real-time persistence)
    * This method is called when users change layout via WebSocket events
+   * Now accepts pageId to save layout to the specific page, not the first page
    */
   private async saveLayoutToDatabase(
     projectId: string,
+    pageId: string,
     layout: {
       headerHeight: number;
       footerHeight: number;
@@ -458,22 +464,21 @@ export class CollaborationSocket {
         sectionIds.add(section.id);
       }
 
-      // Get project's first page
-      const project = await prisma.project.findUnique({
-        where: { id: projectId },
-        include: { pages: true },
+      // Verify page exists and belongs to the project
+      const page = await prisma.page.findFirst({
+        where: { 
+          id: pageId,
+          project_id: projectId 
+        },
       });
 
-      if (!project || project.pages.length === 0) {
-        console.error('Project or page not found:', projectId);
+      if (!page) {
+        console.error(`Page ${pageId} not found in project ${projectId}`);
         return;
       }
 
-      const pageId = project.pages[0].id;
-      const currentPage = project.pages[0];
-
       // Merge layout into existing json_structure
-      const currentStructure = currentPage.json_structure as any;
+      const currentStructure = page.json_structure as any;
       const updatedStructure = {
         ...currentStructure,
         layout: {
@@ -491,7 +496,7 @@ export class CollaborationSocket {
         },
       });
 
-      console.log(`Layout auto-saved for project ${projectId} via WebSocket`);
+      console.log(`Layout auto-saved for page ${pageId} in project ${projectId} via WebSocket`);
     } catch (error) {
       console.error('Error saving layout to database:', error);
     }
@@ -499,28 +504,33 @@ export class CollaborationSocket {
 
   /**
    * Debounced layout save - prevents excessive DB writes during rapid changes
+   * Now uses pageId as part of the key to handle multiple pages independently
    */
   private debouncedSaveLayout(
     projectId: string,
+    pageId: string,
     layout: {
       headerHeight: number;
       footerHeight: number;
       sections: { id: string; height: number }[];
     }
   ) {
-    // Clear existing timer for this project
-    const existingTimer = this.layoutSaveTimers.get(projectId);
+    // Use combination of projectId and pageId as key to allow independent debouncing per page
+    const timerKey = `${projectId}:${pageId}`;
+
+    // Clear existing timer for this project+page combination
+    const existingTimer = this.layoutSaveTimers.get(timerKey);
     if (existingTimer) {
       clearTimeout(existingTimer);
     }
 
     // Set new timer (1 second debounce)
     const timer = setTimeout(() => {
-      this.saveLayoutToDatabase(projectId, layout);
-      this.layoutSaveTimers.delete(projectId);
+      this.saveLayoutToDatabase(projectId, pageId, layout);
+      this.layoutSaveTimers.delete(timerKey);
     }, 1000);
 
-    this.layoutSaveTimers.set(projectId, timer);
+    this.layoutSaveTimers.set(timerKey, timer);
   }
 
   public getIO(): Server {
