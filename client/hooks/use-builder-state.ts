@@ -25,6 +25,53 @@ const deepCloneElement = (el: BuilderElement): BuilderElement => {
   }
 }
 
+// Helper function to strip large binary data from component snapshot for edit history
+// This prevents saving base64 images/videos to the database which can cause 500 errors
+const stripBinaryDataForHistory = (snapshot: any): any => {
+  if (!snapshot) return snapshot
+
+  const result = { ...snapshot }
+
+  if (result.props) {
+    result.props = { ...result.props }
+
+    // List of prop keys that may contain large binary data (base64)
+    const binaryProps = [
+      'uploadedImages', // carousel images
+      'images', // gallery images
+      'src', // image src (if base64)
+      'audioSrc', // audio source
+      'videoSrc', // video source
+      'iconImage', // icon image
+    ]
+
+    binaryProps.forEach(key => {
+      if (result.props[key]) {
+        // Check if it's base64 data
+        if (typeof result.props[key] === 'string' && result.props[key].startsWith('data:')) {
+          // Replace with placeholder to indicate data was stripped
+          result.props[key] = '[BINARY_DATA_STRIPPED]'
+        } else if (Array.isArray(result.props[key])) {
+          // For arrays (like uploadedImages), strip each base64 item
+          result.props[key] = result.props[key].map((item: any) => {
+            if (typeof item === 'string' && item.startsWith('data:')) {
+              return '[BINARY_DATA_STRIPPED]'
+            }
+            return item
+          })
+        }
+      }
+    })
+  }
+
+  // Also check top-level content if it's base64
+  if (typeof result.content === 'string' && result.content.startsWith('data:')) {
+    result.content = '[BINARY_DATA_STRIPPED]'
+  }
+
+  return result
+}
+
 export function useBuilderState() {
   const { user } = useUser()
 
@@ -154,11 +201,14 @@ export function useBuilderState() {
     lastActionRef.current = { action, elementId, timestamp: now }
 
     try {
+      // Strip large binary data (base64 images/videos) from snapshot to prevent 500 errors
+      const sanitizedSnapshot = stripBinaryDataForHistory(componentSnapshot)
+      
       await editHistoryApi.createHistory({
         page_id: currentPageId,
         clerk_id: user.id,
         action,
-        component_snapshot: componentSnapshot,
+        component_snapshot: sanitizedSnapshot,
       })
     } catch (error) {
       console.error(`Failed to save ${action} to DB:`, error)

@@ -29,6 +29,8 @@ const io = new Server(httpServer, {
     methods: ["GET", "POST"],
     credentials: true,
   },
+  // Increase max buffer size to handle large payloads (e.g., base64 images in elements)
+  maxHttpBufferSize: 50e6, // 50 MB
 });
 
 // Middleware

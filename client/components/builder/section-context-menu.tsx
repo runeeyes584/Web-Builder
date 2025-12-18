@@ -233,6 +233,7 @@ export function useSectionActions({
   onUpdateElementPosition,
   defaultSectionHeight,
   onSectionsChange,
+  onBeforeSectionAdd,
 }: {
   sections: { id: string; height: number; name?: string }[]
   setSections: React.Dispatch<React.SetStateAction<{ id: string; height: number; name?: string }[]>>
@@ -243,6 +244,8 @@ export function useSectionActions({
   onUpdateElementPosition?: (id: string, position: { x: number; y: number; width?: number; height?: number }) => void
   defaultSectionHeight: number
   onSectionsChange?: (sections: { id: string; height: number; name?: string }[], headerHeight: number, footerHeight: number) => void
+  // Callback to notify parent before section is added (for shifting elements)
+  onBeforeSectionAdd?: (insertIndex: number) => void
 }) {
   // State to store copied elements
   const [copiedElements, setCopiedElements] = React.useState<BuilderElement[] | null>(null)
@@ -275,26 +278,16 @@ export function useSectionActions({
       height: defaultSectionHeight,
     }
 
+    // Notify parent to shift elements BEFORE adding section
+    // This sets the flag to skip percentage-based position adjustment in canvas effect
+    onBeforeSectionAdd?.(index)
+
     setSections(prev => {
       const next = [...prev]
       next.splice(index, 0, newSection)
       return next
     })
-
-    // Shift all elements in sections at and after this index down
-    const insertTop = headerHeight + sections.slice(0, index).reduce((sum, s) => sum + s.height, 0)
-    elements.forEach(element => {
-      if (!element.position) return
-      if (element.position.y >= insertTop) {
-        onUpdateElementPosition?.(element.id, {
-          x: element.position.x,
-          y: element.position.y + defaultSectionHeight,
-          width: element.position.width,
-          height: element.position.height,
-        })
-      }
-    })
-  }, [sections, headerHeight, elements, defaultSectionHeight, setSections, onUpdateElementPosition])
+  }, [defaultSectionHeight, setSections, onBeforeSectionAdd])
 
   // Add section below
   const addSectionBelow = useCallback((index: number) => {
@@ -303,26 +296,18 @@ export function useSectionActions({
       height: defaultSectionHeight,
     }
 
+    // Insert index is after the current section
+    const insertIndex = index + 1
+
+    // Notify parent to shift elements BEFORE adding section
+    onBeforeSectionAdd?.(insertIndex)
+
     setSections(prev => {
       const next = [...prev]
-      next.splice(index + 1, 0, newSection)
+      next.splice(insertIndex, 0, newSection)
       return next
     })
-
-    // Shift all elements in sections after this index down
-    const insertTop = headerHeight + sections.slice(0, index + 1).reduce((sum, s) => sum + s.height, 0)
-    elements.forEach(element => {
-      if (!element.position) return
-      if (element.position.y >= insertTop) {
-        onUpdateElementPosition?.(element.id, {
-          x: element.position.x,
-          y: element.position.y + defaultSectionHeight,
-          width: element.position.width,
-          height: element.position.height,
-        })
-      }
-    })
-  }, [sections, headerHeight, elements, defaultSectionHeight, setSections, onUpdateElementPosition])
+  }, [defaultSectionHeight, setSections, onBeforeSectionAdd])
 
   // Move section up - removes section from current position and inserts it above
   // This moves the entire partition (area name, color, and all elements) as a unit

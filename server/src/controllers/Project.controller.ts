@@ -535,11 +535,30 @@ export const updateProject = async (req: Request, res: Response) => {
       message: "Project updated successfully",
       data: updatedProject,
     });
-  } catch (error) {
-    console.error("Error updating project:", error);
+  } catch (error: any) {
+    // Log detailed error information for debugging
+    console.error("Error updating project:", {
+      error: error.message || error,
+      code: error.code,
+      name: error.name,
+      // Check if it's a payload size issue
+      isPayloadError: error.message?.includes('document') || error.message?.includes('size') || error.message?.includes('limit'),
+    });
+    
+    // Check for MongoDB document size limit (16MB)
+    if (error.message?.includes('document exceeds maximum allowed bson size') || 
+        error.message?.includes('BSONObjectTooLarge') ||
+        error.code === 10334) {
+      return res.status(413).json({
+        success: false,
+        message: "Project data is too large. Please reduce the size of images or remove some elements. Consider uploading images to cloud storage instead of embedding them.",
+      });
+    }
+    
     return res.status(500).json({
       success: false,
       message: "Failed to update project",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };

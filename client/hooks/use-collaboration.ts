@@ -52,10 +52,14 @@ export function useCollaboration({
   useEffect(() => {
     if (!enabled || !projectId || !clerkId) return;
 
-    // Initialize socket connection
+    // Initialize socket connection with increased buffer size for large payloads (base64 images)
     const socket = io(process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:4000', {
       transports: ['websocket'],
       autoConnect: true,
+      // Increase timeout for large payloads
+      timeout: 60000,
+      // Enable binary transport for efficient image transfer
+      forceNew: false,
     });
 
     socketRef.current = socket;

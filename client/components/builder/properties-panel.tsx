@@ -6341,16 +6341,55 @@ export function PropertiesPanel({
                           multiple
                           id={`gallery-upload-${selectedElement.id}`}
                           key={selectedElement.props?.images?.length || 0}
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const files = Array.from(e.target.files || [])
                             if (files.length > 0) {
-                              const imageUrls = files.map(file => URL.createObjectURL(file))
+                              // Upload images to Cloudinary instead of using base64
                               const imageNames = files.map(file => file.name)
-                              updateElementProps({
-                                images: imageUrls,
-                                imageNames: imageNames,
-                                imageCount: files.length
+                              toast({
+                                title: "Uploading images...",
+                                description: `Uploading ${files.length} image(s)`,
                               })
+                              
+                              try {
+                                const uploadPromises = files.map(file => cloudinaryApi.uploadImage(file))
+                                const results = await Promise.all(uploadPromises)
+                                
+                                const successfulUploads = results.filter(r => r.success && r.data?.url)
+                                const imageUrls = successfulUploads.map(r => r.data!.url)
+                                
+                                if (imageUrls.length > 0) {
+                                  // Get existing images if any
+                                  const existingImages = selectedElement.props?.images || []
+                                  const existingNames = selectedElement.props?.imageNames || []
+                                  
+                                  updateElementProps({
+                                    images: [...existingImages, ...imageUrls],
+                                    imageNames: [...existingNames, ...imageNames.slice(0, successfulUploads.length)],
+                                    imageCount: existingImages.length + imageUrls.length
+                                  })
+                                  
+                                  toast({
+                                    title: "Images uploaded",
+                                    description: `Successfully uploaded ${imageUrls.length} image(s)`,
+                                  })
+                                }
+                                
+                                if (successfulUploads.length < files.length) {
+                                  toast({
+                                    title: "Some uploads failed",
+                                    description: `${files.length - successfulUploads.length} image(s) failed to upload`,
+                                    variant: "destructive",
+                                  })
+                                }
+                              } catch (error) {
+                                console.error("Error uploading images:", error)
+                                toast({
+                                  title: "Upload failed",
+                                  description: "Failed to upload images. Please try again.",
+                                  variant: "destructive",
+                                })
+                              }
                             }
                           }}
                           className="hidden"
@@ -7000,28 +7039,52 @@ export function PropertiesPanel({
                           type="file"
                           multiple
                           accept="image/*"
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const files = Array.from(e.target.files || [])
                             if (files.length > 0) {
-                              const imageUrls: string[] = []
-                              files.forEach((file) => {
-                                const reader = new FileReader()
-                                reader.onload = (event) => {
-                                  if (event.target?.result) {
-                                    imageUrls.push(event.target.result as string)
-                                    if (imageUrls.length === files.length) {
-                                      // If there are existing images, append new ones
-                                      const existingImages = selectedElement.props?.uploadedImages || []
-                                      const allImages = [...existingImages, ...imageUrls]
-                                      updateElementProps({
-                                        uploadedImages: allImages,
-                                        slideCount: allImages.length
-                                      })
-                                    }
-                                  }
-                                }
-                                reader.readAsDataURL(file)
+                              // Upload images to Cloudinary instead of using base64
+                              toast({
+                                title: "Uploading images...",
+                                description: `Uploading ${files.length} image(s) to cloud storage`,
                               })
+                              
+                              try {
+                                const uploadPromises = files.map(file => cloudinaryApi.uploadImage(file))
+                                const results = await Promise.all(uploadPromises)
+                                
+                                const successfulUploads = results.filter(r => r.success && r.data?.url)
+                                const imageUrls = successfulUploads.map(r => r.data!.url)
+                                
+                                if (imageUrls.length > 0) {
+                                  // If there are existing images, append new ones
+                                  const existingImages = selectedElement.props?.uploadedImages || []
+                                  const allImages = [...existingImages, ...imageUrls]
+                                  updateElementProps({
+                                    uploadedImages: allImages,
+                                    slideCount: allImages.length
+                                  })
+                                  
+                                  toast({
+                                    title: "Images uploaded",
+                                    description: `Successfully uploaded ${imageUrls.length} image(s)`,
+                                  })
+                                }
+                                
+                                if (successfulUploads.length < files.length) {
+                                  toast({
+                                    title: "Some uploads failed",
+                                    description: `${files.length - successfulUploads.length} image(s) failed to upload`,
+                                    variant: "destructive",
+                                  })
+                                }
+                              } catch (error) {
+                                console.error("Error uploading carousel images:", error)
+                                toast({
+                                  title: "Upload failed",
+                                  description: "Failed to upload images. Please try again.",
+                                  variant: "destructive",
+                                })
+                              }
                             }
                           }}
                           className="w-full text-xs bg-sidebar-accent border border-sidebar-border rounded px-2 py-1"

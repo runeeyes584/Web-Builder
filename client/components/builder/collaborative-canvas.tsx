@@ -67,6 +67,9 @@ export function CollaborativeCanvas({
   const { user } = useUser()
   const [mounted, setMounted] = useState(false)
   const canvasRef = useRef<HTMLDivElement>(null)
+  
+  // Track if layout update is from collaboration (to skip element position adjustment in canvas)
+  const [isCollaborativeLayoutUpdate, setIsCollaborativeLayoutUpdate] = useState(false)
 
   // Use refs for callbacks to prevent useEffect re-runs when parent recreates these functions
   const onAddElementRef = useRef(onAddElement)
@@ -175,6 +178,8 @@ export function CollaborativeCanvas({
   useEffect(() => {
     if (layoutChanges.length === 0) return
 
+    let hasAppliedChange = false
+
     layoutChanges.forEach((change) => {
       // Skip changes from current user (already applied locally)
       if (change.userId === user?.id) {
@@ -187,6 +192,11 @@ export function CollaborativeCanvas({
         return
       }
 
+      // Mark that layout update is from collaboration BEFORE applying
+      // This tells the canvas to skip element position adjustment
+      setIsCollaborativeLayoutUpdate(true)
+      hasAppliedChange = true
+
       // Apply the layout change
       onLayoutUpdate?.({
         headerHeight: change.headerHeight,
@@ -197,20 +207,37 @@ export function CollaborativeCanvas({
 
     // Clear processed layout changes
     clearLayoutChanges()
+
+    // Reset the collaborative layout flag after a short delay
+    // This allows the canvas to process the update before we reset
+    if (hasAppliedChange) {
+      setTimeout(() => {
+        setIsCollaborativeLayoutUpdate(false)
+      }, 200)
+    }
   }, [layoutChanges, user?.id, pageId, clearLayoutChanges, onLayoutUpdate])
 
   // Wrap canvas callbacks to broadcast changes
   const handleAddElement = useCallback((element: any, position?: { x: number; y: number }) => {
     if (!canEdit) return;
 
-    // Apply locally first with position
-    onAddElementRef.current?.(element, position)
+    // Merge position into element BEFORE applying and broadcasting
+    // This ensures both local and remote users get the same element with correct position
+    const basePosition = element.position || { x: 100, y: 100, width: 200, height: 50 }
+    const mergedPosition = position ? { ...basePosition, ...position } : basePosition
+    const elementWithPosition = {
+      ...element,
+      position: mergedPosition,
+    }
 
-    // Broadcast to others
+    // Apply locally first with the merged element
+    onAddElementRef.current?.(elementWithPosition)
+
+    // Broadcast to others with the complete element including position
     if (projectId) {
       sendElementChange({
         action: 'add',
-        element,
+        element: elementWithPosition,
       })
     }
   }, [canEdit, projectId, sendElementChange])
@@ -399,6 +426,7 @@ export function CollaborativeCanvas({
         onSetActiveLeftPanel={onSetActiveLeftPanel}
         activeTool={canvasProps.activeTool}
         onElementDoubleClick={onElementDoubleClick}
+        isCollaborativeLayoutUpdate={isCollaborativeLayoutUpdate}
         {...canvasProps}
       />
     </div>

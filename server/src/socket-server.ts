@@ -32,10 +32,20 @@ interface LayoutChange {
   pageId?: string; // Page-specific layout change
 }
 
+// Cache entry for edit permissions
+interface PermissionCacheEntry {
+  hasPermission: boolean;
+  timestamp: number;
+}
+
 export class CollaborationSocket {
   private io: Server;
   private userSessions: Map<string, UserSession> = new Map();
   private layoutSaveTimers: Map<string, NodeJS.Timeout> = new Map();
+  // Cache for edit permissions to avoid repeated database queries
+  // Key format: `${projectId}:${clerkId}`
+  private editPermissionCache: Map<string, PermissionCacheEntry> = new Map();
+  private readonly PERMISSION_CACHE_TTL = 60000; // 1 minute cache TTL
 
   constructor(io: Server) {
     this.io = io;
@@ -279,6 +289,14 @@ export class CollaborationSocket {
   }
 
   private async verifyEditPermission(projectId: string, clerkId: string): Promise<boolean> {
+    const cacheKey = `${projectId}:${clerkId}`;
+    
+    // Check cache first
+    const cached = this.editPermissionCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < this.PERMISSION_CACHE_TTL) {
+      return cached.hasPermission;
+    }
+
     try {
       // Check if user owns the project (OWNER has edit permission)
       const project = await prisma.project.findUnique({
@@ -286,6 +304,7 @@ export class CollaborationSocket {
       });
 
       if (project?.clerk_id === clerkId) {
+        this.editPermissionCache.set(cacheKey, { hasPermission: true, timestamp: Date.now() });
         return true;
       }
 
@@ -299,7 +318,15 @@ export class CollaborationSocket {
         },
       });
 
-      return collaborator?.role === 'EDITOR';
+      // Role is stored in lowercase in the database (editor, viewer)
+      // Compare case-insensitively to be safe
+      const role = collaborator?.role?.toLowerCase();
+      const hasPermission = role === 'editor' || role === 'owner';
+      
+      // Cache the result
+      this.editPermissionCache.set(cacheKey, { hasPermission, timestamp: Date.now() });
+      
+      return hasPermission;
     } catch (error) {
       console.error('Error verifying edit permission:', error);
       return false;

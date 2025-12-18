@@ -156,14 +156,22 @@ function CarouselComponent({ element }: { element: BuilderElement }) {
     setIsPlaying(element.props?.autoplay || false)
   }, [element.props?.autoplay])
 
-  const slideCount = element.props?.slideCount || 5
   const uploadedImages = element.props?.uploadedImages || []
+  // Use uploadedImages.length if available, otherwise fall back to slideCount prop
+  const slideCount = uploadedImages.length > 0 ? uploadedImages.length : (element.props?.slideCount || 5)
 
-  // Create slides array
+  // Create slides array - prioritize uploaded images
   const slides = Array.from({ length: slideCount }, (_, i) => ({
     id: `slide-${i}`,
     image: uploadedImages[i] || `https://picsum.photos/400/300?random=${i + 1}`
   }))
+
+  // Reset currentSlide if it exceeds new slideCount (e.g., when images are removed)
+  useEffect(() => {
+    if (currentSlide >= slideCount) {
+      setCurrentSlide(Math.max(0, slideCount - 1))
+    }
+  }, [slideCount, currentSlide])
 
   // Autoplay functionality
   useEffect(() => {
@@ -296,6 +304,7 @@ interface CanvasProps {
   onSetActiveLeftPanel?: (panel: 'components' | 'pages' | 'siteStyle') => void // Callback to set active left panel
   activeTool?: 'select' | 'hand' // Current active tool
   onElementDoubleClick?: (elementId: string) => void // Callback when element is double-clicked to show properties panel
+  isCollaborativeLayoutUpdate?: boolean // Flag to indicate layout update from collaboration (skip element adjustment)
 }
 
 export function BuilderCanvas({
@@ -326,6 +335,7 @@ export function BuilderCanvas({
   onSetActiveLeftPanel,
   activeTool = 'select',
   onElementDoubleClick,
+  isCollaborativeLayoutUpdate = false,
 }: CanvasProps) {
   // Partition dynamic sizes - initialize from saved layout if available
   const [headerHeight, setHeaderHeight] = useState<number>(initialLayout?.headerHeight || 96)
@@ -351,18 +361,55 @@ export function BuilderCanvas({
   // Track if we're in the middle of a page switch to skip element position adjustment
   const isPageSwitchingRef = useRef(false)
   
+  // Track if we're adding a section (elements will be shifted manually, not by percentage effect)
+  const isAddingSectionRef = useRef(false)
+  
+  // Track if layout update is from collaboration (to skip element position adjustment)
+  const prevIsCollaborativeLayoutUpdateRef = useRef(false)
+  
   // Sync full layout from initialLayout when page changes (different sections structure)
-  // This handles switching between pages with different layouts
+  // This handles switching between pages with different layouts AND collaborative updates
   const prevInitialLayoutRef = useRef(initialLayout)
   useEffect(() => {
     // Skip on first render - state is already initialized from initialLayout
     if (isFirstRenderRef.current) {
       isFirstRenderRef.current = false
+      prevIsCollaborativeLayoutUpdateRef.current = isCollaborativeLayoutUpdate
       return
     }
 
     const prev = prevInitialLayoutRef.current
     prevInitialLayoutRef.current = initialLayout
+
+    // Handle collaborative layout updates specially - DON'T adjust element positions
+    // Elements have already been adjusted by the sender, we just need to sync the layout
+    if (isCollaborativeLayoutUpdate && !prevIsCollaborativeLayoutUpdateRef.current && initialLayout?.sections) {
+      prevIsCollaborativeLayoutUpdateRef.current = true
+      
+      // Update layout state without triggering element position adjustment
+      setHeaderHeight(initialLayout.headerHeight)
+      setFooterHeight(initialLayout.footerHeight)
+      setSections(initialLayout.sections.map(s => ({ 
+        id: s.id, 
+        height: Math.max(MIN_SECTION, s.height), 
+        name: s.name 
+      })))
+      
+      // CRITICAL: Update previousRegionHeightsRef IMMEDIATELY to prevent
+      // the element position adjustment effect from running with stale values
+      previousRegionHeightsRef.current = {
+        header: initialLayout.headerHeight,
+        sections: initialLayout.sections.map(s => Math.max(MIN_SECTION, s.height)),
+        footer: initialLayout.footerHeight
+      }
+      
+      return
+    }
+    
+    // Reset the collaborative update tracking when it's no longer a collaborative update
+    if (!isCollaborativeLayoutUpdate && prevIsCollaborativeLayoutUpdateRef.current) {
+      prevIsCollaborativeLayoutUpdateRef.current = false
+    }
 
     // Always reset when initialLayout changes significantly
     if (initialLayout?.sections) {
@@ -404,6 +451,34 @@ export function BuilderCanvas({
         return
       }
 
+      // Check if this is a height-only change (same IDs, same count, but different heights)
+      // For collaborative updates, we should also update heights without element adjustment
+      const isHeightChange = initialLayout.sections.some((s, idx) => {
+        const prevHeight = prev?.sections?.[idx]?.height
+        return prevHeight !== undefined && prevHeight !== s.height
+      }) || initialLayout.headerHeight !== prev?.headerHeight || initialLayout.footerHeight !== prev?.footerHeight
+
+      if (isHeightChange) {
+        // Update layout dimensions
+        setHeaderHeight(initialLayout.headerHeight)
+        setFooterHeight(initialLayout.footerHeight)
+        setSections(currentSections =>
+          currentSections.map((s, idx) => ({
+            ...s,
+            height: Math.max(MIN_SECTION, initialLayout.sections[idx]?.height || s.height)
+          }))
+        )
+        
+        // For collaborative updates, also update previousRegionHeightsRef to skip position adjustment
+        if (isCollaborativeLayoutUpdate) {
+          previousRegionHeightsRef.current = {
+            header: initialLayout.headerHeight,
+            sections: initialLayout.sections.map(s => Math.max(MIN_SECTION, s.height)),
+            footer: initialLayout.footerHeight
+          }
+        }
+      }
+
       // Check if this is a rename operation (same IDs but different names)
       const isRenameOperation = initialLayout.sections.some((s, idx) =>
         prev?.sections?.[idx] && s.name !== prev.sections[idx]?.name
@@ -440,7 +515,7 @@ export function BuilderCanvas({
         isPageSwitchingRef.current = false
       }, 100)
     }
-  }, [initialLayout])
+  }, [initialLayout, isCollaborativeLayoutUpdate])
 
   // Notify parent about current regions layout for LayersPanel grouping
   useEffect(() => {
@@ -645,6 +720,30 @@ export function BuilderCanvas({
       return
     }
     
+    // Skip if we're adding a section - elements are shifted manually by boundaryBtn/useSectionActions
+    if (isAddingSectionRef.current) {
+      // Reset the flag and update previous heights for next time
+      isAddingSectionRef.current = false
+      previousRegionHeightsRef.current = {
+        header: headerHeight,
+        sections: sections.map(s => s.height),
+        footer: footerHeight
+      }
+      return
+    }
+    
+    // Skip if layout update is from collaboration - elements are already in correct positions
+    // The sender has already adjusted element positions, we just need to sync the layout
+    if (isCollaborativeLayoutUpdate) {
+      // Just update the previous heights reference without adjusting elements
+      previousRegionHeightsRef.current = {
+        header: headerHeight,
+        sections: sections.map(s => s.height),
+        footer: footerHeight
+      }
+      return
+    }
+    
     const prev = previousRegionHeightsRef.current
     const hasHeaderChanged = prev.header !== headerHeight
     const hasFooterChanged = prev.footer !== footerHeight
@@ -785,7 +884,7 @@ export function BuilderCanvas({
       sections: sections.map(s => s.height),
       footer: footerHeight
     }
-  }, [headerHeight, footerHeight, sections, elements, onUpdateElementPosition, totalSectionsHeight])
+  }, [headerHeight, footerHeight, sections, elements, onUpdateElementPosition, totalSectionsHeight, isCollaborativeLayoutUpdate])
 
   type ComponentDragItem = { type: "COMPONENT"; componentType: string }
 
@@ -9188,6 +9287,30 @@ export function BuilderCanvas({
           onAddElement={onAddElement}
           onDeleteElement={onDeleteElement}
           onUpdateElementPosition={onUpdateElementPosition}
+          // Callback for when section is added via boundary button
+          onSectionAdd={(insertIndex) => {
+            // Set flag to skip percentage-based position adjustment
+            isAddingSectionRef.current = true
+            
+            // Calculate the position where section will be inserted
+            let insertTop = headerHeight
+            for (let i = 0; i < insertIndex; i++) {
+              insertTop += sections[i]?.height || 0
+            }
+            
+            // Shift all elements at or below insert position down by defaultSectionHeight
+            elements.forEach(element => {
+              if (!element.position) return
+              if (element.position.y >= insertTop) {
+                onUpdateElementPosition(element.id, {
+                  x: element.position.x,
+                  y: element.position.y + DEFAULT_SECTION,
+                  width: element.position.width,
+                  height: element.position.height,
+                })
+              }
+            })
+          }}
         />
       )}
       {/* Enhanced Grid overlay - hidden in preview mode */}
@@ -9322,6 +9445,8 @@ function PartitionsOverlay({
   onAddElement,
   onDeleteElement,
   onUpdateElementPosition,
+  // Callback for when section is added via boundary button
+  onSectionAdd,
 }: {
   headerHeight: number
   footerHeight: number
@@ -9351,6 +9476,8 @@ function PartitionsOverlay({
   onAddElement?: (element: BuilderElement, position?: { x: number; y: number }) => void
   onDeleteElement?: (id: string) => void
   onUpdateElementPosition?: (id: string, position: { x: number; y: number; width?: number; height?: number }) => void
+  // Callback for when section is added via boundary button (to shift elements)
+  onSectionAdd?: (insertIndex: number) => void
 }) {
   // Fine-grained hover states so sections act independently
   const [hoverHeader, setHoverHeader] = useState(false)
@@ -9390,19 +9517,32 @@ function PartitionsOverlay({
     onUpdateElementPosition,
     defaultSectionHeight,
     onSectionsChange,
+    // Callback to shift elements when section is added via context menu
+    onBeforeSectionAdd: onSectionAdd,
   })
 
   // Note: submerged states now come from parent Canvas component via props
 
-  // Track if sections were just added to trigger immediate save callback
-  const sectionsJustAddedRef = useRef(false)
+  // Track previous section IDs to detect structural changes
+  const prevSectionIdsRef = useRef<string[]>(sections.map(s => s.id))
 
-  // Trigger onSectionsChange after sections state update completes
+  // Trigger onSectionsChange when sections structure changes (add/delete)
+  // This ensures changes from context menu, boundary buttons, and other sources are saved
   useEffect(() => {
-    if (sectionsJustAddedRef.current && onSectionsChange) {
+    const currentIds = sections.map(s => s.id)
+    const prevIds = prevSectionIdsRef.current
+    
+    // Check if sections structure changed (different count or different IDs)
+    const isStructuralChange = 
+      currentIds.length !== prevIds.length ||
+      !currentIds.every((id, idx) => id === prevIds[idx])
+    
+    if (isStructuralChange && onSectionsChange) {
       onSectionsChange(sections, headerHeight, footerHeight)
-      sectionsJustAddedRef.current = false
     }
+    
+    // Update the ref for next comparison
+    prevSectionIdsRef.current = currentIds
   }, [sections, headerHeight, footerHeight, onSectionsChange])
 
   type BtnKind =
@@ -9424,6 +9564,23 @@ function PartitionsOverlay({
       // Insert a new section at the appropriate boundary
       const mkSection = () => ({ id: `sec-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, height: defaultSectionHeight })
 
+      // Calculate insert index BEFORE modifying sections array
+      let insertIndex = 0
+      if (kind.type === "header-bottom") {
+        insertIndex = 0
+      } else if (kind.type === "footer-top") {
+        insertIndex = sections.length // Insert at end (elements below footer don't need shifting)
+      } else if (kind.type === "sec-top") {
+        insertIndex = Math.max(0, Math.min(kind.index, sections.length))
+      } else if (kind.type === "sec-bottom") {
+        insertIndex = Math.max(0, Math.min(kind.index + 1, sections.length))
+      }
+
+      // Shift elements BEFORE adding section (except for footer-top which adds at end)
+      if (kind.type !== "footer-top") {
+        onSectionAdd?.(insertIndex)
+      }
+
       setSections((prev) => {
         const next = [...prev]
         if (kind.type === "header-bottom") {
@@ -9438,8 +9595,7 @@ function PartitionsOverlay({
           next.splice(insertAt, 0, mkSection())
         }
 
-        // Mark that sections were just added (will trigger useEffect)
-        sectionsJustAddedRef.current = true
+        // Note: onSectionsChange will be triggered by the effect that detects structural changes
 
         return next
       })
@@ -9476,7 +9632,7 @@ function PartitionsOverlay({
         + Add section
       </button>
     )
-  }, [defaultSectionHeight])
+  }, [defaultSectionHeight, sections, onSectionAdd])
 
   // Decide which boundary button should be persistently visible based on focusedRegion
   const focusBoundaryMap: Record<"header" | "section" | "footer", "h-bottom" | "s-bottom" | "f-top"> = {
