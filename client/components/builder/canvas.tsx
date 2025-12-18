@@ -355,9 +355,53 @@ export function BuilderCanvas({
   const totalSectionsHeight = sections.reduce((sum, s) => sum + s.height, 0)
   const contentHeight = headerHeight + totalSectionsHeight + footerHeight
 
+  // Check if we're in stacked view mode (mobile or tablet) for responsive layout
+  const isStackedView = currentBreakpoint === "mobile" || currentBreakpoint === "tablet"
+
+  // Sort elements by Y position for stacked view (top to bottom, left to right for same row)
+  const sortedElements = useMemo(() => {
+    if (!isStackedView) return elements
+    return [...elements].sort((a, b) => {
+      const posA_Y = a.position?.y || 0
+      const posB_Y = b.position?.y || 0
+      // If Y positions are close (within 50px), sort by X to maintain row order
+      if (Math.abs(posA_Y - posB_Y) < 50) {
+        return (a.position?.x || 0) - (b.position?.x || 0)
+      }
+      return posA_Y - posB_Y
+    })
+  }, [elements, isStackedView])
+
+  // Determine grid spans for Tablet view based on desktop visual rows
+  const elementSpans = useMemo(() => {
+    if (currentBreakpoint !== "tablet") return new Map<string, number>()
+    const spans = new Map<string, number>()
+    const sorted = [...sortedElements]
+    let i = 0
+    while (i < sorted.length) {
+      const currentRow = [sorted[i]]
+      const currentY = sorted[i].position?.y || 0
+      let j = i + 1
+      while (j < sorted.length) {
+        const nextEl = sorted[j]
+        const nextY = nextEl.position?.y || 0
+        if (Math.abs(nextY - currentY) < 50) {
+          currentRow.push(nextEl)
+          j++
+        } else {
+          break
+        }
+      }
+      // Assign spans: multiple items = 1 each, single item = 2 (full width)
+      currentRow.forEach(el => spans.set(el.id, currentRow.length > 1 ? 1 : 2))
+      i = j
+    }
+    return spans
+  }, [sortedElements, currentBreakpoint])
+
   // Track if this is the first render to skip initial sync
   const isFirstRenderRef = useRef(true)
-  
+
   // Track if we're in the middle of a page switch to skip element position adjustment
   const isPageSwitchingRef = useRef(false)
   
@@ -416,8 +460,8 @@ export function BuilderCanvas({
       // Check if this is a structural change (different section IDs or count)
       const prevSectionIds = prev?.sections?.map(s => s.id) || []
       const newSectionIds = initialLayout.sections.map(s => s.id)
-      
-      const isStructuralChange = 
+
+      const isStructuralChange =
         !prev?.sections ||
         initialLayout.sections.length !== prev.sections.length ||
         !newSectionIds.every((id, idx) => id === prevSectionIds[idx])
@@ -425,16 +469,16 @@ export function BuilderCanvas({
       if (isStructuralChange) {
         // Mark as page switching to skip element position adjustment
         isPageSwitchingRef.current = true
-        
+
         // Full layout reset for page switch or structural change
         setHeaderHeight(initialLayout.headerHeight)
         setFooterHeight(initialLayout.footerHeight)
-        setSections(initialLayout.sections.map(s => ({ 
-          id: s.id, 
-          height: Math.max(MIN_SECTION, s.height), 
-          name: s.name 
+        setSections(initialLayout.sections.map(s => ({
+          id: s.id,
+          height: Math.max(MIN_SECTION, s.height),
+          name: s.name
         })))
-        
+
         // Reset previousRegionHeightsRef to match new layout immediately
         // This prevents incorrect position calculations when switching pages
         previousRegionHeightsRef.current = {
@@ -442,12 +486,12 @@ export function BuilderCanvas({
           sections: initialLayout.sections.map(s => Math.max(MIN_SECTION, s.height)),
           footer: initialLayout.footerHeight
         }
-        
+
         // Clear page switching flag after a short delay (after state updates propagate)
         setTimeout(() => {
           isPageSwitchingRef.current = false
         }, 100)
-        
+
         return
       }
 
@@ -496,20 +540,20 @@ export function BuilderCanvas({
       // initialLayout became null/undefined but we had sections before
       // Mark as page switching
       isPageSwitchingRef.current = true
-      
+
       // Reset to default layout
       const defaultHeight = 608
       setHeaderHeight(96)
       setFooterHeight(96)
       setSections([{ id: `sec-${Date.now()}`, height: defaultHeight }])
-      
+
       // Reset previousRegionHeightsRef to match default layout
       previousRegionHeightsRef.current = {
         header: 96,
         sections: [defaultHeight],
         footer: 96
       }
-      
+
       // Clear page switching flag after a short delay
       setTimeout(() => {
         isPageSwitchingRef.current = false
@@ -844,7 +888,7 @@ export function BuilderCanvas({
       // BOUNDARY ENFORCEMENT: Ensure element stays within canvas bounds
       const maxY = headerHeight + totalSectionsHeight + footerHeight - elementHeight
       const minY = 0
-      
+
       // Clamp Y position to valid canvas area
       if (newY < minY) {
         newY = minY
@@ -1020,7 +1064,7 @@ export function BuilderCanvas({
         position: { x: 100, y: 100, width: 150, height: 50 },
 
       },
-  
+
       card: {
         content: "Card Content",
         styles: {
@@ -3971,7 +4015,59 @@ export function BuilderCanvas({
     document.addEventListener("mouseup", onMouseUp)
   }, [sections, zoom, getMinRegionHeight])
 
-  const renderElement = (element: BuilderElement, index: number = 0) => {
+  // Helper function to render element content for stacked view
+  const renderElementContent = (element: BuilderElement, styles: React.CSSProperties): React.ReactNode => {
+    switch (element.type) {
+      case "heading":
+        return <h1 className="text-card-foreground" style={styles}>{element.content}</h1>
+      case "paragraph":
+        return <p className="text-card-foreground text-sm" style={styles}>{element.content}</p>
+      case "button":
+        return <button className="text-card-foreground w-full h-full" style={styles}>{element.content}</button>
+      case "image":
+        return (
+          <img
+            src={element.content || "/placeholder.svg"}
+            alt="Element"
+            className="w-full h-auto object-cover rounded"
+            style={{ maxHeight: '200px', ...styles }}
+          />
+        )
+      case "card":
+        return (
+          <div className="text-card-foreground w-full h-full p-4" style={styles}>
+            <h3 style={{ fontSize: element.props?.titleFontSize || "1.125rem", fontWeight: element.props?.titleFontWeight || "600" }}>
+              {element.props?.title || "Card Title"}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              {element.props?.description || element.content}
+            </p>
+          </div>
+        )
+      case "navigation":
+        return (
+          <div className="text-card-foreground w-full p-4 bg-card border border-border rounded-lg flex items-center justify-between" style={styles}>
+            <div className="font-semibold">{element.props?.logo || 'Logo'}</div>
+            <div className="flex gap-4">
+              {(element.props?.menuItems || ['Home', 'About', 'Contact']).map((item: string, idx: number) => (
+                <span key={idx} className="text-sm">{item}</span>
+              ))}
+            </div>
+          </div>
+        )
+      case "footer":
+        return (
+          <div className="text-card-foreground w-full p-4 bg-muted border border-border rounded-lg text-center" style={styles}>
+            <p className="font-semibold">{element.content}</p>
+            <p className="text-sm text-muted-foreground">{element.props?.copyright || "© 2024 Your Company"}</p>
+          </div>
+        )
+      default:
+        return <div className="text-card-foreground w-full h-full" style={styles}>{element.content}</div>
+    }
+  }
+
+  const renderElement = (element: BuilderElement, index: number = 0, stackedView: boolean = false) => {
     const isSelected = selectedElements.includes(element.id)
     const isMarqueeHighlighted = marqueeHighlightedIds.includes(element.id)
     const elementStyles = getElementStyles(element)
@@ -4028,6 +4124,38 @@ export function BuilderCanvas({
     // Debug log for specific elements if needed
     // if (element.type === 'button') console.log('[Canvas] Render Button', { id: element.id, isInteracting, zIndex: isInteracting ? 100 : 10 })
 
+    // Stacked view: use relative positioning with auto sizing
+    if (stackedView) {
+      return (
+        <div
+          key={element.id}
+          data-element-id={element.id}
+          className={`
+            relative rounded-md
+            ${!isPreviewMode && isSelected ? "ring-2 ring-primary bg-primary/20" : ""}
+            ${!isPreviewMode ? "hover:bg-primary/10" : ""}
+            ${isHidden ? "opacity-30" : "opacity-100"}
+            cursor-default
+          `}
+          style={{
+            width: '100%',
+            minHeight: Math.min(finalHeight || 50, 200), // Cap max height for responsive
+            display: isHidden && !isPreviewMode ? "block" : isHidden ? "none" : undefined,
+          }}
+          onClick={(e) => !isPreviewMode && handleElementClick(e, element.id)}
+        >
+          {/* Element content for stacked view */}
+          <div
+            className={`w-full h-full ${element.type === 'select' && element.props?.previewMode ? 'overflow-visible' : 'overflow-hidden'}`}
+            style={{ padding: 0 }}
+          >
+            {renderElementContent(element, elementStyles)}
+          </div>
+        </div>
+      )
+    }
+
+    // Desktop view: use absolute positioning (original behavior)
     return (
       <div
         key={element.id}
@@ -4275,14 +4403,14 @@ export function BuilderCanvas({
               const columnCount = element.props?.columnCount || 1
               const columnSpacing = element.props?.columnSpacing || 16
               const columnWidths = element.props?.columnWidths || Array(columnCount).fill(100 / columnCount)
-              
+
               // Split items into columns
               const itemsPerColumn = Math.ceil(listItems.length / columnCount)
               const columns: string[][] = []
               for (let i = 0; i < columnCount; i++) {
                 columns.push(listItems.slice(i * itemsPerColumn, (i + 1) * itemsPerColumn))
               }
-              
+
               return (
                 <div className="text-card-foreground w-full h-full" style={elementStyles}>
                   {element.props?.title && (
@@ -4299,12 +4427,12 @@ export function BuilderCanvas({
                       {element.props.title}
                     </h3>
                   )}
-                  <div 
+                  <div
                     className="flex w-full"
                     style={{ gap: `${columnSpacing}px` }}
                   >
                     {columns.map((columnItems, colIndex) => (
-                      <div 
+                      <div
                         key={colIndex}
                         className="flex-shrink-0"
                         style={{
@@ -4435,10 +4563,10 @@ export function BuilderCanvas({
                         {(element.props?.options || ["Option 1", "Option 2", "Option 3"])
                           .filter((option: string) => option && option.trim() !== '')
                           .map((option: string, index: number) => (
-                          <SelectItem key={index} value={option}>
-                            {option}
-                          </SelectItem>
-                        ))}
+                            <SelectItem key={index} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -5415,19 +5543,19 @@ export function BuilderCanvas({
                     {(element.props?.options || [])
                       .filter((option: string) => option && option.trim() !== '')
                       .map((option: string, index: number) => (
-                      <SelectItem
-                        key={index}
-                        value={option}
-                        style={{
-                          ...(element.props?.optionFontFamily && element.props.optionFontFamily !== 'inherit' && element.props.optionFontFamily !== 'default' && { fontFamily: element.props.optionFontFamily }),
-                          ...(element.props?.optionFontSize && { fontSize: element.props.optionFontSize + 'px' }),
-                          ...(element.props?.optionFontWeight && { fontWeight: element.props.optionFontWeight }),
-                          ...(element.props?.optionTextColor && { color: element.props.optionTextColor })
-                        }}
-                      >
-                        {option}
-                      </SelectItem>
-                    ))}
+                        <SelectItem
+                          key={index}
+                          value={option}
+                          style={{
+                            ...(element.props?.optionFontFamily && element.props.optionFontFamily !== 'inherit' && element.props.optionFontFamily !== 'default' && { fontFamily: element.props.optionFontFamily }),
+                            ...(element.props?.optionFontSize && { fontSize: element.props.optionFontSize + 'px' }),
+                            ...(element.props?.optionFontWeight && { fontWeight: element.props.optionFontWeight }),
+                            ...(element.props?.optionTextColor && { color: element.props.optionTextColor })
+                          }}
+                        >
+                          {option}
+                        </SelectItem>
+                      ))}
                     {(element.props?.options || []).filter((option: string) => option && option.trim() !== '').length === 0 && (
                       <SelectItem value="no-options" disabled>
                         No options available
@@ -9233,18 +9361,31 @@ export function BuilderCanvas({
     <div
       id="builder-canvas"
       ref={setCanvasNode}
-      className={`relative w-full h-full min-h-[800px] bg-gradient-to-br from-canvas via-canvas to-canvas/95 overflow-auto transition-all duration-300 ${isOver ? "bg-drop-zone/20" : ""} ${activeTool === 'hand' ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : ''}`}
+      className={`
+        ${isStackedView
+          ? currentBreakpoint === "mobile"
+            ? "flex flex-col gap-4 p-4"
+            : "grid grid-cols-2 gap-4 p-6 content-start"
+          : "relative"
+        }
+        w-full h-full min-h-[800px] bg-gradient-to-br from-canvas via-canvas to-canvas/95 overflow-auto transition-all duration-300 
+        ${isOver ? "bg-drop-zone/20" : ""} 
+        ${activeTool === 'hand' ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : ''}
+      `}
       onClick={handleCanvasClick}
       onMouseDown={handleCanvasMouseDown}
       style={{
         transform: `scale(${zoom / 100})`,
         transformOrigin: 'top left',
-        width: `${100 / (zoom / 100)}%`,
+        width: isStackedView
+          ? currentBreakpoint === "mobile" ? "375px" : "768px"
+          : `${100 / (zoom / 100)}%`,
         height: `${100 / (zoom / 100)}%`,
-        minHeight: `${contentHeight}px`,
+        minHeight: isStackedView ? '600px' : `${contentHeight}px`,
+        margin: isStackedView ? '0 auto' : undefined,
         // Dynamically extend horizontal canvas so grid covers all placed elements
         // This enables smooth horizontal scrolling when sidebars reduce visible width
-        minWidth: (() => {
+        minWidth: isStackedView ? undefined : (() => {
           const fallback = 1200
           const maxRight = elements.reduce((acc, el) => {
             const x = el.position?.x ?? 0
@@ -9256,8 +9397,8 @@ export function BuilderCanvas({
         })(),
       }}
     >
-      {/* Partitions: interactive hover & boundaries (visible only when toggled and NOT in preview mode) */}
-      {showSections && !isPreviewMode && (
+      {/* Partitions: interactive hover & boundaries (visible only when toggled and NOT in preview mode and NOT in stacked view) */}
+      {showSections && !isPreviewMode && !isStackedView && (
         <PartitionsOverlay
           headerHeight={headerHeight}
           footerHeight={footerHeight}
@@ -9318,6 +9459,7 @@ export function BuilderCanvas({
         <div
           className="absolute inset-0 pointer-events-none opacity-10 transition-opacity duration-300"
           style={{
+            zIndex: 0,
             backgroundImage: `
               linear-gradient(to right, var(--color-primary) 1px, transparent 1px),
               linear-gradient(to bottom, var(--color-primary) 1px, transparent 1px)
@@ -9327,12 +9469,16 @@ export function BuilderCanvas({
         />
       )}
 
-      {/* Elements with animations */}
-      {elements.map((element, index) => (
+      {/* Elements with animations - use sortedElements for stacked view */}
+      {(isStackedView ? sortedElements : elements).map((element, index) => (
         <div
           key={element.id}
           className="animate-in fade-in duration-500"
-          style={{ animationDelay: `${index * 100}ms` }}
+          style={{
+            animationDelay: `${index * 100}ms`,
+            // For tablet grid, apply column span
+            ...(currentBreakpoint === "tablet" ? { gridColumn: `span ${elementSpans.get(element.id) || 1}` } : {})
+          }}
         >
           <ElementContextMenu
             element={element}
@@ -9352,10 +9498,10 @@ export function BuilderCanvas({
               })),
               footer: { top: headerHeight + totalSectionsHeight, height: footerHeight }
             } : undefined}
-            disabled={isPreviewMode || !canEdit || activeTool === 'hand'}
+            disabled={isPreviewMode || !canEdit || activeTool === 'hand' || isStackedView}
             contextMenuOpenRef={contextMenuOpenRef}
           >
-            {renderElement(element)}
+            {renderElement(element, index, isStackedView)}
           </ElementContextMenu>
         </div>
       ))}
