@@ -1139,7 +1139,7 @@ export function BuilderCanvas({
 
       },
       input: {
-        content: "Enter text here...",
+        content: "Input Fields",
         styles: {
           padding: "0.75rem",
           border: "1px solid var(--color-border)",
@@ -1154,8 +1154,14 @@ export function BuilderCanvas({
           tablet: { padding: "0.65rem", fontSize: "0.95rem" },
           mobile: { padding: "0.6rem", fontSize: "0.9rem" },
         },
-        position: { x: 100, y: 100, width: 250, height: 50 },
-
+        position: { x: 100, y: 100, width: 300, height: 150 },
+        props: {
+          inputFields: [
+            { id: 'inp-1', type: 'text', label: 'Name', placeholder: 'Enter your name', value: '' },
+            { id: 'inp-2', type: 'email', label: 'Email', placeholder: 'Enter your email', value: '' },
+            { id: 'inp-3', type: 'tel', label: 'Phone', placeholder: 'Enter your phone number', value: '' }
+          ]
+        }
       },
       textarea: {
         content: "Enter your message here...",
@@ -1197,10 +1203,10 @@ export function BuilderCanvas({
 
       },
       checkbox: {
-        content: "Checkbox option",
+        content: "Checkbox Group",
         styles: {
           display: "flex",
-          alignItems: "center",
+          flexDirection: "column",
           gap: "0.5rem",
           fontSize: "1rem",
           color: "var(--color-foreground)",
@@ -1210,14 +1216,21 @@ export function BuilderCanvas({
           tablet: { fontSize: "0.95rem" },
           mobile: { fontSize: "0.9rem" },
         },
-        position: { x: 100, y: 100, width: 150, height: 30 },
-
+        position: { x: 100, y: 100, width: 200, height: 120 },
+        props: {
+          checkboxOptions: [
+            { id: 'chk-1', label: 'Option 1', value: 'option1', checked: false },
+            { id: 'chk-2', label: 'Option 2', value: 'option2', checked: false },
+            { id: 'chk-3', label: 'Option 3', value: 'option3', checked: false }
+          ],
+          checkboxPreviewMode: false
+        }
       },
       radio: {
-        content: "Radio option",
+        content: "Radio Group",
         styles: {
           display: "flex",
-          alignItems: "center",
+          flexDirection: "column",
           gap: "0.5rem",
           fontSize: "1rem",
           color: "var(--color-foreground)",
@@ -1227,14 +1240,23 @@ export function BuilderCanvas({
           tablet: { fontSize: "0.95rem" },
           mobile: { fontSize: "0.9rem" },
         },
-        position: { x: 100, y: 100, width: 150, height: 30 },
-
+        position: { x: 100, y: 100, width: 200, height: 120 },
+        props: {
+          radioOptions: [
+            { id: 'opt-1', label: 'Option 1', value: 'option1' },
+            { id: 'opt-2', label: 'Option 2', value: 'option2' },
+            { id: 'opt-3', label: 'Option 3', value: 'option3' }
+          ],
+          selectedValue: '',
+          groupName: 'radio-group',
+          radioPreviewMode: false
+        }
       },
       switch: {
-        content: "Toggle switch",
+        content: "Toggle Switches",
         styles: {
           display: "flex",
-          alignItems: "center",
+          flexDirection: "column",
           gap: "0.5rem",
           fontSize: "1rem",
           color: "var(--color-foreground)",
@@ -1244,8 +1266,15 @@ export function BuilderCanvas({
           tablet: { fontSize: "0.95rem" },
           mobile: { fontSize: "0.9rem" },
         },
-        position: { x: 100, y: 100, width: 150, height: 30 },
-
+        position: { x: 100, y: 100, width: 200, height: 120 },
+        props: {
+          switchOptions: [
+            { id: 'sw-1', label: 'Option 1', checked: false },
+            { id: 'sw-2', label: 'Option 2', checked: true },
+            { id: 'sw-3', label: 'Option 3', checked: false }
+          ],
+          switchPreviewMode: false
+        }
       },
       video: {
         content: "/placeholder.svg?height=300&width=500",
@@ -2524,11 +2553,24 @@ export function BuilderCanvas({
       },
       // Forms & Validation Components
       "contact-form": {
-        content: "Contact Us Form",
+        content: "Send Us a Message",
         styles: { padding: "1.5rem", backgroundColor: "var(--color-card)", borderRadius: "0.75rem", border: "1px solid var(--color-border)", color: "var(--color-foreground)" },
         responsiveStyles: { desktop: { padding: "1.5rem" }, tablet: { padding: "1.25rem" }, mobile: { padding: "1rem" } },
-        position: { x: 100, y: 100, width: 300, height: 250 },
-
+        position: { x: 100, y: 100, width: 500, height: 450 },
+        props: {
+          subtitle: "Please fill in the form below to get in touch with us.",
+          formFields: [
+            { id: 'cf-1', type: 'text', label: 'First name', placeholder: 'First name', value: '', row: 1 },
+            { id: 'cf-2', type: 'text', label: 'Last name', placeholder: 'Last name', value: '', row: 1 },
+            { id: 'cf-3', type: 'email', label: 'Email address', placeholder: 'Email address', value: '', row: 2 },
+            { id: 'cf-4', type: 'tel', label: 'Phone Number', placeholder: 'Phone Number', value: '', row: 2 },
+            { id: 'cf-5', type: 'textarea', label: 'Message', placeholder: 'Message', value: '', row: 3 }
+          ],
+          showTermsCheckbox: true,
+          termsText: "I've read and agree with Terms of Service and Privacy Policy",
+          submitText: "Submit",
+          columnLayout: "auto"
+        }
       },
 
       "newsletter-signup": {
@@ -4049,9 +4091,10 @@ export function BuilderCanvas({
           <div className="text-card-foreground w-full p-4 bg-card border border-border rounded-lg flex items-center justify-between" style={styles}>
             <div className="font-semibold">{element.props?.logo || 'Logo'}</div>
             <div className="flex gap-4">
-              {(element.props?.menuItems || ['Home', 'About', 'Contact']).map((item: string, idx: number) => (
-                <span key={idx} className="text-sm">{item}</span>
-              ))}
+              {(element.props?.menuItems || ['Home', 'About', 'Contact']).map((item: string | { label: string; link: string }, idx: number) => {
+                const label = typeof item === 'string' ? item : item.label
+                return <span key={idx} className="text-sm">{label}</span>
+              })}
             </div>
           </div>
         )
@@ -4487,18 +4530,53 @@ export function BuilderCanvas({
           }
           {
             element.type === "input" && (
-              <input
-                type="text"
-                placeholder={element.content}
-                className="w-full h-full bg-background text-foreground border border-border rounded-md px-3 py-2"
-                style={{
-                  ...elementStyles,
-                  fontFamily: element.props?.inputFontFamily === "default" || element.props?.inputFontFamily === "inherit" ? undefined : element.props?.inputFontFamily,
-                  fontSize: element.props?.inputFontSize ? `${element.props.inputFontSize}px` : undefined,
-                  fontWeight: element.props?.inputFontWeight || undefined,
-                  color: element.props?.inputTextColor || undefined,
-                }}
-              />
+              <div className="text-card-foreground w-full h-full flex flex-col gap-2 p-2" style={elementStyles}>
+                {element.content && (
+                  <span
+                    className="text-sm font-medium mb-1"
+                    style={{
+                      fontFamily: element.props?.inputFontFamily === "default" || element.props?.inputFontFamily === "inherit" ? undefined : element.props?.inputFontFamily,
+                      fontSize: element.props?.inputFontSize ? `${element.props.inputFontSize}px` : undefined,
+                      fontWeight: element.props?.inputFontWeight || 'bold',
+                      color: element.props?.inputTextColor || undefined,
+                    }}
+                  >
+                    {element.content}
+                  </span>
+                )}
+                {(element.props?.inputFields || [
+                  { id: 'inp-1', type: 'text', label: 'Name', placeholder: 'Enter your name', value: '' },
+                  { id: 'inp-2', type: 'email', label: 'Email', placeholder: 'Enter your email', value: '' },
+                  { id: 'inp-3', type: 'tel', label: 'Phone', placeholder: 'Enter your phone number', value: '' }
+                ]).map((field: { id: string; type: string; label: string; placeholder: string; value: string }) => (
+                  <div key={field.id} className="flex flex-col gap-1">
+                    {field.label && (
+                      <label
+                        className="text-xs text-muted-foreground"
+                        style={{
+                          fontFamily: element.props?.inputFontFamily === "default" || element.props?.inputFontFamily === "inherit" ? undefined : element.props?.inputFontFamily,
+                          color: element.props?.inputTextColor || undefined,
+                        }}
+                      >
+                        {field.label}
+                      </label>
+                    )}
+                    <input
+                      type={field.type}
+                      placeholder={field.placeholder}
+                      value={field.value}
+                      readOnly
+                      className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2"
+                      style={{
+                        fontFamily: element.props?.inputFontFamily === "default" || element.props?.inputFontFamily === "inherit" ? undefined : element.props?.inputFontFamily,
+                        fontSize: element.props?.inputFontSize ? `${element.props.inputFontSize}px` : undefined,
+                        fontWeight: element.props?.inputFontWeight || undefined,
+                        color: element.props?.inputTextColor || undefined,
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
             )
           }
           {
@@ -4627,73 +4705,200 @@ export function BuilderCanvas({
           }
           {
             element.type === "checkbox" && (
-              <div className="text-card-foreground w-full h-full flex items-center gap-2" style={elementStyles}>
-                <input type="checkbox" className="w-4 h-4" />
-                <span
-                  className="text-sm"
-                  style={{
-                    fontFamily: element.props?.checkboxFontFamily || undefined,
-                    fontSize: element.props?.checkboxFontSize ? `${element.props.checkboxFontSize}px` : undefined,
-                    fontWeight: element.props?.checkboxFontWeight || undefined,
-                    color: element.props?.checkboxTextColor || undefined,
-                  }}
-                >
-                  {element.content}
-                </span>
+              <div className="text-card-foreground w-full h-full flex flex-col gap-2 p-2" style={elementStyles}>
+                {element.content && (
+                  <span
+                    className="text-sm font-medium mb-1"
+                    style={{
+                      fontFamily: element.props?.checkboxFontFamily || undefined,
+                      fontSize: element.props?.checkboxFontSize ? `${element.props.checkboxFontSize}px` : undefined,
+                      fontWeight: element.props?.checkboxFontWeight || 'bold',
+                      color: element.props?.checkboxTextColor || undefined,
+                    }}
+                  >
+                    {element.content}
+                  </span>
+                )}
+                {(element.props?.checkboxOptions || [
+                  { id: 'chk-1', label: 'Option 1', value: 'option1', checked: false },
+                  { id: 'chk-2', label: 'Option 2', value: 'option2', checked: false },
+                  { id: 'chk-3', label: 'Option 3', value: 'option3', checked: false }
+                ]).map((option: { id: string; label: string; value: string; checked: boolean }) => (
+                  <label
+                    key={option.id}
+                    className={`flex items-center gap-2 ${element.props?.checkboxPreviewMode ? 'cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 transition-colors' : ''}`}
+                    onClick={(e) => {
+                      if (element.props?.checkboxPreviewMode) {
+                        e.stopPropagation()
+                        const currentOptions = element.props?.checkboxOptions || []
+                        const newOptions = currentOptions.map((opt: { id: string; label: string; value: string; checked: boolean }) =>
+                          opt.id === option.id ? { ...opt, checked: !opt.checked } : opt
+                        )
+                        onUpdateElement(element.id, {
+                          props: { ...element.props, checkboxOptions: newOptions }
+                        })
+                      }
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4"
+                      checked={option.checked || false}
+                      readOnly={!element.props?.checkboxPreviewMode}
+                      onChange={() => {
+                        if (element.props?.checkboxPreviewMode) {
+                          const currentOptions = element.props?.checkboxOptions || []
+                          const newOptions = currentOptions.map((opt: { id: string; label: string; value: string; checked: boolean }) =>
+                            opt.id === option.id ? { ...opt, checked: !opt.checked } : opt
+                          )
+                          onUpdateElement(element.id, {
+                            props: { ...element.props, checkboxOptions: newOptions }
+                          })
+                        }
+                      }}
+                    />
+                    <span
+                      className="text-sm"
+                      style={{
+                        fontFamily: element.props?.checkboxFontFamily || undefined,
+                        fontSize: element.props?.checkboxFontSize ? `${element.props.checkboxFontSize}px` : undefined,
+                        fontWeight: element.props?.checkboxFontWeight || undefined,
+                        color: element.props?.checkboxTextColor || undefined,
+                      }}
+                    >
+                      {option.label}
+                    </span>
+                  </label>
+                ))}
               </div>
             )
           }
           {
             element.type === "radio" && (
-              <div className="text-card-foreground w-full h-full flex items-center gap-2" style={elementStyles}>
-                <input
-                  type="radio"
-                  name={element.props?.groupName || "radio-group"}
-                  className="w-4 h-4"
-                  checked={element.props?.checked || false}
-                  readOnly
-                />
-                <span
-                  className="text-sm"
-                  style={{
-                    fontFamily: element.props?.radioFontFamily || undefined,
-                    fontSize: element.props?.radioFontSize ? `${element.props.radioFontSize}px` : undefined,
-                    fontWeight: element.props?.radioFontWeight || undefined,
-                    color: element.props?.radioTextColor || undefined,
-                  }}
-                >
-                  {element.content}
-                </span>
+              <div className="text-card-foreground w-full h-full flex flex-col gap-2 p-2" style={elementStyles}>
+                {element.content && (
+                  <span
+                    className="text-sm font-medium mb-1"
+                    style={{
+                      fontFamily: element.props?.radioFontFamily || undefined,
+                      fontSize: element.props?.radioFontSize ? `${element.props.radioFontSize}px` : undefined,
+                      fontWeight: element.props?.radioFontWeight || 'bold',
+                      color: element.props?.radioTextColor || undefined,
+                    }}
+                  >
+                    {element.content}
+                  </span>
+                )}
+                {(element.props?.radioOptions || [
+                  { id: 'opt-1', label: 'Option 1', value: 'option1' },
+                  { id: 'opt-2', label: 'Option 2', value: 'option2' },
+                  { id: 'opt-3', label: 'Option 3', value: 'option3' }
+                ]).map((option: { id: string; label: string; value: string }) => (
+                  <label
+                    key={option.id}
+                    className={`flex items-center gap-2 ${element.props?.radioPreviewMode ? 'cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 transition-colors' : ''}`}
+                    onClick={(e) => {
+                      if (element.props?.radioPreviewMode) {
+                        e.stopPropagation()
+                        onUpdateElement(element.id, {
+                          props: { ...element.props, selectedValue: option.value }
+                        })
+                      }
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name={element.props?.groupName || "radio-group"}
+                      className="w-4 h-4"
+                      checked={element.props?.selectedValue === option.value}
+                      readOnly={!element.props?.radioPreviewMode}
+                      onChange={() => {
+                        if (element.props?.radioPreviewMode) {
+                          onUpdateElement(element.id, {
+                            props: { ...element.props, selectedValue: option.value }
+                          })
+                        }
+                      }}
+                    />
+                    <span
+                      className="text-sm"
+                      style={{
+                        fontFamily: element.props?.radioFontFamily || undefined,
+                        fontSize: element.props?.radioFontSize ? `${element.props.radioFontSize}px` : undefined,
+                        fontWeight: element.props?.radioFontWeight || undefined,
+                        color: element.props?.radioTextColor || undefined,
+                      }}
+                    >
+                      {option.label}
+                    </span>
+                  </label>
+                ))}
               </div>
             )
           }
           {
             element.type === "switch" && (
-              <div className="text-card-foreground w-full h-full flex items-center gap-2" style={elementStyles}>
-                <div
-                  className={`w-10 h-6 rounded-full relative transition-colors ${element.props?.checked ? 'bg-primary' : 'bg-muted'}`}
-                  style={{
-                    backgroundColor: element.props?.checked ? (element.props?.switchColor || '#3b82f6') : undefined,
-                  }}
-                >
-                  <div
-                    className="w-4 h-4 bg-white rounded-full absolute top-1 transition-transform"
+              <div className="text-card-foreground w-full h-full flex flex-col gap-2 p-2" style={elementStyles}>
+                {element.content && (
+                  <span
+                    className="text-sm font-medium mb-1"
                     style={{
-                      transform: element.props?.checked ? 'translateX(20px)' : 'translateX(2px)',
+                      fontFamily: element.props?.switchFontFamily || undefined,
+                      fontSize: element.props?.switchFontSize ? `${element.props.switchFontSize}px` : undefined,
+                      fontWeight: element.props?.switchFontWeight || 'bold',
+                      color: element.props?.switchTextColor || undefined,
                     }}
-                  />
-                </div>
-                <span
-                  className="text-sm"
-                  style={{
-                    fontFamily: element.props?.switchFontFamily || undefined,
-                    fontSize: element.props?.switchFontSize ? `${element.props.switchFontSize}px` : undefined,
-                    fontWeight: element.props?.switchFontWeight || undefined,
-                    color: element.props?.switchTextColor || undefined,
-                  }}
-                >
-                  {element.content}
-                </span>
+                  >
+                    {element.content}
+                  </span>
+                )}
+                {(element.props?.switchOptions || [
+                  { id: 'sw-1', label: 'Option 1', checked: false },
+                  { id: 'sw-2', label: 'Option 2', checked: true },
+                  { id: 'sw-3', label: 'Option 3', checked: false }
+                ]).map((option: { id: string; label: string; checked: boolean }) => (
+                  <div
+                    key={option.id}
+                    className={`flex items-center gap-2 ${element.props?.switchPreviewMode ? 'cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 transition-colors' : ''}`}
+                    onClick={(e) => {
+                      if (element.props?.switchPreviewMode) {
+                        e.stopPropagation()
+                        const currentOptions = element.props?.switchOptions || []
+                        const newOptions = currentOptions.map((opt: { id: string; label: string; checked: boolean }) =>
+                          opt.id === option.id ? { ...opt, checked: !opt.checked } : opt
+                        )
+                        onUpdateElement(element.id, {
+                          props: { ...element.props, switchOptions: newOptions }
+                        })
+                      }
+                    }}
+                  >
+                    <div
+                      className={`w-10 h-6 rounded-full relative transition-colors ${option.checked ? 'bg-primary' : 'bg-muted'}`}
+                      style={{
+                        backgroundColor: option.checked ? (element.props?.switchColor || '#3b82f6') : undefined,
+                      }}
+                    >
+                      <div
+                        className="w-4 h-4 bg-white rounded-full absolute top-1 transition-transform"
+                        style={{
+                          transform: option.checked ? 'translateX(20px)' : 'translateX(2px)',
+                        }}
+                      />
+                    </div>
+                    <span
+                      className="text-sm"
+                      style={{
+                        fontFamily: element.props?.switchFontFamily || undefined,
+                        fontSize: element.props?.switchFontSize ? `${element.props.switchFontSize}px` : undefined,
+                        fontWeight: element.props?.switchFontWeight || undefined,
+                        color: element.props?.switchTextColor || undefined,
+                      }}
+                    >
+                      {option.label}
+                    </span>
+                  </div>
+                ))}
               </div>
             )
           }
@@ -6677,19 +6882,22 @@ export function BuilderCanvas({
                   </div>
                 )}
                 <div className="flex gap-4">
-                  {(element.props?.menuItems || ['Home', 'About', 'Contact']).map((item: string, index: number) => (
-                    <span
-                      key={index}
-                      className="text-sm"
-                      style={{
-                        fontSize: element.props?.menuItemFontSize || '14px',
-                        fontWeight: element.props?.menuItemFontWeight || '400',
-                        fontFamily: element.props?.menuItemFontFamily || 'inherit'
-                      }}
-                    >
-                      {item}
-                    </span>
-                  ))}
+                  {(element.props?.menuItems || ['Home', 'About', 'Contact']).map((item: string | { label: string; link: string }, index: number) => {
+                    const label = typeof item === 'string' ? item : item.label
+                    return (
+                      <span
+                        key={index}
+                        className="text-sm"
+                        style={{
+                          fontSize: element.props?.menuItemFontSize || '14px',
+                          fontWeight: element.props?.menuItemFontWeight || '400',
+                          fontFamily: element.props?.menuItemFontFamily || 'inherit'
+                        }}
+                      >
+                        {label}
+                      </span>
+                    )
+                  })}
                 </div>
               </div>
             )
@@ -6767,19 +6975,22 @@ export function BuilderCanvas({
                     {element.content || "Menu"}
                   </div>
                   <div className="space-y-2">
-                    {(element.props?.sidebarItems || ["Dashboard", "Settings", "Profile", "Logout"]).map((item: string, index: number) => (
-                      <div
-                        key={index}
-                        className="text-muted-foreground"
-                        style={{
-                          fontSize: element.props?.itemFontSize || "12px",
-                          fontWeight: element.props?.itemFontWeight || "400",
-                          textAlign: element.props?.itemPosition || "left"
-                        }}
-                      >
-                        • {item}
-                      </div>
-                    ))}
+                    {(element.props?.sidebarItems || ["Dashboard", "Settings", "Profile", "Logout"]).map((item: string | { label: string; link: string }, index: number) => {
+                      const label = typeof item === 'string' ? item : item.label
+                      return (
+                        <div
+                          key={index}
+                          className="text-muted-foreground"
+                          style={{
+                            fontSize: element.props?.itemFontSize || "12px",
+                            fontWeight: element.props?.itemFontWeight || "400",
+                            textAlign: element.props?.itemPosition || "left"
+                          }}
+                        >
+                          • {label}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               </div>
@@ -8890,14 +9101,118 @@ export function BuilderCanvas({
           {
             element.type === "contact-form" && (
               <div className="w-full h-full" style={elementStyles}>
-                <div className="w-full h-full space-y-3">
-                  <h3 className="text-sm font-medium">{element.content}</h3>
-                  <div className="space-y-2">
-                    <input type="text" placeholder="Name" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-                    <input type="email" placeholder="Email" className="w-full px-2 py-1 text-xs border border-border rounded bg-background" />
-                    <textarea placeholder="Message" className="w-full px-2 py-1 text-xs border border-border rounded bg-background h-16 resize-none"></textarea>
-                    <button className="w-full px-2 py-1 text-xs bg-primary text-primary-foreground rounded">Send Message</button>
+                <div className="w-full h-full space-y-4">
+                  <div>
+                    <h3
+                      className="text-lg font-bold"
+                      style={{
+                        fontFamily: element.props?.titleFontFamily || 'inherit',
+                        fontSize: element.props?.titleFontSize || '18px',
+                        fontWeight: element.props?.titleFontWeight || '700',
+                        color: element.props?.titleColor || undefined,
+                      }}
+                    >
+                      {element.content}
+                    </h3>
+                    {element.props?.subtitle && (
+                      <p
+                        className="text-sm text-muted-foreground mt-1"
+                        style={{
+                          fontFamily: element.props?.subtitleFontFamily || 'inherit',
+                          fontSize: element.props?.subtitleFontSize || '14px',
+                          color: element.props?.subtitleColor || undefined,
+                        }}
+                      >
+                        {element.props.subtitle}
+                      </p>
+                    )}
                   </div>
+                  {(() => {
+                    const formFields = element.props?.formFields || [
+                      { id: 'cf-1', type: 'text', label: 'First name', placeholder: 'First name', value: '', row: 1 },
+                      { id: 'cf-2', type: 'text', label: 'Last name', placeholder: 'Last name', value: '', row: 1 },
+                      { id: 'cf-3', type: 'email', label: 'Email address', placeholder: 'Email address', value: '', row: 2 },
+                      { id: 'cf-4', type: 'tel', label: 'Phone Number', placeholder: 'Phone Number', value: '', row: 2 },
+                      { id: 'cf-5', type: 'textarea', label: 'Message', placeholder: 'Message', value: '', row: 3 }
+                    ]
+                    const columnLayout = element.props?.columnLayout || 'auto'
+                    
+                    // Group fields by row
+                    const rowMap = new Map<number, typeof formFields>()
+                    formFields.forEach((field: { id: string; type: string; label: string; placeholder: string; value: string; row: number }) => {
+                      const row = field.row || 1
+                      if (!rowMap.has(row)) rowMap.set(row, [])
+                      rowMap.get(row)!.push(field)
+                    })
+                    const rows = Array.from(rowMap.entries()).sort(([a], [b]) => a - b)
+                    
+                    return (
+                      <div className="space-y-3">
+                        {rows.map(([rowNum, fields]) => {
+                          let gridClass = 'grid gap-3'
+                          if (columnLayout === '1-column') {
+                            gridClass += ' grid-cols-1'
+                          } else if (columnLayout === '2-columns') {
+                            gridClass += ' grid-cols-2'
+                          } else {
+                            // Auto: use number of fields in row
+                            gridClass += fields.length > 1 ? ' grid-cols-2' : ' grid-cols-1'
+                          }
+                          
+                          return (
+                            <div key={rowNum} className={gridClass}>
+                              {fields.map((field: { id: string; type: string; label: string; placeholder: string; value: string; row: number }) => (
+                                field.type === 'textarea' ? (
+                                  <textarea
+                                    key={field.id}
+                                    placeholder={field.placeholder}
+                                    className="w-full px-3 py-2 text-sm border border-border rounded-md bg-muted/50 resize-none col-span-full"
+                                    style={{
+                                      minHeight: '80px',
+                                      fontFamily: element.props?.inputFontFamily || 'inherit',
+                                      fontSize: element.props?.inputFontSize || '14px',
+                                    }}
+                                    readOnly
+                                  />
+                                ) : (
+                                  <input
+                                    key={field.id}
+                                    type={field.type}
+                                    placeholder={field.placeholder}
+                                    className="w-full px-3 py-2 text-sm border border-border rounded-md bg-muted/50"
+                                    style={{
+                                      fontFamily: element.props?.inputFontFamily || 'inherit',
+                                      fontSize: element.props?.inputFontSize || '14px',
+                                    }}
+                                    readOnly
+                                  />
+                                )
+                              ))}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
+                  {element.props?.showTermsCheckbox !== false && (
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" className="w-4 h-4" readOnly />
+                      <span className="text-sm text-muted-foreground">
+                        {element.props?.termsText || "I've read and agree with Terms of Service and Privacy Policy"}
+                      </span>
+                    </div>
+                  )}
+                  <button
+                    className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md"
+                    style={{
+                      fontFamily: element.props?.buttonFontFamily || 'inherit',
+                      fontSize: element.props?.buttonFontSize || '14px',
+                      backgroundColor: element.props?.buttonBackgroundColor || undefined,
+                      color: element.props?.buttonTextColor || undefined,
+                    }}
+                  >
+                    {element.props?.submitText || "Submit"}
+                  </button>
                 </div>
               </div>
             )

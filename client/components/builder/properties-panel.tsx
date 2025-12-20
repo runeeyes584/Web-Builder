@@ -4015,39 +4015,72 @@ export function PropertiesPanel({
                     )}
                     <div>
                       <Label className="text-xs text-muted-foreground">Menu Items</Label>
-                      <div className="space-y-2 mt-1">
-                        {(selectedElement.props?.menuItems || ["Home", "About", "Contact"]).map((item: string, index: number) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <Input
-                              placeholder={`Menu item ${index + 1}`}
-                              value={item}
-                              onChange={(e) => {
-                                const newMenuItems = [...(selectedElement.props?.menuItems || ["Home", "About", "Contact"])]
-                                newMenuItems[index] = e.target.value
-                                updateElementProps({ menuItems: newMenuItems })
-                              }}
-                              className="bg-sidebar-accent border-sidebar-border flex-1"
-                            />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const newMenuItems = [...(selectedElement.props?.menuItems || ["Home", "About", "Contact"])]
-                                newMenuItems.splice(index, 1)
-                                updateElementProps({ menuItems: newMenuItems })
-                              }}
-                              className="w-8 h-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                              title="Delete menu item"
-                            >
-                              ×
-                            </Button>
-                          </div>
-                        ))}
+                      <div className="space-y-3 mt-1">
+                        {(selectedElement.props?.menuItems || ["Home", "About", "Contact"]).map((item: string | { label: string; link: string }, index: number) => {
+                          const itemLabel = typeof item === 'string' ? item : item.label
+                          const itemLink = typeof item === 'string' ? '' : (item.link || '')
+                          return (
+                            <div key={index} className="space-y-1 p-2 border border-sidebar-border rounded-md bg-sidebar-accent/50">
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  placeholder={`Menu item ${index + 1}`}
+                                  value={itemLabel}
+                                  onChange={(e) => {
+                                    const currentItems = selectedElement.props?.menuItems || ["Home", "About", "Contact"]
+                                    const newMenuItems = currentItems.map((it: string | { label: string; link: string }, i: number) => {
+                                      if (i !== index) return typeof it === 'string' ? { label: it, link: '' } : it
+                                      const currentLink = typeof it === 'string' ? '' : (it.link || '')
+                                      return { label: e.target.value, link: currentLink }
+                                    })
+                                    updateElementProps({ menuItems: newMenuItems })
+                                  }}
+                                  className="bg-sidebar-accent border-sidebar-border flex-1"
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newMenuItems = [...(selectedElement.props?.menuItems || ["Home", "About", "Contact"])]
+                                    newMenuItems.splice(index, 1)
+                                    updateElementProps({ menuItems: newMenuItems })
+                                  }}
+                                  className="w-8 h-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  title="Delete menu item"
+                                >
+                                  ×
+                                </Button>
+                              </div>
+                              <div>
+                                <Label className="text-[10px] text-muted-foreground">Link URL</Label>
+                                <Input
+                                  placeholder="https://example.com or /page"
+                                  value={itemLink}
+                                  onChange={(e) => {
+                                    const currentItems = selectedElement.props?.menuItems || ["Home", "About", "Contact"]
+                                    const newMenuItems = currentItems.map((it: string | { label: string; link: string }, i: number) => {
+                                      if (i !== index) return typeof it === 'string' ? { label: it, link: '' } : it
+                                      const currentLabel = typeof it === 'string' ? it : it.label
+                                      return { label: currentLabel, link: e.target.value }
+                                    })
+                                    updateElementProps({ menuItems: newMenuItems })
+                                  }}
+                                  className="bg-sidebar-accent border-sidebar-border text-xs h-7"
+                                />
+                              </div>
+                            </div>
+                          )
+                        })}
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const newMenuItems = [...(selectedElement.props?.menuItems || ["Home", "About", "Contact"]), "New Item"]
+                            const currentItems = selectedElement.props?.menuItems || ["Home", "About", "Contact"]
+                            const newMenuItems = [
+                              ...currentItems.map((it: string | { label: string; link: string }) => 
+                                typeof it === 'string' ? { label: it, link: '' } : it
+                              ),
+                              { label: "New Item", link: "" }
+                            ]
                             updateElementProps({ menuItems: newMenuItems })
                           }}
                           className="w-full text-green-600 hover:text-green-700 hover:bg-green-50"
@@ -4115,32 +4148,136 @@ export function PropertiesPanel({
                 ) : selectedElement.type === "input" ? (
                   <div className="space-y-3">
                     <div>
-                      <Label className="text-xs text-muted-foreground">Placeholder</Label>
+                      <Label className="text-xs text-muted-foreground">Input Group Label</Label>
                       <Input
-                        placeholder="Enter placeholder text"
+                        placeholder="Input Fields"
                         value={selectedElement.content}
                         onChange={(e) => updateElementContent(e.target.value)}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">Input Type</Label>
-                      <Select
-                        value={selectedElement.props?.type || "text"}
-                        onValueChange={(value) => updateElementProps({ type: value })}
+                      <Label className="text-xs text-muted-foreground">Input Fields</Label>
+                      <div className="space-y-3 mt-1">
+                        {(selectedElement.props?.inputFields || [
+                          { id: 'inp-1', type: 'text', label: 'Name', placeholder: 'Enter your name', value: '' },
+                          { id: 'inp-2', type: 'email', label: 'Email', placeholder: 'Enter your email', value: '' },
+                          { id: 'inp-3', type: 'tel', label: 'Phone', placeholder: 'Enter your phone number', value: '' }
+                        ]).map((field: { id: string; type: string; label: string; placeholder: string; value: string }, index: number) => (
+                          <div key={field.id || index} className="p-2 border border-sidebar-border rounded-md space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-medium text-muted-foreground">Field {index + 1}</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => {
+                                  const currentFields = selectedElement.props?.inputFields || [
+                                    { id: 'inp-1', type: 'text', label: 'Name', placeholder: 'Enter your name', value: '' },
+                                    { id: 'inp-2', type: 'email', label: 'Email', placeholder: 'Enter your email', value: '' },
+                                    { id: 'inp-3', type: 'tel', label: 'Phone', placeholder: 'Enter your phone number', value: '' }
+                                  ]
+                                  if (currentFields.length <= 1) return // Keep at least one field
+                                  const newFields = currentFields.filter((_: { id: string; type: string; label: string; placeholder: string; value: string }, i: number) => i !== index)
+                                  updateElementProps({ inputFields: newFields })
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-xs text-muted-foreground">Label</Label>
+                                <Input
+                                  placeholder="Field label"
+                                  value={field.label}
+                                  onChange={(e) => {
+                                    const currentFields = selectedElement.props?.inputFields || []
+                                    const newFields = [...currentFields]
+                                    newFields[index] = { ...field, label: e.target.value }
+                                    updateElementProps({ inputFields: newFields })
+                                  }}
+                                  className="bg-sidebar-accent border-sidebar-border text-xs mt-1"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs text-muted-foreground">Type</Label>
+                                <Select
+                                  value={field.type}
+                                  onValueChange={(value) => {
+                                    const currentFields = selectedElement.props?.inputFields || []
+                                    const newFields = [...currentFields]
+                                    // Auto-generate placeholder based on type
+                                    const placeholderMap: Record<string, string> = {
+                                      'text': 'Enter your text',
+                                      'email': 'Enter your email',
+                                      'password': 'Enter your password',
+                                      'number': 'Enter a number',
+                                      'tel': 'Enter your phone number',
+                                      'url': 'Enter a URL'
+                                    }
+                                    newFields[index] = { 
+                                      ...field, 
+                                      type: value,
+                                      placeholder: placeholderMap[value] || 'Enter value'
+                                    }
+                                    updateElementProps({ inputFields: newFields })
+                                  }}
+                                >
+                                  <SelectTrigger className="bg-sidebar-accent border-sidebar-border text-xs mt-1">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="text">Text</SelectItem>
+                                    <SelectItem value="email">Email</SelectItem>
+                                    <SelectItem value="password">Password</SelectItem>
+                                    <SelectItem value="number">Number</SelectItem>
+                                    <SelectItem value="tel">Phone</SelectItem>
+                                    <SelectItem value="url">URL</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Placeholder</Label>
+                              <Input
+                                placeholder="Enter placeholder text"
+                                value={field.placeholder}
+                                onChange={(e) => {
+                                  const currentFields = selectedElement.props?.inputFields || []
+                                  const newFields = [...currentFields]
+                                  newFields[index] = { ...field, placeholder: e.target.value }
+                                  updateElementProps({ inputFields: newFields })
+                                }}
+                                className="bg-sidebar-accent border-sidebar-border text-xs mt-1"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-2"
+                        onClick={() => {
+                          const currentFields = selectedElement.props?.inputFields || [
+                            { id: 'inp-1', type: 'text', label: 'Name', placeholder: 'Enter your name', value: '' },
+                            { id: 'inp-2', type: 'email', label: 'Email', placeholder: 'Enter your email', value: '' },
+                            { id: 'inp-3', type: 'tel', label: 'Phone', placeholder: 'Enter your phone number', value: '' }
+                          ]
+                          const newField = {
+                            id: `inp-${Date.now()}`,
+                            type: 'text',
+                            label: `Field ${currentFields.length + 1}`,
+                            placeholder: 'Enter your text',
+                            value: ''
+                          }
+                          updateElementProps({ inputFields: [...currentFields, newField] })
+                        }}
                       >
-                        <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="text">Text</SelectItem>
-                          <SelectItem value="email">Email</SelectItem>
-                          <SelectItem value="password">Password</SelectItem>
-                          <SelectItem value="number">Number</SelectItem>
-                          <SelectItem value="tel">Phone</SelectItem>
-                          <SelectItem value="url">URL</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Input
+                      </Button>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Switch
@@ -5617,18 +5754,172 @@ export function PropertiesPanel({
                     <div>
                       <Label className="text-xs text-muted-foreground">Form Title</Label>
                       <Input
-                        placeholder="Contact Us Form"
+                        placeholder="Send Us a Message"
                         value={selectedElement.content}
                         onChange={(e) => updateElementContent(e.target.value)}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
                     <div>
+                      <Label className="text-xs text-muted-foreground">Subtitle</Label>
+                      <Textarea
+                        placeholder="Please fill in the form below..."
+                        value={selectedElement.props?.subtitle || ""}
+                        onChange={(e) => updateElementProps({ subtitle: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1 min-h-[60px]"
+                      />
+                    </div>
+                    <Separator className="bg-sidebar-border" />
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Form Fields</Label>
+                      <div className="space-y-2 mt-2">
+                        {(selectedElement.props?.formFields || [
+                          { id: 'cf-1', type: 'text', label: 'First name', placeholder: 'First name', value: '', row: 1 },
+                          { id: 'cf-2', type: 'text', label: 'Last name', placeholder: 'Last name', value: '', row: 1 },
+                          { id: 'cf-3', type: 'email', label: 'Email address', placeholder: 'Email address', value: '', row: 2 },
+                          { id: 'cf-4', type: 'tel', label: 'Phone Number', placeholder: 'Phone Number', value: '', row: 2 },
+                          { id: 'cf-5', type: 'textarea', label: 'Message', placeholder: 'Message', value: '', row: 3 }
+                        ]).map((field: { id: string; type: string; label: string; placeholder: string; value: string; row: number }, index: number) => (
+                          <div key={field.id || index} className="p-2 border border-sidebar-border rounded-md space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-medium text-muted-foreground">Field {index + 1}</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => {
+                                  const currentFields = selectedElement.props?.formFields || []
+                                  if (currentFields.length <= 1) return
+                                  const newFields = currentFields.filter((_: { id: string }, i: number) => i !== index)
+                                  updateElementProps({ formFields: newFields })
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-xs text-muted-foreground">Type</Label>
+                                <Select
+                                  value={field.type}
+                                  onValueChange={(value) => {
+                                    const currentFields = selectedElement.props?.formFields || []
+                                    const newFields = [...currentFields]
+                                    const placeholderMap: Record<string, string> = {
+                                      'text': 'Enter text',
+                                      'email': 'Email address',
+                                      'tel': 'Phone Number',
+                                      'number': 'Enter number',
+                                      'textarea': 'Message'
+                                    }
+                                    newFields[index] = { ...field, type: value, placeholder: placeholderMap[value] || 'Enter value' }
+                                    updateElementProps({ formFields: newFields })
+                                  }}
+                                >
+                                  <SelectTrigger className="bg-sidebar-accent border-sidebar-border text-xs mt-1">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="text">Text</SelectItem>
+                                    <SelectItem value="email">Email</SelectItem>
+                                    <SelectItem value="tel">Phone</SelectItem>
+                                    <SelectItem value="number">Number</SelectItem>
+                                    <SelectItem value="textarea">Textarea</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="text-xs text-muted-foreground">Row</Label>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  value={field.row || 1}
+                                  onChange={(e) => {
+                                    const currentFields = selectedElement.props?.formFields || []
+                                    const newFields = [...currentFields]
+                                    newFields[index] = { ...field, row: parseInt(e.target.value) || 1 }
+                                    updateElementProps({ formFields: newFields })
+                                  }}
+                                  className="bg-sidebar-accent border-sidebar-border text-xs mt-1"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Placeholder</Label>
+                              <Input
+                                placeholder="Enter placeholder"
+                                value={field.placeholder}
+                                onChange={(e) => {
+                                  const currentFields = selectedElement.props?.formFields || []
+                                  const newFields = [...currentFields]
+                                  newFields[index] = { ...field, placeholder: e.target.value }
+                                  updateElementProps({ formFields: newFields })
+                                }}
+                                className="bg-sidebar-accent border-sidebar-border text-xs mt-1"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-2"
+                        onClick={() => {
+                          const currentFields = selectedElement.props?.formFields || []
+                          const maxRow = Math.max(...currentFields.map((f: { row: number }) => f.row || 1), 0)
+                          const newField = {
+                            id: `cf-${Date.now()}`,
+                            type: 'text',
+                            label: `Field ${currentFields.length + 1}`,
+                            placeholder: 'Enter text',
+                            value: '',
+                            row: maxRow + 1
+                          }
+                          updateElementProps({ formFields: [...currentFields, newField] })
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Text Field
+                      </Button>
+                    </div>
+                    <Separator className="bg-sidebar-border" />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label className="text-xs font-medium">Show Terms Checkbox</Label>
+                        <p className="text-xs text-muted-foreground">Display agreement checkbox</p>
+                      </div>
+                      <Switch
+                        checked={selectedElement.props?.showTermsCheckbox !== false}
+                        onCheckedChange={(checked) => updateElementProps({ showTermsCheckbox: checked })}
+                      />
+                    </div>
+                    {selectedElement.props?.showTermsCheckbox !== false && (
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Terms Text</Label>
+                        <Input
+                          placeholder="I've read and agree with..."
+                          value={selectedElement.props?.termsText || ""}
+                          onChange={(e) => updateElementProps({ termsText: e.target.value })}
+                          className="bg-sidebar-accent border-sidebar-border mt-1"
+                        />
+                      </div>
+                    )}
+                    <div>
                       <Label className="text-xs text-muted-foreground">Submit Button Text</Label>
                       <Input
-                        placeholder="Send Message"
+                        placeholder="Submit"
                         value={selectedElement.props?.submitText || ""}
                         onChange={(e) => updateElementProps({ submitText: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Link</Label>
+                      <Input
+                        placeholder="https://example.com"
+                        value={selectedElement.props?.submitLink || ""}
+                        onChange={(e) => updateElementProps({ submitLink: e.target.value })}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
@@ -5711,6 +6002,15 @@ export function PropertiesPanel({
                       />
                     </div>
                     <div>
+                      <Label className="text-xs text-muted-foreground">Link</Label>
+                      <Input
+                        placeholder="https://example.com"
+                        value={selectedElement.props?.submitLink || ""}
+                        onChange={(e) => updateElementProps({ submitLink: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                    <div>
                       <Label className="text-xs text-muted-foreground">Forgot Password Link</Label>
                       <Input
                         placeholder="Forgot password?"
@@ -5776,6 +6076,15 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Link</Label>
+                      <Input
+                        placeholder="https://example.com"
+                        value={selectedElement.props?.submitLink || ""}
+                        onChange={(e) => updateElementProps({ submitLink: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
                   </div>
                 ) : selectedElement.type === "survey-form" ? (
                   <div className="space-y-3">
@@ -5812,6 +6121,15 @@ export function PropertiesPanel({
                         placeholder="Submit"
                         value={selectedElement.props?.submitText || ""}
                         onChange={(e) => updateElementProps({ submitText: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Link</Label>
+                      <Input
+                        placeholder="https://example.com"
+                        value={selectedElement.props?.submitLink || ""}
+                        onChange={(e) => updateElementProps({ submitLink: e.target.value })}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
@@ -5863,6 +6181,15 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Link</Label>
+                      <Input
+                        placeholder="https://example.com"
+                        value={selectedElement.props?.submitLink || ""}
+                        onChange={(e) => updateElementProps({ submitLink: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
                   </div>
                 ) : selectedElement.type === "booking-form" ? (
                   <div className="space-y-3">
@@ -5893,6 +6220,15 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Link</Label>
+                      <Input
+                        placeholder="https://example.com"
+                        value={selectedElement.props?.submitLink || ""}
+                        onChange={(e) => updateElementProps({ submitLink: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
                   </div>
                 ) : selectedElement.type === "feedback-form" ? (
                   <div className="space-y-3">
@@ -5920,6 +6256,15 @@ export function PropertiesPanel({
                         placeholder="Submit Feedback"
                         value={selectedElement.props?.submitText || ""}
                         onChange={(e) => updateElementProps({ submitText: e.target.value })}
+                        className="bg-sidebar-accent border-sidebar-border mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Link</Label>
+                      <Input
+                        placeholder="https://example.com"
+                        value={selectedElement.props?.submitLink || ""}
+                        onChange={(e) => updateElementProps({ submitLink: e.target.value })}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
@@ -6029,39 +6374,72 @@ export function PropertiesPanel({
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground">Sidebar Items</Label>
-                      <div className="space-y-2 mt-1">
-                        {(selectedElement.props?.sidebarItems || ["Dashboard", "Settings", "Profile", "Logout"]).map((item: string, index: number) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <Input
-                              placeholder={`Sidebar item ${index + 1}`}
-                              value={item}
-                              onChange={(e) => {
-                                const newSidebarItems = [...(selectedElement.props?.sidebarItems || ["Dashboard", "Settings", "Profile", "Logout"])]
-                                newSidebarItems[index] = e.target.value
-                                updateElementProps({ sidebarItems: newSidebarItems })
-                              }}
-                              className="bg-sidebar-accent border-sidebar-border flex-1"
-                            />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const newSidebarItems = [...(selectedElement.props?.sidebarItems || ["Dashboard", "Settings", "Profile", "Logout"])]
-                                newSidebarItems.splice(index, 1)
-                                updateElementProps({ sidebarItems: newSidebarItems })
-                              }}
-                              className="w-8 h-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                              title="Delete sidebar item"
-                            >
-                              ×
-                            </Button>
-                          </div>
-                        ))}
+                      <div className="space-y-3 mt-1">
+                        {(selectedElement.props?.sidebarItems || ["Dashboard", "Settings", "Profile", "Logout"]).map((item: string | { label: string; link: string }, index: number) => {
+                          const itemLabel = typeof item === 'string' ? item : item.label
+                          const itemLink = typeof item === 'string' ? '' : (item.link || '')
+                          return (
+                            <div key={index} className="space-y-1 p-2 border border-sidebar-border rounded-md bg-sidebar-accent/50">
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  placeholder={`Sidebar item ${index + 1}`}
+                                  value={itemLabel}
+                                  onChange={(e) => {
+                                    const currentItems = selectedElement.props?.sidebarItems || ["Dashboard", "Settings", "Profile", "Logout"]
+                                    const newSidebarItems = currentItems.map((it: string | { label: string; link: string }, i: number) => {
+                                      if (i !== index) return typeof it === 'string' ? { label: it, link: '' } : it
+                                      const currentLink = typeof it === 'string' ? '' : (it.link || '')
+                                      return { label: e.target.value, link: currentLink }
+                                    })
+                                    updateElementProps({ sidebarItems: newSidebarItems })
+                                  }}
+                                  className="bg-sidebar-accent border-sidebar-border flex-1"
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newSidebarItems = [...(selectedElement.props?.sidebarItems || ["Dashboard", "Settings", "Profile", "Logout"])]
+                                    newSidebarItems.splice(index, 1)
+                                    updateElementProps({ sidebarItems: newSidebarItems })
+                                  }}
+                                  className="w-8 h-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  title="Delete sidebar item"
+                                >
+                                  ×
+                                </Button>
+                              </div>
+                              <div>
+                                <Label className="text-[10px] text-muted-foreground">Link URL</Label>
+                                <Input
+                                  placeholder="https://example.com or /page"
+                                  value={itemLink}
+                                  onChange={(e) => {
+                                    const currentItems = selectedElement.props?.sidebarItems || ["Dashboard", "Settings", "Profile", "Logout"]
+                                    const newSidebarItems = currentItems.map((it: string | { label: string; link: string }, i: number) => {
+                                      if (i !== index) return typeof it === 'string' ? { label: it, link: '' } : it
+                                      const currentLabel = typeof it === 'string' ? it : it.label
+                                      return { label: currentLabel, link: e.target.value }
+                                    })
+                                    updateElementProps({ sidebarItems: newSidebarItems })
+                                  }}
+                                  className="bg-sidebar-accent border-sidebar-border text-xs h-7"
+                                />
+                              </div>
+                            </div>
+                          )
+                        })}
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const newSidebarItems = [...(selectedElement.props?.sidebarItems || ["Dashboard", "Settings", "Profile", "Logout"]), "New Item"]
+                            const currentItems = selectedElement.props?.sidebarItems || ["Dashboard", "Settings", "Profile", "Logout"]
+                            const newSidebarItems = [
+                              ...currentItems.map((it: string | { label: string; link: string }) => 
+                                typeof it === 'string' ? { label: it, link: '' } : it
+                              ),
+                              { label: "New Item", link: "" }
+                            ]
                             updateElementProps({ sidebarItems: newSidebarItems })
                           }}
                           className="w-full text-green-600 hover:text-green-700 hover:bg-green-50"
@@ -6241,20 +6619,80 @@ export function PropertiesPanel({
                 ) : selectedElement.type === "checkbox" ? (
                   <div className="space-y-3">
                     <div>
-                      <Label className="text-xs text-muted-foreground">Checkbox Label</Label>
+                      <Label className="text-xs text-muted-foreground">Checkbox Group Label</Label>
                       <Input
-                        placeholder="Checkbox option"
+                        placeholder="Checkbox Group"
                         value={selectedElement.content}
                         onChange={(e) => updateElementContent(e.target.value)}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={selectedElement.props?.checked || false}
-                        onCheckedChange={(checked) => updateElementProps({ checked })}
-                      />
-                      <Label className="text-xs text-muted-foreground">Checked by default</Label>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Checkbox Options</Label>
+                      <div className="space-y-2 mt-1">
+                        {(selectedElement.props?.checkboxOptions || [
+                          { id: 'chk-1', label: 'Option 1', value: 'option1', checked: false },
+                          { id: 'chk-2', label: 'Option 2', value: 'option2', checked: false },
+                          { id: 'chk-3', label: 'Option 3', value: 'option3', checked: false }
+                        ]).map((option: { id: string; label: string; value: string; checked: boolean }, index: number) => (
+                          <div key={option.id || index} className="flex items-center gap-2">
+                            <Input
+                              placeholder={`Option ${index + 1}`}
+                              value={option.label}
+                              onChange={(e) => {
+                                const currentOptions = selectedElement.props?.checkboxOptions || [
+                                  { id: 'chk-1', label: 'Option 1', value: 'option1', checked: false },
+                                  { id: 'chk-2', label: 'Option 2', value: 'option2', checked: false },
+                                  { id: 'chk-3', label: 'Option 3', value: 'option3', checked: false }
+                                ]
+                                const newOptions = [...currentOptions]
+                                newOptions[index] = { ...option, label: e.target.value, value: e.target.value.toLowerCase().replace(/\s+/g, '-') }
+                                updateElementProps({ checkboxOptions: newOptions })
+                              }}
+                              className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => {
+                                const currentOptions = selectedElement.props?.checkboxOptions || [
+                                  { id: 'chk-1', label: 'Option 1', value: 'option1', checked: false },
+                                  { id: 'chk-2', label: 'Option 2', value: 'option2', checked: false },
+                                  { id: 'chk-3', label: 'Option 3', value: 'option3', checked: false }
+                                ]
+                                if (currentOptions.length <= 1) return // Keep at least one option
+                                const newOptions = currentOptions.filter((_: { id: string; label: string; value: string; checked: boolean }, i: number) => i !== index)
+                                updateElementProps({ checkboxOptions: newOptions })
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-2"
+                        onClick={() => {
+                          const currentOptions = selectedElement.props?.checkboxOptions || [
+                            { id: 'chk-1', label: 'Option 1', value: 'option1', checked: false },
+                            { id: 'chk-2', label: 'Option 2', value: 'option2', checked: false },
+                            { id: 'chk-3', label: 'Option 3', value: 'option3', checked: false }
+                          ]
+                          const newOption = {
+                            id: `chk-${Date.now()}`,
+                            label: `Option ${currentOptions.length + 1}`,
+                            value: `option${currentOptions.length + 1}`,
+                            checked: false
+                          }
+                          updateElementProps({ checkboxOptions: [...currentOptions, newOption] })
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Checkbox Option
+                      </Button>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Switch
@@ -6263,13 +6701,31 @@ export function PropertiesPanel({
                       />
                       <Label className="text-xs text-muted-foreground">Required</Label>
                     </div>
+                    <Separator className="bg-sidebar-border" />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label className="text-xs font-medium">Preview Mode</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Click checkbox options on canvas to test
+                        </p>
+                      </div>
+                      <Switch
+                        checked={selectedElement.props?.checkboxPreviewMode || false}
+                        onCheckedChange={(checked) => updateElementProps({ checkboxPreviewMode: checked })}
+                      />
+                    </div>
+                    {selectedElement.props?.checkboxPreviewMode && (
+                      <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                        ⚠️ Preview mode is ON. You can interact with checkbox options on the canvas.
+                      </div>
+                    )}
                   </div>
                 ) : selectedElement.type === "radio" ? (
                   <div className="space-y-3">
                     <div>
-                      <Label className="text-xs text-muted-foreground">Radio Label</Label>
+                      <Label className="text-xs text-muted-foreground">Radio Group Label</Label>
                       <Input
-                        placeholder="Radio option"
+                        placeholder="Radio Group"
                         value={selectedElement.content}
                         onChange={(e) => updateElementContent(e.target.value)}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
@@ -6284,32 +6740,229 @@ export function PropertiesPanel({
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={selectedElement.props?.checked || false}
-                        onCheckedChange={(checked) => updateElementProps({ checked })}
-                      />
-                      <Label className="text-xs text-muted-foreground">Selected by default</Label>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Radio Options</Label>
+                      <div className="space-y-2 mt-1">
+                        {(selectedElement.props?.radioOptions || [
+                          { id: 'opt-1', label: 'Option 1', value: 'option1' },
+                          { id: 'opt-2', label: 'Option 2', value: 'option2' },
+                          { id: 'opt-3', label: 'Option 3', value: 'option3' }
+                        ]).map((option: { id: string; label: string; value: string }, index: number) => (
+                          <div key={option.id || index} className="flex items-center gap-2">
+                            <Input
+                              placeholder={`Option ${index + 1}`}
+                              value={option.label}
+                              onChange={(e) => {
+                                const currentOptions = selectedElement.props?.radioOptions || [
+                                  { id: 'opt-1', label: 'Option 1', value: 'option1' },
+                                  { id: 'opt-2', label: 'Option 2', value: 'option2' },
+                                  { id: 'opt-3', label: 'Option 3', value: 'option3' }
+                                ]
+                                const newOptions = [...currentOptions]
+                                newOptions[index] = { ...option, label: e.target.value, value: e.target.value.toLowerCase().replace(/\s+/g, '-') }
+                                updateElementProps({ radioOptions: newOptions })
+                              }}
+                              className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => {
+                                const currentOptions = selectedElement.props?.radioOptions || [
+                                  { id: 'opt-1', label: 'Option 1', value: 'option1' },
+                                  { id: 'opt-2', label: 'Option 2', value: 'option2' },
+                                  { id: 'opt-3', label: 'Option 3', value: 'option3' }
+                                ]
+                                if (currentOptions.length <= 1) return // Keep at least one option
+                                const newOptions = currentOptions.filter((_: { id: string; label: string; value: string }, i: number) => i !== index)
+                                // Update selected value if the deleted option was selected
+                                const deletedOption = currentOptions[index]
+                                if (selectedElement.props?.selectedValue === deletedOption.value) {
+                                  updateElementProps({ radioOptions: newOptions, selectedValue: newOptions[0]?.value || '' })
+                                } else {
+                                  updateElementProps({ radioOptions: newOptions })
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-2"
+                        onClick={() => {
+                          const currentOptions = selectedElement.props?.radioOptions || [
+                            { id: 'opt-1', label: 'Option 1', value: 'option1' },
+                            { id: 'opt-2', label: 'Option 2', value: 'option2' },
+                            { id: 'opt-3', label: 'Option 3', value: 'option3' }
+                          ]
+                          const newOption = {
+                            id: `opt-${Date.now()}`,
+                            label: `Option ${currentOptions.length + 1}`,
+                            value: `option${currentOptions.length + 1}`
+                          }
+                          updateElementProps({ radioOptions: [...currentOptions, newOption] })
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Radio Option
+                      </Button>
                     </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Default Selected Value</Label>
+                      <Select
+                        value={selectedElement.props?.selectedValue || "__none__"}
+                        onValueChange={(value) => updateElementProps({ selectedValue: value === "__none__" ? "" : value })}
+                      >
+                        <SelectTrigger className="bg-sidebar-accent border-sidebar-border mt-1">
+                          <SelectValue placeholder="None (no default selection)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">None (no default selection)</SelectItem>
+                          {(selectedElement.props?.radioOptions || [
+                            { id: 'opt-1', label: 'Option 1', value: 'option1' },
+                            { id: 'opt-2', label: 'Option 2', value: 'option2' },
+                            { id: 'opt-3', label: 'Option 3', value: 'option3' }
+                          ]).map((option: { id: string; label: string; value: string }) => (
+                            <SelectItem key={option.id} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Separator className="bg-sidebar-border" />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label className="text-xs font-medium">Preview Mode</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Click radio options on canvas to test
+                        </p>
+                      </div>
+                      <Switch
+                        checked={selectedElement.props?.radioPreviewMode || false}
+                        onCheckedChange={(checked) => updateElementProps({ radioPreviewMode: checked })}
+                      />
+                    </div>
+                    {selectedElement.props?.radioPreviewMode && (
+                      <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                        ⚠️ Preview mode is ON. You can interact with radio options on the canvas.
+                      </div>
+                    )}
                   </div>
                 ) : selectedElement.type === "switch" ? (
                   <div className="space-y-3">
                     <div>
-                      <Label className="text-xs text-muted-foreground">Switch Label</Label>
+                      <Label className="text-xs text-muted-foreground">Switch Group Label</Label>
                       <Input
-                        placeholder="Toggle option"
+                        placeholder="Toggle Switches"
                         value={selectedElement.content}
                         onChange={(e) => updateElementContent(e.target.value)}
                         className="bg-sidebar-accent border-sidebar-border mt-1"
                       />
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={selectedElement.props?.checked || false}
-                        onCheckedChange={(checked) => updateElementProps({ checked })}
-                      />
-                      <Label className="text-xs text-muted-foreground">On by default</Label>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Switch Options</Label>
+                      <div className="space-y-2 mt-1">
+                        {(selectedElement.props?.switchOptions || [
+                          { id: 'sw-1', label: 'Option 1', checked: false },
+                          { id: 'sw-2', label: 'Option 2', checked: true },
+                          { id: 'sw-3', label: 'Option 3', checked: false }
+                        ]).map((option: { id: string; label: string; checked: boolean }, index: number) => (
+                          <div key={option.id || index} className="flex items-center gap-2">
+                            <Switch
+                              checked={option.checked || false}
+                              onCheckedChange={(checked) => {
+                                const currentOptions = selectedElement.props?.switchOptions || [
+                                  { id: 'sw-1', label: 'Option 1', checked: false },
+                                  { id: 'sw-2', label: 'Option 2', checked: true },
+                                  { id: 'sw-3', label: 'Option 3', checked: false }
+                                ]
+                                const newOptions = [...currentOptions]
+                                newOptions[index] = { ...option, checked }
+                                updateElementProps({ switchOptions: newOptions })
+                              }}
+                              className="data-[state=checked]:bg-primary"
+                            />
+                            <Input
+                              placeholder={`Option ${index + 1}`}
+                              value={option.label}
+                              onChange={(e) => {
+                                const currentOptions = selectedElement.props?.switchOptions || [
+                                  { id: 'sw-1', label: 'Option 1', checked: false },
+                                  { id: 'sw-2', label: 'Option 2', checked: true },
+                                  { id: 'sw-3', label: 'Option 3', checked: false }
+                                ]
+                                const newOptions = [...currentOptions]
+                                newOptions[index] = { ...option, label: e.target.value }
+                                updateElementProps({ switchOptions: newOptions })
+                              }}
+                              className="flex-1 bg-sidebar-accent border-sidebar-border text-xs"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => {
+                                const currentOptions = selectedElement.props?.switchOptions || [
+                                  { id: 'sw-1', label: 'Option 1', checked: false },
+                                  { id: 'sw-2', label: 'Option 2', checked: true },
+                                  { id: 'sw-3', label: 'Option 3', checked: false }
+                                ]
+                                if (currentOptions.length <= 1) return // Keep at least one option
+                                const newOptions = currentOptions.filter((_: { id: string; label: string; checked: boolean }, i: number) => i !== index)
+                                updateElementProps({ switchOptions: newOptions })
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-2"
+                        onClick={() => {
+                          const currentOptions = selectedElement.props?.switchOptions || [
+                            { id: 'sw-1', label: 'Option 1', checked: false },
+                            { id: 'sw-2', label: 'Option 2', checked: true },
+                            { id: 'sw-3', label: 'Option 3', checked: false }
+                          ]
+                          const newOption = {
+                            id: `sw-${Date.now()}`,
+                            label: `Option ${currentOptions.length + 1}`,
+                            checked: false
+                          }
+                          updateElementProps({ switchOptions: [...currentOptions, newOption] })
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Toggle Switch
+                      </Button>
                     </div>
+                    <Separator className="bg-sidebar-border" />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label className="text-xs font-medium">Preview Mode</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Toggle switches on canvas to test
+                        </p>
+                      </div>
+                      <Switch
+                        checked={selectedElement.props?.switchPreviewMode || false}
+                        onCheckedChange={(checked) => updateElementProps({ switchPreviewMode: checked })}
+                      />
+                    </div>
+                    {selectedElement.props?.switchPreviewMode && (
+                      <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                        ⚠️ Preview mode is ON. You can interact with toggle switches on the canvas.
+                      </div>
+                    )}
                   </div>
                 ) : selectedElement.type === "gallery" ? (
                   <div className="space-y-3">
@@ -22606,6 +23259,86 @@ export function PropertiesPanel({
                         />
                         <Label className="text-xs text-muted-foreground">Equal column width</Label>
                       </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Contact Form Column Layout Settings */}
+              {selectedElement.type === "contact-form" && (
+                <>
+                  <Separator className="bg-sidebar-border" />
+
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-2 mb-3">
+                      <Layout className="w-4 h-4" />
+                      Column Layout
+                    </Label>
+
+                    <div className="space-y-3">
+                      <Label className="text-xs text-muted-foreground block">Field Layout</Label>
+                      <div className="flex gap-2">
+                        {/* Auto Layout */}
+                        <button
+                          onClick={() => updateElementProps({ columnLayout: 'auto' })}
+                          className={`flex-1 p-2 border rounded-md hover:bg-sidebar-accent transition-colors ${
+                            (selectedElement.props?.columnLayout || 'auto') === 'auto' ? 'border-primary bg-primary/10' : 'border-sidebar-border'
+                          }`}
+                          title="Auto"
+                        >
+                          <div className="flex justify-center gap-0.5">
+                            <div className="w-3 h-4 border border-current rounded-sm"></div>
+                            <div className="w-3 h-4 border border-current rounded-sm"></div>
+                          </div>
+                          <div className="flex justify-center mt-0.5">
+                            <div className="w-6 h-4 border border-current rounded-sm"></div>
+                          </div>
+                          <span className="text-xs mt-1 block">Auto</span>
+                        </button>
+
+                        {/* 1 Column */}
+                        <button
+                          onClick={() => updateElementProps({ columnLayout: '1-column' })}
+                          className={`flex-1 p-2 border rounded-md hover:bg-sidebar-accent transition-colors ${
+                            selectedElement.props?.columnLayout === '1-column' ? 'border-primary bg-primary/10' : 'border-sidebar-border'
+                          }`}
+                          title="1 Column"
+                        >
+                          <div className="flex flex-col justify-center items-center gap-0.5">
+                            <div className="w-6 h-3 border border-current rounded-sm"></div>
+                            <div className="w-6 h-3 border border-current rounded-sm"></div>
+                            <div className="w-6 h-3 border border-current rounded-sm"></div>
+                          </div>
+                          <span className="text-xs mt-1 block">1 Col</span>
+                        </button>
+
+                        {/* 2 Columns */}
+                        <button
+                          onClick={() => updateElementProps({ columnLayout: '2-columns' })}
+                          className={`flex-1 p-2 border rounded-md hover:bg-sidebar-accent transition-colors ${
+                            selectedElement.props?.columnLayout === '2-columns' ? 'border-primary bg-primary/10' : 'border-sidebar-border'
+                          }`}
+                          title="2 Columns"
+                        >
+                          <div className="flex flex-col justify-center items-center gap-0.5">
+                            <div className="flex gap-0.5">
+                              <div className="w-3 h-3 border border-current rounded-sm"></div>
+                              <div className="w-3 h-3 border border-current rounded-sm"></div>
+                            </div>
+                            <div className="flex gap-0.5">
+                              <div className="w-3 h-3 border border-current rounded-sm"></div>
+                              <div className="w-3 h-3 border border-current rounded-sm"></div>
+                            </div>
+                          </div>
+                          <span className="text-xs mt-1 block">2 Cols</span>
+                        </button>
+                      </div>
+
+                      <p className="text-xs text-muted-foreground mt-2">
+                        <strong>Auto:</strong> Uses row numbers to group fields.<br/>
+                        <strong>1 Col:</strong> All fields in single column.<br/>
+                        <strong>2 Cols:</strong> All fields in 2-column grid.
+                      </p>
                     </div>
                   </div>
                 </>
